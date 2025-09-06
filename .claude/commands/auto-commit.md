@@ -1,0 +1,1 @@
+Quickly stages all changes and creates a commit with an optional custom message. Perfect for rapid development iterations.
