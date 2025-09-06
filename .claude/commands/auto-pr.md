@@ -13,15 +13,9 @@ if ! git rev-parse --git-dir > /dev/null 2>&1; then
     handle_error "Not in a git repository"
 fi
 
-# Check current git status and changes
-echo "📋 Current changes:"
-CHANGES=$(git status --short)
-if [ -z "$CHANGES" ]; then
-    echo "No changes detected."
-    echo "💡 Make some changes first, then run this command again."
-    exit 0
-fi
-echo "$CHANGES"
+# Get current git status
+echo "📋 Current git status:"
+git status --short
 echo ""
 
 # Get current branch
@@ -75,38 +69,11 @@ else
     fi
 fi
 
-# Add all changes to staging
-echo "Adding changes to staging..."
-git add . || handle_error "Failed to add changes"
-
-# Check if there are staged changes
-if git diff --cached --quiet; then
-    echo "No changes to commit."
-    echo "💡 All changes might already be committed."
+# Check if there are any changes (staged or unstaged)
+if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo "📝 Adding changes to staging..."
+    git add .
     
-    # Check if we need to push
-    if git diff @{upstream}..HEAD --quiet 2>/dev/null; then
-        echo "✅ Branch is up to date with remote."
-        
-        # Try to create PR if gh is available
-        if command -v gh &> /dev/null; then
-            echo "🔍 Checking if PR already exists..."
-            if gh pr view &> /dev/null; then
-                PR_URL=$(gh pr view --json url -q '.url')
-                echo "✅ Pull request already exists: $PR_URL"
-            else
-                echo "Creating pull request..."
-                gh pr create --title "$BRANCH_NAME" --body "Automated pull request for $BRANCH_NAME
-
-🤖 Generated with [Claude Code](https://claude.ai/code)" && echo "✅ Pull request created!"
-            fi
-        else
-            echo "💡 Install GitHub CLI (gh) to create pull requests automatically"
-            echo "Or create manually at: https://github.com/$(git remote get-url origin | sed 's/.*github\.com[:/]\([^/]*\/[^/]*\)\.git.*/\1/')/compare/$BRANCH_NAME"
-        fi
-        exit 0
-    fi
-else
     # Prompt for commit message
     echo ""
     echo "📝 Enter commit message (or press Enter for auto-generated):"
@@ -125,6 +92,8 @@ else
 🤖 Generated with [Claude Code](https://claude.ai/code)
 
 Co-Authored-By: Claude <noreply@anthropic.com>" || handle_error "Failed to create commit"
+else
+    echo "✅ No uncommitted changes found"
 fi
 
 # Push the branch to remote
