@@ -1,0 +1,95 @@
+{
+  "navigation": {
+    "home": "Home",
+    "locations": "Locations",
+    "bookings": "My Bookings",
+    "profile": "Profile",
+    "signIn": "Sign In",
+    "bookNow": "Book Now"
+  },
+  "homepage": {
+    "hero": {
+      "title": "Book Your Perfect",
+      "titleHighlight": "Venue Experience",
+      "subtitle": "Discover extraordinary venues for meetings, events, and collaborative spaces. From intimate conference rooms to grand event halls, find the perfect setting for your next occasion.",
+      "exploreVenues": "Explore Venues",
+      "watchDemo": "Watch Demo",
+      "premiumLocations": "Premium Locations",
+      "premiumLocationsDesc": "Carefully curated venues",
+      "instantBooking": "Instant Booking",
+      "instantBookingDesc": "Real-time availability",
+      "teamFocused": "Team Focused",
+      "teamFocusedDesc": "Built for collaboration"
+    },
+    "features": {
+      "title": "Why Choose Our Booking System?",
+      "easyBooking": {
+        "title": "Easy Booking",
+        "description": "Book your perfect venue in just a few clicks with our intuitive interface."
+      },
+      "realTimeAvailability": {
+        "title": "Real-time Availability",
+        "description": "See live availability and get instant confirmation for your bookings."
+      },
+      "flexibleCancellation": {
+        "title": "Flexible Cancellation",
+        "description": "Change or cancel your bookings with our flexible cancellation policy."
+      }
+    },
+    "features": {
+      "title": "Why Choose Our Platform?",
+      "subtitle": "Experience seamless venue booking with enterprise-grade features and unmatched convenience.",
+      "secureBooking": {
+        "title": "Secure Booking",
+        "description": "End-to-end encrypted transactions with full payment protection and secure data handling.",
+        "badge": "Security"
+      },
+      "availability": {
+        "title": "24/7 Availability",
+        "description": "Book venues anytime with instant confirmation and real-time availability updates.",
+        "badge": "Convenience"
+      },
+      "flexiblePayment": {
+        "title": "Flexible Payment",
+        "description": "Multiple payment options with transparent pricing and no hidden fees.",
+        "badge": "Payment"
+      },
+      "premiumSupport": {
+        "title": "Premium Support",
+        "description": "Dedicated customer support team available to help with bookings and venue questions.",
+        "badge": "Support"
+      },
+      "amenities": {
+        "title": "Premium Amenities",
+        "subtitle": "Every venue comes equipped with modern amenities to ensure your event runs smoothly.",
+        "wifi": "High-Speed WiFi",
+        "refreshments": "Refreshments",
+        "avEquipment": "AV Equipment"
+      }
+    },
+    "cta": {
+      "rating": "Rated 4.9/5 by 2,000+ customers",
+      "title": "Ready to Book Your",
+      "titleHighlight": "Perfect Venue?",
+      "subtitle": "Join thousands of satisfied customers who trust us with their most important events. Start exploring venues and make your booking today.",
+      "startBrowsing": "Start Browsing Venues",
+      "scheduleDemo": "Schedule a Demo",
+      "stats": {
+        "venues": "Premium Venues",
+        "bookings": "Successful Bookings",
+        "support": "Customer Support"
+      }
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Try again",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "portfolioBooking": "Portfolio Booking"
+  }
+}
