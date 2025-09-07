@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//f/Portfolio-Booking/backend/Booking.Api/**)",
+      "Read(//f/Portfolio-Booking/backend/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

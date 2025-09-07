@@ -14,6 +14,7 @@ public class LocationEndpoints : IEndpoints
 
         group.MapGet("/", GetAllLocations)
             .WithName("GetAllLocations")
+            .Produces<IEnumerable<LocationDto>>(StatusCodes.Status200OK)
             .WithOpenApi(operation => new(operation)
             {
                 Summary = "Get all available locations",
@@ -22,6 +23,8 @@ public class LocationEndpoints : IEndpoints
 
         group.MapGet("/{id:guid}", GetLocationById)
             .WithName("GetLocationById")
+            .Produces<LocationDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound)
             .WithOpenApi(operation => new(operation)
             {
                 Summary = "Get location by ID",
