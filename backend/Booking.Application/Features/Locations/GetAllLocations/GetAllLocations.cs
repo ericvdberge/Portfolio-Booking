@@ -11,7 +11,7 @@ public class GetAllLocationsHandler(
 {
     public async Task<IEnumerable<LocationDto>> HandleAsync(GetAllLocationsQuery query, CancellationToken cancellationToken = default)
     {
-        var availableLocations = await _locationRepository.GetAvailableNowAsync(cancellationToken);
+        var availableLocations = await _locationRepository.GetAllAsync(cancellationToken);
         
         return availableLocations.Select(location => new LocationDto
         {

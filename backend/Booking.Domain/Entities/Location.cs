@@ -12,10 +12,12 @@ public class Location
     public TimeSpan CloseTime { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
+    public List<Booking> Bookings { get; private set; } = [];
+    public LocationType LocationType { get; private set; }
 
-    private Location() { }
+    private Location() {}
 
-    public Location(string name, string address, string description, int capacity, TimeSpan openTime, TimeSpan closeTime)
+    public Location(string name, string address, string description, int capacity, TimeSpan openTime, TimeSpan closeTime, LocationType locationType)
     {
         Id = Guid.CreateVersion7();
         Name = name;
@@ -24,43 +26,22 @@ public class Location
         Capacity = capacity;
         OpenTime = openTime;
         CloseTime = closeTime;
-        IsActive = true;
+        IsActive = false;
+        LocationType = locationType;
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public bool IsAvailableAtTime(DateTime dateTime)
+    public Booking Book(DateTime startTime, DateTime endTime)
     {
-        if (!IsActive)
-            return false;
+        var newBooking = new Booking(Id, startTime, endTime);
 
-        var timeOfDay = dateTime.TimeOfDay;
-        
-        if (OpenTime <= CloseTime)
-        {
-            return timeOfDay >= OpenTime && timeOfDay <= CloseTime;
-        }
-        else
-        {
-            return timeOfDay >= OpenTime || timeOfDay <= CloseTime;
-        }
+        if (!LocationType.Policies.All(policy => policy.CanBook(this, newBooking)))
+            throw new InvalidOperationException("Booking violates one or more booking policies.");
+
+        Bookings.Add(newBooking);
+        return newBooking;
     }
 
-    public bool IsAvailableNow()
-    {
-        return IsAvailableAtTime(DateTime.UtcNow);
-    }
-
-    public void UpdateAvailability(bool isActive)
-    {
-        IsActive = isActive;
-        UpdatedAt = DateTime.UtcNow;
-    }
-
-    public void UpdateOperatingHours(TimeSpan openTime, TimeSpan closeTime)
-    {
-        OpenTime = openTime;
-        CloseTime = closeTime;
-        UpdatedAt = DateTime.UtcNow;
-    }
+    public void Activate() => IsActive = true;
 }
