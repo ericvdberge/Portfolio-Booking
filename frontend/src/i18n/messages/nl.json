@@ -1,0 +1,95 @@
+{
+  "navigation": {
+    "home": "Start",
+    "locations": "Locaties",
+    "bookings": "Mijn Boekingen",
+    "profile": "Profiel",
+    "signIn": "Inloggen",
+    "bookNow": "Boek Nu"
+  },
+  "homepage": {
+    "hero": {
+      "title": "Boek Je Perfecte",
+      "titleHighlight": "Locatie Ervaring",
+      "subtitle": "Ontdek buitengewone locaties voor vergaderingen, evenementen en samenwerkingsruimtes. Van intieme vergaderruimtes tot grandioze evenementenhallen, vind de perfecte setting voor je volgende gelegenheid.",
+      "exploreVenues": "Verken Locaties",
+      "watchDemo": "Bekijk Demo",
+      "premiumLocations": "Premium Locaties",
+      "premiumLocationsDesc": "Zorgvuldig geselecteerde locaties",
+      "instantBooking": "Direct Boeken",
+      "instantBookingDesc": "Real-time beschikbaarheid",
+      "teamFocused": "Team Gericht",
+      "teamFocusedDesc": "Gebouwd voor samenwerking"
+    },
+    "features": {
+      "title": "Waarom Kiezen Voor Ons Boekingssysteem?",
+      "easyBooking": {
+        "title": "Eenvoudig Boeken",
+        "description": "Boek je perfecte locatie in slechts een paar klikken met onze intuïtieve interface."
+      },
+      "realTimeAvailability": {
+        "title": "Real-time Beschikbaarheid",
+        "description": "Zie live beschikbaarheid en krijg directe bevestiging voor je boekingen."
+      },
+      "flexibleCancellation": {
+        "title": "Flexibel Annuleren",
+        "description": "Wijzig of annuleer je boekingen met ons flexibele annuleringsbeleid."
+      }
+    },
+    "features": {
+      "title": "Waarom Kiezen Voor Ons Platform?",
+      "subtitle": "Ervaar naadloos locatie boeken met enterprise-grade functies en ongeëvenaarde gemak.",
+      "secureBooking": {
+        "title": "Veilig Boeken",
+        "description": "End-to-end versleutelde transacties met volledige betalingsbescherming en veilige gegevensverwerking.",
+        "badge": "Veiligheid"
+      },
+      "availability": {
+        "title": "24/7 Beschikbaarheid",
+        "description": "Boek locaties altijd met directe bevestiging en real-time beschikbaarheidsupdates.",
+        "badge": "Gemak"
+      },
+      "flexiblePayment": {
+        "title": "Flexibele Betaling",
+        "description": "Meerdere betalingsopties met transparante prijzen en geen verborgen kosten.",
+        "badge": "Betaling"
+      },
+      "premiumSupport": {
+        "title": "Premium Ondersteuning",
+        "description": "Toegewijd klantenservice team beschikbaar om te helpen met boekingen en locatievragen.",
+        "badge": "Ondersteuning"
+      },
+      "amenities": {
+        "title": "Premium Faciliteiten",
+        "subtitle": "Elke locatie is uitgerust met moderne faciliteiten om ervoor te zorgen dat je evenement soepel verloopt.",
+        "wifi": "High-Speed WiFi",
+        "refreshments": "Versnaperingen",
+        "avEquipment": "AV Apparatuur"
+      }
+    },
+    "cta": {
+      "rating": "Beoordeeld 4.9/5 door 2.000+ klanten",
+      "title": "Klaar om Je",
+      "titleHighlight": "Perfecte Locatie te Boeken?",
+      "subtitle": "Sluit je aan bij duizenden tevreden klanten die ons vertrouwen met hun belangrijkste evenementen. Begin met het verkennen van locaties en maak vandaag je boeking.",
+      "startBrowsing": "Begin Met Browsen",
+      "scheduleDemo": "Plan een Demo",
+      "stats": {
+        "venues": "Premium Locaties",
+        "bookings": "Succesvolle Boekingen",
+        "support": "Klantenservice"
+      }
+    }
+  },
+  "common": {
+    "loading": "Laden...",
+    "error": "Er is een fout opgetreden",
+    "retry": "Probeer opnieuw",
+    "cancel": "Annuleren",
+    "save": "Opslaan",
+    "delete": "Verwijderen",
+    "edit": "Bewerken",
+    "close": "Sluiten",
+    "portfolioBooking": "Portfolio Boekingen"
+  }
+}

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/providers/query-provider";
 import { Header } from "@/components/Header";
+import { LocaleProvider } from '@/providers/locale-provider';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,22 +20,27 @@ export const metadata: Metadata = {
   description: "Discover and book amazing venues for your meetings, events, and workspace needs.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Load default English messages for initial render
+  const initialMessages = (await import('@/i18n/messages/en.json')).default;
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <QueryProvider>
-          <Header />
-          <main>
-            {children}
-          </main>
-        </QueryProvider>
+        <LocaleProvider initialMessages={initialMessages}>
+          <QueryProvider>
+            <Header />
+            <main>
+              {children}
+            </main>
+          </QueryProvider>
+        </LocaleProvider>
       </body>
     </html>
   );
