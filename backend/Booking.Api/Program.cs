@@ -5,6 +5,16 @@ using Booking.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddOpenApi();
 builder.Services.AddEndpoints();
 builder.Services.AddApplication();
@@ -19,6 +29,8 @@ using (var scope = app.Services.CreateScope())
     await seeder.SeedAsync();
 }
 
+
+app.UseCors();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

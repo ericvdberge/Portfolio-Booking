@@ -2,7 +2,9 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Star } from 'lucide-react';
+import { MapPin, Star, Clock } from 'lucide-react';
+import { useLocations } from '@/features/locations/queriers/location-queries';
+import { LocationDto } from '@/api/client';
 
 export default function Home() {
   return (
