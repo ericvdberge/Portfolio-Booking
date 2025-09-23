@@ -1,3 +1,9 @@
+using Booking.Domain.Abstractions;
+using Booking.Domain.Enums;
+using Booking.Domain.Policies;
+using System.Data;
+using System.Runtime.CompilerServices;
+
 namespace Booking.Domain.Entities;
 
 public class Location
@@ -12,12 +18,13 @@ public class Location
     public TimeSpan CloseTime { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
-    public List<Booking> Bookings { get; private set; } = [];
     public LocationType LocationType { get; private set; }
+    public List<Booking> Bookings { get; private set; } = [];
+    public List<PolicyConfig> PolicyConfigs { get; private set; } = [];
 
     private Location() {}
 
-    public Location(string name, string address, string description, int capacity, TimeSpan openTime, TimeSpan closeTime, LocationType locationType)
+    public Location(string name, string address, string description, int capacity, TimeSpan openTime, TimeSpan closeTime)
     {
         Id = Guid.CreateVersion7();
         Name = name;
@@ -27,7 +34,6 @@ public class Location
         OpenTime = openTime;
         CloseTime = closeTime;
         IsActive = false;
-        LocationType = locationType;
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -36,11 +42,23 @@ public class Location
     {
         var newBooking = new Booking(Id, startTime, endTime);
 
-        if (!LocationType.Policies.All(policy => policy.CanBook(this, newBooking)))
-            throw new InvalidOperationException("Booking violates one or more booking policies.");
+        var allPoliciesAllowed = GetEffectivePolicies().All(p => p.CanBook(this, newBooking));
+        if (!allPoliciesAllowed)
+            throw new InvalidOperationException();
 
         Bookings.Add(newBooking);
         return newBooking;
+    }
+
+    public IEnumerable<IBookingPolicy> GetEffectivePolicies()
+    {
+        var defaultPolicies = PolicyDefaults.For(LocationType);
+
+        var customPolicies = PolicyConfigs
+            .Select(p => p.ToPolicy());
+
+        //Todo: make custom policy override default policy and remove duplicates
+        return defaultPolicies.Concat(customPolicies);
     }
 
     public void Activate() => IsActive = true;

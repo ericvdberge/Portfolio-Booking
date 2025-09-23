@@ -3,9 +3,9 @@ using Booking.Domain.Entities;
 
 namespace Booking.Domain.Policies.Booking;
 
-public class GapPolicy(TimeSpan _gapTime) : BookingPolicy
+public class GapPolicy(TimeSpan _gapTime) : IBookingPolicy
 {
-    public override bool CanBook(Location location, Entities.Booking proposedBooking)
+    public bool CanBook(Location location, Entities.Booking proposedBooking)
     {
         var existingBookings = location.Bookings
             .Where(b => b.EndTime <= proposedBooking.StartTime)

@@ -3,9 +3,9 @@ using Booking.Domain.Entities;
 
 namespace Booking.Domain.Policies.Booking;
 
-public class NoOverlapPolicy : BookingPolicy
+public class NoOverlapPolicy : IBookingPolicy
 {
-    public override bool CanBook(Location location, Entities.Booking proposedBooking)
+    public bool CanBook(Location location, Entities.Booking proposedBooking)
     {
         return location.Bookings.All(existing =>
             proposedBooking.EndTime <= existing.StartTime ||

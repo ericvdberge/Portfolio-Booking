@@ -3,9 +3,9 @@ using Booking.Domain.Entities;
 
 namespace Booking.Domain.Policies.Booking;
 
-public class MaxDurationPolicy(TimeSpan _maxDuration) : BookingPolicy
+public class MaxDurationPolicy(TimeSpan _maxDuration) : IBookingPolicy
 {
-    public override bool CanBook(Location location, Entities.Booking proposedBooking)
+    public bool CanBook(Location location, Entities.Booking proposedBooking)
     {
         return (proposedBooking.EndTime - proposedBooking.StartTime) <= _maxDuration;
     }
