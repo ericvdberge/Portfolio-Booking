@@ -4,8 +4,8 @@ public class Booking
 {
     public Guid Id { get; private set; }
     public Guid LocationId { get; private set; }
-    public DateTime StartTime { get; private set; }
-    public DateTime EndTime { get; private set; }
+    public DateTime StartDate { get; private set; }
+    public DateTime EndDate { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
@@ -14,12 +14,12 @@ public class Booking
         
     }
 
-    public Booking(Guid locationId, DateTime startTime, DateTime endTime)
+    public Booking(Guid locationId, DateTime startDate, DateTime endDate)
     {
         Id = Guid.CreateVersion7();
         LocationId = locationId;
-        StartTime = startTime;
-        EndTime = endTime;
+        StartDate = startDate;
+        EndDate = endDate;
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }

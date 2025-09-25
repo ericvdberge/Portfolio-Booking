@@ -1,3 +1,4 @@
+using Booking.Infrastructure.Data;
 using Booking.Infrastructure.Repositories;
 using Booking.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +13,8 @@ public static class ServiceCollectionExtensions
     {
         services.AddDbContext<BookingDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
-        
+
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<ILocationRepository, LocationRepository>();
         services.AddScoped<DatabaseSeedService>();
 
