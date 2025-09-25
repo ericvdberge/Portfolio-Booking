@@ -7,6 +7,6 @@ public interface IUnitOfWork
 
 public class UnitOfWork(BookingDbContext _context) : IUnitOfWork
 {
-    public Task<int> SaveChangesAsync()
-        => _context.SaveChangesAsync();
+    public async Task<int> SaveChangesAsync()
+        => await _context.SaveChangesAsync();
 }

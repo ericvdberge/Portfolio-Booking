@@ -6,7 +6,7 @@ namespace Booking.Domain.Policies.Booking;
 
 public class NoOverlapPolicy : IBookingPolicy
 {
-    public Policykey Key => Policykey.NoOverlapPolicy;
+    public static Policykey Key => Policykey.NoOverlapPolicy;
 
     public bool CanBook(Location location, Entities.Booking proposedBooking)
     {

@@ -15,7 +15,7 @@ public class BookingPolicyProvider
            .GetTypes()
            .Where(t => typeof(IBookingPolicy).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)
            .ToDictionary(
-               t => ((IBookingPolicy)Activator.CreateInstance(t)!).Key,
+               t => (Policykey)t.GetProperty("Key", BindingFlags.Public | BindingFlags.Static)!.GetValue(null)!,
                t => t
            );
     }

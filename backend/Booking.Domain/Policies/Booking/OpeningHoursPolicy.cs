@@ -7,7 +7,7 @@ namespace Booking.Domain.Policies.Booking;
 
 public class OpeningHoursPolicy(TimeSpan _open, TimeSpan _close) : IBookingPolicy
 {
-    public Policykey Key => Policykey.OpeningHoursPolicy;
+    public static Policykey Key => Policykey.OpeningHoursPolicy;
 
     public bool CanBook(Location location, Entities.Booking proposedBooking)
     {

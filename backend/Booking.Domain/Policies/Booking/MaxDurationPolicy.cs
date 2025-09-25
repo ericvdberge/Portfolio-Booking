@@ -7,7 +7,7 @@ namespace Booking.Domain.Policies.Booking;
 
 public class MaxDurationPolicy(TimeSpan _maxDuration) : IBookingPolicy
 {
-    public Policykey Key => Policykey.MaxDurationPolicy;
+    public static Policykey Key => Policykey.MaxDurationPolicy;
 
     public bool CanBook(Location location, Entities.Booking proposedBooking)
     {

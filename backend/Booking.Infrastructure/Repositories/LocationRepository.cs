@@ -15,6 +15,7 @@ public class LocationRepository : ILocationRepository
     public async Task<Location?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Locations
+            .Include(l => l.Bookings)
             .FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
     }
 

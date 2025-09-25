@@ -7,7 +7,7 @@ namespace Booking.Domain.Policies.Booking;
 
 public class GapPolicy(TimeSpan _gapTime) : IBookingPolicy
 {
-    public Policykey Key => Policykey.GapPolicy;
+    public static Policykey Key => Policykey.GapPolicy;
     public bool CanBook(Location location, Entities.Booking proposedBooking)
     {
         var existingBookings = location.Bookings

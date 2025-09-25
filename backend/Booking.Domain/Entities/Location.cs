@@ -22,11 +22,8 @@ public class Location
     public List<Booking> Bookings { get; private set; } = [];
     public List<PolicyConfig> PolicyConfigs { get; private set; } = [];
 
-    private Location() {}
-
     public Location(string name, string address, string description, int capacity, TimeSpan openTime, TimeSpan closeTime)
     {
-        Id = Guid.CreateVersion7();
         Name = name;
         Address = address;
         Description = description;
