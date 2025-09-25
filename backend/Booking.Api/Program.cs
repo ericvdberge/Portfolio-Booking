@@ -5,16 +5,7 @@ using Booking.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
-});
-
+builder.Services.AddDangerousCors();
 builder.Services.AddOpenApi();
 builder.Services.AddEndpoints();
 builder.Services.AddApplication();

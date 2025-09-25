@@ -1,16 +1,28 @@
 using Booking.Domain.Abstractions;
 using Booking.Domain.Entities;
+using Booking.Domain.Enums;
+using System.Text.Json;
 
 namespace Booking.Domain.Policies.Booking;
 
-public class OpeningHoursPolicy(TimeSpan open, TimeSpan close): BookingPolicy
+public class OpeningHoursPolicy(TimeSpan _open, TimeSpan _close) : IBookingPolicy
 {
-    public override bool CanBook(Location location, Entities.Booking proposedBooking)
-    {
-        var bookingStart = proposedBooking.StartTime.TimeOfDay;
-        var bookingEnd = proposedBooking.EndTime.TimeOfDay;
+    public static Policykey Key => Policykey.OpeningHoursPolicy;
 
-        return bookingStart >= open && bookingEnd <= close;
+    public bool CanBook(Location location, Entities.Booking proposedBooking)
+    {
+        var bookingStart = proposedBooking.StartDate.TimeOfDay;
+        var bookingEnd = proposedBooking.StartDate.TimeOfDay;
+
+        return bookingStart >= _open && bookingEnd <= _close;
     }
 
+    public void Apply(string settingsJson)
+    {
+        var cfg = JsonSerializer.Deserialize<OpeningHoursPolicySettings>(settingsJson)!;
+        _open = cfg.Open;
+        _close = cfg.Close;
+    }
 }
+
+public record OpeningHoursPolicySettings(TimeSpan Open, TimeSpan Close);

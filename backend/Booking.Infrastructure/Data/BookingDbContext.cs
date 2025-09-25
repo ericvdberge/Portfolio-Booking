@@ -10,6 +10,7 @@ public class BookingDbContext : DbContext
     }
 
     public DbSet<Location> Locations { get; set; }
+    public DbSet<Domain.Entities.Booking> Bookings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -25,6 +26,8 @@ public class BookingDbContext : DbContext
             entity.Property(e => e.CloseTime).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt).IsRequired();
+
+            entity.HasMany(e => e.Bookings);
         });
     }
 }

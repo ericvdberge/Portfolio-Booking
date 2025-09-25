@@ -10,14 +10,10 @@ CREATE TABLE IF NOT EXISTS "Locations" (
     "IsActive" BOOLEAN NOT NULL DEFAULT FALSE,
     "OpenTime" TIME NOT NULL,
     "CloseTime" TIME NOT NULL,
-    "LocationTypeId" UUID,
+    "LocationType" INTEGER NOT NULL,
     "CreatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     "UpdatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    
-    -- Foreign key constraint
-    CONSTRAINT "FK_Locations_LocationTypes" FOREIGN KEY ("LocationTypeId") 
-        REFERENCES "LocationTypes"("Id") ON DELETE SET NULL,
-        
+
     -- Business rule constraints
     CONSTRAINT "CK_Locations_OpenClose" CHECK ("OpenTime" < "CloseTime")
 );
@@ -25,4 +21,3 @@ CREATE TABLE IF NOT EXISTS "Locations" (
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS "IX_Locations_Name" ON "Locations" ("Name");
 CREATE INDEX IF NOT EXISTS "IX_Locations_IsActive" ON "Locations" ("IsActive");
-CREATE INDEX IF NOT EXISTS "IX_Locations_LocationTypeId" ON "Locations" ("LocationTypeId");

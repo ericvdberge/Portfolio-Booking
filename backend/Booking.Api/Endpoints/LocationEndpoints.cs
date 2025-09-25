@@ -1,6 +1,7 @@
 using Booking.Api.Abstractions;
 using Booking.Application.Abstractions;
 using Booking.Application.Features.Locations;
+using Booking.Application.Features.Locations.BookLocation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Booking.Api.Endpoints;
@@ -30,6 +31,15 @@ public class LocationEndpoints : IEndpoints
                 Summary = "Get location by ID",
                 Description = "Returns a specific location by its unique identifier"
             });
+
+        group.MapPost("/{id:guid}/book", CreateBooking)
+            .WithName("CreateBooking")
+            .Produces(StatusCodes.Status201Created)
+            .WithOpenApi(operation => new(operation)
+            {
+                Summary = "Create booking for location",
+                Description = "Creates a booking for the given location"
+            });
     }
 
     private async Task<IResult> GetAllLocations(
@@ -57,5 +67,22 @@ public class LocationEndpoints : IEndpoints
             return Results.NotFound($"Location with ID {id} not found");
             
         return Results.Ok(location);
+    }
+
+    private async Task<IResult> CreateBooking(
+        [FromServices] ILogicDispatcher _dispatcher,
+        [FromRoute] Guid id,
+        [FromBody] BookLocationRequest bookLocationRequest,
+        CancellationToken cancellationToken)
+    {
+        await _dispatcher.SendAsync(
+            new BookLocationCommand(
+                id, 
+                bookLocationRequest.StartDate, 
+                bookLocationRequest.EndDate
+            ),
+            cancellationToken
+        );
+        return Results.Created();
     }
 }

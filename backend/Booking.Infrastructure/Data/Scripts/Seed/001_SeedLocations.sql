@@ -9,32 +9,11 @@ DECLARE
     training_type_id UUID;
     meeting_pod_type_id UUID;
 BEGIN
-    -- First, seed LocationTypes if they don't exist
-    IF NOT EXISTS (SELECT 1 FROM "LocationTypes") THEN
-        -- Insert location types
-        INSERT INTO "LocationTypes" ("Id", "Name", "Description")
-        VALUES 
-            (gen_random_uuid(), 'Conference Room', 'Professional meeting spaces with presentation capabilities'),
-            (gen_random_uuid(), 'Creative Studio', 'Open creative spaces for workshops and collaborative work'),
-            (gen_random_uuid(), 'Executive Boardroom', 'Premium spaces for high-level meetings and presentations'),
-            (gen_random_uuid(), 'Training Room', 'Large spaces designed for education and group training'),
-            (gen_random_uuid(), 'Meeting Pod', 'Small intimate spaces for focused discussions');
-            
-        RAISE NOTICE 'Successfully seeded % location types', (SELECT COUNT(*) FROM "LocationTypes");
-    END IF;
-
-    -- Get the location type IDs for referencing
-    SELECT "Id" INTO conference_room_type_id FROM "LocationTypes" WHERE "Name" = 'Conference Room';
-    SELECT "Id" INTO creative_space_type_id FROM "LocationTypes" WHERE "Name" = 'Creative Studio';
-    SELECT "Id" INTO executive_type_id FROM "LocationTypes" WHERE "Name" = 'Executive Boardroom';
-    SELECT "Id" INTO training_type_id FROM "LocationTypes" WHERE "Name" = 'Training Room';
-    SELECT "Id" INTO meeting_pod_type_id FROM "LocationTypes" WHERE "Name" = 'Meeting Pod';
-
     -- Check if we already have locations
     IF NOT EXISTS (SELECT 1 FROM "Locations") THEN
         -- Insert sample locations
         INSERT INTO "Locations" 
-        ("Id", "Name", "Address", "Description", "Capacity", "IsActive", "OpenTime", "CloseTime", "LocationTypeId", "CreatedAt", "UpdatedAt")
+        ("Id", "Name", "Address", "Description", "Capacity", "IsActive", "OpenTime", "CloseTime", "LocationType", "CreatedAt", "UpdatedAt")
         VALUES 
         (
             gen_random_uuid(),
@@ -45,7 +24,7 @@ BEGIN
             true,
             '08:00:00',
             '18:00:00',
-            conference_room_type_id,
+            1,
             NOW(),
             NOW()
         ),
@@ -58,7 +37,7 @@ BEGIN
             true,
             '09:00:00',
             '21:00:00',
-            creative_space_type_id,
+            1,
             NOW(),
             NOW()
         ),
@@ -71,7 +50,7 @@ BEGIN
             true,
             '07:00:00',
             '19:00:00',
-            executive_type_id,
+            1,
             NOW(),
             NOW()
         ),
@@ -84,7 +63,7 @@ BEGIN
             true,
             '08:30:00',
             '17:30:00',
-            training_type_id,
+            1,
             NOW(),
             NOW()
         ),
@@ -97,7 +76,7 @@ BEGIN
             true,
             '08:00:00',
             '20:00:00',
-            meeting_pod_type_id,
+            1,
             NOW(),
             NOW()
         );
