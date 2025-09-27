@@ -4,8 +4,7 @@
     "locations": "Locaties",
     "bookings": "Mijn Boekingen",
     "profile": "Profiel",
-    "signIn": "Inloggen",
-    "bookNow": "Boek Nu"
+    "signIn": "Inloggen"
   },
   "homepage": {
     "hero": {
@@ -20,21 +19,6 @@
       "instantBookingDesc": "Real-time beschikbaarheid",
       "teamFocused": "Team Gericht",
       "teamFocusedDesc": "Gebouwd voor samenwerking"
-    },
-    "features": {
-      "title": "Waarom Kiezen Voor Ons Boekingssysteem?",
-      "easyBooking": {
-        "title": "Eenvoudig Boeken",
-        "description": "Boek je perfecte locatie in slechts een paar klikken met onze intuïtieve interface."
-      },
-      "realTimeAvailability": {
-        "title": "Real-time Beschikbaarheid",
-        "description": "Zie live beschikbaarheid en krijg directe bevestiging voor je boekingen."
-      },
-      "flexibleCancellation": {
-        "title": "Flexibel Annuleren",
-        "description": "Wijzig of annuleer je boekingen met ons flexibele annuleringsbeleid."
-      }
     },
     "features": {
       "title": "Waarom Kiezen Voor Ons Platform?",
@@ -90,6 +74,44 @@
     "delete": "Verwijderen",
     "edit": "Bewerken",
     "close": "Sluiten",
-    "portfolioBooking": "Portfolio Boekingen"
+    "logo": "Boop-a-Booking"
+  },
+  "locations": {
+    "title": "Stay at our top unique properties",
+    "subtitle": "From castles and villas to boats and igloos, we have it all"
+  },
+  "featuredLocations": {
+    "title": "Uitgelichte Bestemmingen",
+    "subtitle": "Ontdek onze handgekozen selectie van prachtige locaties",
+    "errorLoading": "Kan locaties momenteel niet laden.",
+    "noLocations": "Geen locaties beschikbaar.",
+    "viewAllLocations": "Bekijk Alle Locaties"
+  },
+  "locationCard": {
+    "capacity": "Capaciteit",
+    "available": "Beschikbaar",
+    "bookNow": "Boek Nu"
+  },
+  "locationDetails": {
+    "notFound": "Locatie Niet Gevonden",
+    "notFoundDescription": "De locatie die je zoekt bestaat niet of is verwijderd.",
+    "goBack": "Ga Terug",
+    "aboutLocation": "Over Deze Locatie",
+    "noDescription": "Geen beschrijving beschikbaar voor deze locatie.",
+    "details": "Locatie Details",
+    "capacity": "Capaciteit",
+    "people": "personen",
+    "hours": "Uren",
+    "availability": "Beschikbaarheid",
+    "available": "Beschikbaar",
+    "bookTitle": "Boek Deze Locatie",
+    "bookDescription": "Reserveer deze prachtige locatie voor je speciale evenement",
+    "bookNow": "Boek Nu",
+    "features": "Locatie Kenmerken",
+    "feature1": "Prachtige mediterrane omgeving",
+    "feature2": "Professionele evenement ondersteuning",
+    "feature3": "Flexibele boekingsopties",
+    "feature4": "Schilderachtige foto mogelijkheden",
+    "bookingComingSoon": "Boekingsfunctionaliteit voor locatie {locationId} wordt binnenkort geïmplementeerd!"
   }
 }

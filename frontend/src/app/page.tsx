@@ -1,13 +1,20 @@
 import { HeroSection } from '@/components/landing_page/HeroSection';
 import { FeaturesSection } from '@/components/landing_page/FeaturesSection';
+import { FeaturedLocationsSection } from '@/components/landing_page/FeaturedLocationsSection';
 import { CTASection } from '@/components/landing_page/CTASection';
 
 export default function Home() {
+
   return (
     <div className="min-h-screen">
       <HeroSection />
-      <FeaturesSection />
-      <CTASection />
+      <div className="py-8">
+        <FeaturesSection />
+      </div>
+      <FeaturedLocationsSection />
+      <div className="py-8">
+        <CTASection />
+      </div>
     </div>
   );
 }

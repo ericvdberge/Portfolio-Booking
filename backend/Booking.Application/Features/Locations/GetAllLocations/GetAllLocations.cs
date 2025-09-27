@@ -3,7 +3,7 @@ using Booking.Infrastructure.Repositories;
 
 namespace Booking.Application.Features.Locations;
 
-public record GetAllLocationsQuery : IQuery<IEnumerable<LocationDto>>;
+public record GetAllLocationsQuery(LocationFilter? Filter = null) : IQuery<IEnumerable<LocationDto>>;
 
 public class GetAllLocationsHandler(
     ILocationRepository _locationRepository
@@ -11,7 +11,7 @@ public class GetAllLocationsHandler(
 {
     public async Task<IEnumerable<LocationDto>> HandleAsync(GetAllLocationsQuery query, CancellationToken cancellationToken = default)
     {
-        var availableLocations = await _locationRepository.GetAllAsync(cancellationToken);
+        var availableLocations = await _locationRepository.GetAllAsync(query.Filter, cancellationToken);
         
         return availableLocations.Select(location => new LocationDto
         {

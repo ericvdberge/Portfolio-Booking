@@ -19,10 +19,13 @@ public class LocationRepository : ILocationRepository
             .FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
     }
 
-    public async Task<IEnumerable<Location>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Location>> GetAllAsync(LocationFilter? filter = null, CancellationToken cancellationToken = default)
     {
+        var limit = filter?.Limit ?? 50;
+
         return await _context.Locations
             .Where(l => l.IsActive)
+            .Take(limit)
             .ToListAsync(cancellationToken);
     }
 

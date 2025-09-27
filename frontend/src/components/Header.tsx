@@ -14,7 +14,7 @@ export function Header() {
       <div className="container mx-auto px-4">
         <div className="flex h-14 items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
-            <span className="font-bold text-xl">{common('portfolioBooking')}</span>
+            <span className="font-bold text-xl">{common('logo')}</span>
           </Link>
           
           <nav className="flex items-center space-x-6">
@@ -30,13 +30,10 @@ export function Header() {
             >
               {t('locations')}
             </Link>
+            <LanguageSwitcher />
             <Button variant="ghost" size="sm">
               {t('signIn')}
             </Button>
-            <Button size="sm">
-              {t('bookNow')}
-            </Button>
-            <LanguageSwitcher />
           </nav>
         </div>
       </div>
