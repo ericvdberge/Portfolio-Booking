@@ -36,67 +36,64 @@ export function FeaturesSection() {
   const amenities = getAmenities(t);
 
   return (
-    <section className="py-24 bg-slate-50">
-      <div className="container mx-auto px-4">
-        <div className="mx-auto max-w-2xl text-center mb-16">
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-            {t('title')}
-          </h2>
-          <p className="mt-4 text-lg text-slate-600">
-            {t('subtitle')}
+    <section className="container mx-auto px-4 py-20 space-y-20">
+      <div className="mx-auto max-w-3xl text-center space-y-6">
+        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          {t('title')}
+        </h2>
+        <p className="text-xl text-muted-foreground">
+          {t('subtitle')}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        {features.map((feature) => {
+          const IconComponent = feature.icon;
+          return (
+            <Card key={feature.key} className="shadow-none border-none p-6 hover:bg-slate-50 transition-colors">
+              <CardHeader className="pb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="rounded-xl bg-purple-100 p-3">
+                    <IconComponent className="h-7 w-7 text-purple-600" />
+                  </div>
+                  <Badge variant="secondary" className="text-xs">
+                    {t(`${feature.key}.badge`)}
+                  </Badge>
+                </div>
+                <CardTitle className="text-xl">{t(`${feature.key}.title`)}</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <CardDescription className="text-muted-foreground leading-relaxed">
+                  {t(`${feature.key}.description`)}
+                </CardDescription>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      <div className="bg-slate-50 rounded-3xl p-12">
+        <div className="text-center mb-16 space-y-4">
+          <h3 className="text-3xl font-bold">
+            {t('amenities.title')}
+          </h3>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            {t('amenities.subtitle')}
           </p>
         </div>
-
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4 mb-20">
-          {features.map((feature) => {
-            const IconComponent = feature.icon;
-            const featureData = t(`${feature.key}`);
+        
+        <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
+          {amenities.map((amenity) => {
+            const IconComponent = amenity.icon;
             return (
-              <Card key={feature.key} className="relative border-0 shadow-lg hover:shadow-xl transition-shadow">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="rounded-lg bg-purple-100 p-2">
-                      <IconComponent className="h-6 w-6 text-purple-600" />
-                    </div>
-                    <Badge variant="secondary" className="text-xs">
-                      {t(`${feature.key}.badge`)}
-                    </Badge>
-                  </div>
-                  <CardTitle className="text-lg">{t(`${feature.key}.title`)}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-slate-600">
-                    {t(`${feature.key}.description`)}
-                  </CardDescription>
-                </CardContent>
-              </Card>
+              <div key={amenity.key} className="flex flex-col items-center text-center space-y-4">
+                <div className="rounded-full bg-white p-6 shadow-sm">
+                  <IconComponent className="h-8 w-8 text-slate-700" />
+                </div>
+                <span className="text-base font-medium">{t(`amenities.${amenity.key}`)}</span>
+              </div>
             );
           })}
-        </div>
-
-        <div className="rounded-2xl bg-white p-8 shadow-lg">
-          <div className="text-center mb-12">
-            <h3 className="text-2xl font-bold text-slate-900 mb-4">
-              {t('amenities.title')}
-            </h3>
-            <p className="text-slate-600">
-              {t('amenities.subtitle')}
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-            {amenities.map((amenity) => {
-              const IconComponent = amenity.icon;
-              return (
-                <div key={amenity.key} className="flex flex-col items-center text-center">
-                  <div className="mb-3 rounded-full bg-slate-100 p-4">
-                    <IconComponent className="h-6 w-6 text-slate-700" />
-                  </div>
-                  <span className="text-sm font-medium text-slate-700">{t(`amenities.${amenity.key}`)}</span>
-                </div>
-              );
-            })}
-          </div>
         </div>
       </div>
     </section>

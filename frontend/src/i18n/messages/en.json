@@ -4,8 +4,7 @@
     "locations": "Locations",
     "bookings": "My Bookings",
     "profile": "Profile",
-    "signIn": "Sign In",
-    "bookNow": "Book Now"
+    "signIn": "Sign In"
   },
   "homepage": {
     "hero": {
@@ -20,21 +19,6 @@
       "instantBookingDesc": "Real-time availability",
       "teamFocused": "Team Focused",
       "teamFocusedDesc": "Built for collaboration"
-    },
-    "features": {
-      "title": "Why Choose Our Booking System?",
-      "easyBooking": {
-        "title": "Easy Booking",
-        "description": "Book your perfect venue in just a few clicks with our intuitive interface."
-      },
-      "realTimeAvailability": {
-        "title": "Real-time Availability",
-        "description": "See live availability and get instant confirmation for your bookings."
-      },
-      "flexibleCancellation": {
-        "title": "Flexible Cancellation",
-        "description": "Change or cancel your bookings with our flexible cancellation policy."
-      }
     },
     "features": {
       "title": "Why Choose Our Platform?",
@@ -81,6 +65,44 @@
       }
     }
   },
+  "locations": {
+    "title": "Explore Locations",
+    "subtitle": "Discover beautiful venues for your next event or meeting"
+  },
+  "featuredLocations": {
+    "title": "Featured Destinations",
+    "subtitle": "Discover our handpicked selection of stunning locations",
+    "errorLoading": "Unable to load locations at the moment.",
+    "noLocations": "No locations available.",
+    "viewAllLocations": "View All Locations"
+  },
+  "locationCard": {
+    "capacity": "Capacity",
+    "available": "Available",
+    "bookNow": "Book Now"
+  },
+  "locationDetails": {
+    "notFound": "Location Not Found",
+    "notFoundDescription": "The location you're looking for doesn't exist or has been removed.",
+    "goBack": "Go Back",
+    "aboutLocation": "About This Location",
+    "noDescription": "No description available for this location.",
+    "details": "Location Details",
+    "capacity": "Capacity",
+    "people": "people",
+    "hours": "Hours",
+    "availability": "Availability",
+    "available": "Available",
+    "bookTitle": "Book This Location",
+    "bookDescription": "Reserve this beautiful location for your special event",
+    "bookNow": "Book Now",
+    "features": "Location Features",
+    "feature1": "Beautiful Mediterranean setting",
+    "feature2": "Professional event support",
+    "feature3": "Flexible booking options",
+    "feature4": "Scenic photo opportunities",
+    "bookingComingSoon": "Booking functionality for location {locationId} will be implemented soon!"
+  },
   "common": {
     "loading": "Loading...",
     "error": "An error occurred",
@@ -90,6 +112,6 @@
     "delete": "Delete",
     "edit": "Edit",
     "close": "Close",
-    "portfolioBooking": "Portfolio Booking"
+    "logo": "Boop-a-Booking"
   }
 }
