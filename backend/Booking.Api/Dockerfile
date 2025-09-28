@@ -1,7 +1,7 @@
 # Use the official .NET runtime as a parent image
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
-EXPOSE 8080
+EXPOSE 80
 
 # Use the .NET SDK image to build the application
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
@@ -35,5 +35,8 @@ COPY --from=publish /app/publish .
 
 # Copy database scripts to the Data directory
 COPY --from=build /src/Booking.Infrastructure/Data/Scripts ./Data/Scripts
+
+# Configure ASP.NET Core to listen on port 80
+ENV ASPNETCORE_HTTP_PORTS=80
 
 ENTRYPOINT ["dotnet", "Booking.Api.dll"]
