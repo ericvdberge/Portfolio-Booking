@@ -65,6 +65,10 @@ jobs:
     - name: Deploy infrastructure with updated images
       run: |
         echo "Proceeding with deployment..."
+        # Generate a 5-character hash from current timestamp
+        DEPLOYMENT_HASH=$(date +%s | sha256sum | head -c 5)
+        echo "Using deployment hash: $DEPLOYMENT_HASH"
+
         az deployment group create \
           --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
           --template-file infrastructure/azure-setup.bicep \
@@ -74,4 +78,5 @@ jobs:
           --parameters frontendImage="${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:latest" \
           --parameters databasePassword="${{ secrets.DB_PASSWORD }}" \
           --parameters userPrincipalId="${{ secrets.USER_PRINCIPAL_ID }}" \
+          --parameters deploymentHash="$DEPLOYMENT_HASH" \
           --output json
