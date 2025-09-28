@@ -36,4 +36,7 @@ COPY --from=publish /app/publish .
 # Copy database scripts to the Data directory
 COPY --from=build /src/Booking.Infrastructure/Data/Scripts ./Data/Scripts
 
+# Configure ASP.NET Core to listen on port 80
+ENV ASPNETCORE_HTTP_PORTS=80
+
 ENTRYPOINT ["dotnet", "Booking.Api.dll"]
