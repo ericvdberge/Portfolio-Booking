@@ -33,6 +33,9 @@ param keyVaultName string = '${namePrefix}kv${uniqueString(resourceGroup().id)}'
 @description('User principal ID for Key Vault access (optional)')
 param userPrincipalId string = ''
 
+@description('Deployment timestamp to force new revisions')
+param deploymentTime string = utcNow()
+
 // Key Vault
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: keyVaultName
@@ -269,6 +272,7 @@ resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
       ]
     }
     template: {
+      revisionSuffix: substring(replace(deploymentTime, ':', ''), 0, 10)
       containers: [
         {
           name: 'backend'
@@ -312,6 +316,7 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
       }
     }
     template: {
+      revisionSuffix: substring(replace(deploymentTime, ':', ''), 0, 10)
       containers: [
         {
           name: 'frontend'
