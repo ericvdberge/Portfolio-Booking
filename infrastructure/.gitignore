@@ -1,0 +1,6 @@
+# Ignore local parameters file with secrets
+parameters.local.json
+
+# Ignore any files with sensitive data
+*.secret.json
+*.env.local
