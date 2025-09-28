@@ -91,9 +91,10 @@ jobs:
         echo "Checking resource group access..."
         az group show --name ${{ vars.AZURE_RESOURCE_GROUP }}
 
-    - name: Deploy infrastructure with updated images
+    - name: Validate Bicep template
       run: |
-        az deployment group create \
+        echo "Validating Bicep template..."
+        az deployment group validate \
           --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
           --template-file infrastructure/azure-setup.bicep \
           --parameters namePrefix="pbooking" \
@@ -102,3 +103,17 @@ jobs:
           --parameters frontendImage="${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:latest" \
           --parameters databasePassword="${{ secrets.DB_PASSWORD }}" \
           --parameters userPrincipalId="${{ secrets.USER_PRINCIPAL_ID }}"
+
+    - name: Deploy infrastructure with updated images
+      run: |
+        echo "Starting deployment..."
+        az deployment group create \
+          --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
+          --template-file infrastructure/azure-setup.bicep \
+          --parameters namePrefix="pbooking" \
+          --parameters location="swedencentral" \
+          --parameters backendImage="${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:latest" \
+          --parameters frontendImage="${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:latest" \
+          --parameters databasePassword="${{ secrets.DB_PASSWORD }}" \
+          --parameters userPrincipalId="${{ secrets.USER_PRINCIPAL_ID }}" \
+          --verbose
