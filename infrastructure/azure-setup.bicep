@@ -100,7 +100,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
     name: 'Standard_LRS'
   }
   properties: {
-    accessTier: 'Hot'
+    accessTier: 'Cool'
   }
 }
 
@@ -108,7 +108,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
 resource fileShare 'Microsoft.Storage/storageAccounts/fileServices/shares@2023-01-01' = {
   name: '${storageAccount.name}/default/${fileShareName}'
   properties: {
-    shareQuota: 5120 // 5GB
+    shareQuota: 1024 // 1GB minimum
   }
 }
 
@@ -225,13 +225,13 @@ resource databaseApp 'Microsoft.App/containerApps@2024-03-01' = {
             }
           ]
           resources: {
-            cpu: json('0.5')
-            memory: '1Gi'
+            cpu: json('0.25')
+            memory: '0.5Gi'
           }
         }
       ]
       scale: {
-        minReplicas: 1
+        minReplicas: 0
         maxReplicas: 1
       }
     }
@@ -288,8 +288,8 @@ resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
             }
           ]
           resources: {
-            cpu: json('0.5')
-            memory: '1Gi'
+            cpu: json('0.25')
+            memory: '0.5Gi'
           }
         }
       ]
