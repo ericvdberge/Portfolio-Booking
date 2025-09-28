@@ -26,9 +26,6 @@ param backendImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworl
 @description('Frontend container image')
 param frontendImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 
-@description('Database connection string')
-@secure()
-param connectionString string = ''
 
 @description('Key Vault name')
 param keyVaultName string = '${namePrefix}kv${uniqueString(resourceGroup().id)}'
@@ -65,6 +62,17 @@ resource dbPasswordSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   parent: keyVault
   properties: {
     value: databasePassword
+    contentType: 'text/plain'
+  }
+}
+
+// Key Vault Secret for Connection String
+resource connectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  name: 'connection-string'
+  parent: keyVault
+  dependsOn: [databaseApp]
+  properties: {
+    value: 'Host=${databaseApp.name};Database=portfolio_booking;Username=booking_user;Password=${databasePassword}'
     contentType: 'text/plain'
   }
 }
@@ -144,6 +152,7 @@ resource userKeyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@202
     principalType: 'User'
   }
 }
+
 
 // Storage for Container Apps Environment
 resource storage 'Microsoft.App/managedEnvironments/storages@2024-03-01' = {
@@ -231,7 +240,7 @@ resource databaseApp 'Microsoft.App/containerApps@2024-03-01' = {
 resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: '${namePrefix}-backend'
   location: location
-  dependsOn: [databaseApp, keyVaultRoleAssignment]
+  dependsOn: [keyVaultRoleAssignment]
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
@@ -255,7 +264,8 @@ resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
         }
         {
           name: 'connection-string'
-          value: 'Host=${databaseApp.name};Database=portfolio_booking;Username=booking_user;Password=${databasePassword}'
+          keyVaultUrl: connectionStringSecret.properties.secretUri
+          identity: containerAppIdentity.id
         }
       ]
     }
@@ -292,7 +302,6 @@ resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
 resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: '${namePrefix}-frontend'
   location: location
-  dependsOn: [backendApp]
   properties: {
     managedEnvironmentId: containerAppEnvironment.id
     configuration: {

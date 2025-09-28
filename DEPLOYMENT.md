@@ -58,7 +58,7 @@ Or deploy manually with Azure CLI:
 az group create --name portfolio-booking-rg --location eastus
 
 # Deploy Bicep template
-az deployment group create --resource-group BookingSystem --template-file infrastructure/azure-setup.bicep --parameters infrastructure/parameters.json
+az deployment group create --resource-group BookingSystem --template-file infrastructure/azure-setup.bicep --parameters infrastructure/parameters.local.json
 ```
 
 ## GitHub Actions Workflow
