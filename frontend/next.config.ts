@@ -5,9 +5,7 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/config.ts');
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-  },
+  // Remove the env config to allow runtime environment variables
 };
 
 export default withNextIntl(nextConfig);
