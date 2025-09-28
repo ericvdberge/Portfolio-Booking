@@ -6,9 +6,9 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  BACKEND_IMAGE_NAME: ${{ github.repository }}/backend
-  FRONTEND_IMAGE_NAME: ${{ github.repository }}/frontend
-  POSTGRES_IMAGE_NAME: ${{ github.repository }}/postgres
+  BACKEND_IMAGE_NAME: ericvdberge/portfolio-booking/backend
+  FRONTEND_IMAGE_NAME: ericvdberge/portfolio-booking/frontend
+  POSTGRES_IMAGE_NAME: ericvdberge/portfolio-booking/postgres
 
 jobs:
   build-and-push:
