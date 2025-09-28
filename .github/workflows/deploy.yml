@@ -87,14 +87,16 @@ jobs:
     - name: Verify Azure authentication
       run: |
         echo "Testing Azure CLI authentication..."
-        az account show
+        az account show --output json
         echo "Checking resource group access..."
-        az group show --name ${{ vars.AZURE_RESOURCE_GROUP }}
+        az group show --name ${{ vars.AZURE_RESOURCE_GROUP }} --output json
 
-    - name: Validate Bicep template
+    - name: Deploy infrastructure with updated images
       run: |
-        echo "Validating Bicep template..."
-        az deployment group validate \
+        echo "Starting deployment..."
+        # Use what-if to test without consuming response stream
+        echo "Running deployment what-if analysis..."
+        az deployment group what-if \
           --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
           --template-file infrastructure/azure-setup.bicep \
           --parameters namePrefix="pbooking" \
@@ -104,9 +106,7 @@ jobs:
           --parameters databasePassword="${{ secrets.DB_PASSWORD }}" \
           --parameters userPrincipalId="${{ secrets.USER_PRINCIPAL_ID }}"
 
-    - name: Deploy infrastructure with updated images
-      run: |
-        echo "Starting deployment..."
+        echo "Proceeding with actual deployment..."
         az deployment group create \
           --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
           --template-file infrastructure/azure-setup.bicep \
@@ -116,4 +116,4 @@ jobs:
           --parameters frontendImage="${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:latest" \
           --parameters databasePassword="${{ secrets.DB_PASSWORD }}" \
           --parameters userPrincipalId="${{ secrets.USER_PRINCIPAL_ID }}" \
-          --verbose
+          --output json
