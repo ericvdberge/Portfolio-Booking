@@ -8,7 +8,6 @@ env:
   REGISTRY: ghcr.io
   BACKEND_IMAGE_NAME: ericvdberge/portfolio-booking/backend
   FRONTEND_IMAGE_NAME: ericvdberge/portfolio-booking/frontend
-  POSTGRES_IMAGE_NAME: ericvdberge/portfolio-booking/postgres
 
 jobs:
   build-and-push:
@@ -63,29 +62,9 @@ jobs:
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-    - name: Verify Azure authentication
-      run: |
-        echo "Testing Azure CLI authentication..."
-        az account show --output json
-        echo "Checking resource group access..."
-        az group show --name ${{ vars.AZURE_RESOURCE_GROUP }} --output json
-
     - name: Deploy infrastructure with updated images
       run: |
-        echo "Starting deployment..."
-        # Use what-if to test without consuming response stream
-        echo "Running deployment what-if analysis..."
-        az deployment group what-if \
-          --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
-          --template-file infrastructure/azure-setup.bicep \
-          --parameters namePrefix="pbooking" \
-          --parameters location="swedencentral" \
-          --parameters backendImage="${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:latest" \
-          --parameters frontendImage="${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:latest" \
-          --parameters databasePassword="${{ secrets.DB_PASSWORD }}" \
-          --parameters userPrincipalId="${{ secrets.USER_PRINCIPAL_ID }}"
-
-        echo "Proceeding with actual deployment..."
+        echo "Proceeding with deployment..."
         az deployment group create \
           --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
           --template-file infrastructure/azure-setup.bicep \
