@@ -70,7 +70,6 @@ resource dbPasswordSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
 resource connectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   name: 'connection-string'
   parent: keyVault
-  dependsOn: [databaseApp]
   properties: {
     value: 'Host=${databaseApp.name};Database=portfolio_booking;Username=booking_user;Password=${databasePassword}'
     contentType: 'text/plain'

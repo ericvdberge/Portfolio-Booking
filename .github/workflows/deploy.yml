@@ -1,7 +1,6 @@
 name: Build and Deploy to Azure Container Apps
 
 on:
-  push: # for now every push, in a short period only on main
   pull_request:
     branches: [main]
 
@@ -90,8 +89,8 @@ jobs:
         az deployment group create \
           --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
           --template-file infrastructure/azure-setup.bicep \
-          --parameters namePrefix="pbooking"
-          --parameters location="swedencentral"
+          --parameters namePrefix="pbooking" \
+          --parameters location="swedencentral" \
           --parameters backendImage="${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:latest" \
           --parameters frontendImage="${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:latest" \
           --parameters databasePassword="${{ secrets.DB_PASSWORD }}"
