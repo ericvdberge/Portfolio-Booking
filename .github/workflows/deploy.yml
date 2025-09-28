@@ -84,6 +84,13 @@ jobs:
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+    - name: Verify Azure authentication
+      run: |
+        echo "Testing Azure CLI authentication..."
+        az account show
+        echo "Checking resource group access..."
+        az group show --name ${{ vars.AZURE_RESOURCE_GROUP }}
+
     - name: Deploy infrastructure with updated images
       run: |
         az deployment group create \
@@ -93,4 +100,5 @@ jobs:
           --parameters location="swedencentral" \
           --parameters backendImage="${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:latest" \
           --parameters frontendImage="${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:latest" \
-          --parameters databasePassword="${{ secrets.DB_PASSWORD }}"
+          --parameters databasePassword="${{ secrets.DB_PASSWORD }}" \
+          --parameters userPrincipalId="${{ secrets.USER_PRINCIPAL_ID }}"
