@@ -40,9 +40,11 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: https://pbooking-backend.lemonwater-1ae5d7b2.swedencentral.azurecontainerapps.io/
     container_name: portfolio_booking_frontend
     environment:
-      - NEXT_PUBLIC_API_URL=http://api:8080
+      - NEXT_PUBLIC_API_URL=https://pbooking-backend.lemonwater-1ae5d7b2.swedencentral.azurecontainerapps.io/
     ports:
       - "3000:80"
     depends_on:
