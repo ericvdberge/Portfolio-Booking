@@ -21,6 +21,10 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 ENV NEXT_TELEMETRY_DISABLED 1
 
+# Accept API_URL as build argument
+ARG NEXT_PUBLIC_API_URL=http://localhost:8080
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 RUN corepack enable pnpm && pnpm run build
 
 # Production image, copy all the files and run next
