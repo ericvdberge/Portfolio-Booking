@@ -8,19 +8,21 @@ interface LocationGridProps {
   error?: string;
   onBookNow?: (locationId: string) => void;
   onViewDetails?: (locationId: string) => void;
+  skeletonCount?: number;
 }
 
-export function LocationGrid({ 
-  locations, 
-  isLoading = false, 
+export function LocationGrid({
+  locations,
+  isLoading = false,
   error,
   onBookNow,
-  onViewDetails
+  onViewDetails,
+  skeletonCount = 6
 }: LocationGridProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 justify-items-center">
-        {Array.from({ length: 6 }).map((_, i) => (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 justify-items-center">
+        {Array.from({ length: skeletonCount }).map((_, i) => (
           <LocationSkeleton key={i} />
         ))}
       </div>
@@ -46,7 +48,7 @@ export function LocationGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 justify-items-center">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 justify-items-center">
       {locations.map((location, index) => (
         <LocationCard
           key={location.id}

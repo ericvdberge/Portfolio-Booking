@@ -1,6 +1,6 @@
 'use client';
 
-import { LocationCard } from '@/features/locations/components/LocationCard';
+import { LocationGrid } from '@/features/locations/components/LocationGrid';
 import { useGetAllLocations } from '@/api/client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -32,38 +32,15 @@ export function FeaturedLocationsSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          {isLoading ? (
-            // Loading skeleton
-            Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-lg overflow-hidden">
-                <div className="h-48 bg-gray-200 animate-pulse" />
-                <div className="p-6 space-y-4">
-                  <div className="h-6 bg-gray-200 animate-pulse rounded" />
-                  <div className="h-4 bg-gray-200 animate-pulse rounded w-2/3" />
-                  <div className="h-4 bg-gray-200 animate-pulse rounded w-1/2" />
-                </div>
-              </div>
-            ))
-          ) : error ? (
-            <div className="col-span-full text-center py-8">
-              <p className="text-gray-500">{t('featuredLocations.errorLoading')}</p>
-            </div>
-          ) : locations && locations.length > 0 ? (
-            locations.map((location, index) => (
-              <LocationCard
-                key={location.id}
-                location={location}
-                onBookNow={handleBookNow}
-                onViewDetails={handleViewDetails}
-                delay={index * 100}
-              />
-            ))
-          ) : (
-            <div className="col-span-full text-center py-8">
-              <p className="text-gray-500">{t('featuredLocations.noLocations')}</p>
-            </div>
-          )}
+        <div className="pb-8">
+          <LocationGrid
+            locations={locations || []}
+            isLoading={isLoading}
+            error={error?.payload}
+            onBookNow={handleBookNow}
+            onViewDetails={handleViewDetails}
+            skeletonCount={3}
+          />
         </div>
 
         <div className="text-center">
