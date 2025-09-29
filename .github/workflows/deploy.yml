@@ -43,7 +43,7 @@ jobs:
         push: true
         tags: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:latest
         build-args: |
-          API_URL=${{ vars.API_URL }}
+          NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
 
   deploy:
     needs: build-and-push
