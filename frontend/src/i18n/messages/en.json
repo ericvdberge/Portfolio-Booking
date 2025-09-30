@@ -103,6 +103,15 @@
     "feature4": "Scenic photo opportunities",
     "bookingComingSoon": "Booking functionality for location {locationId} will be implemented soon!"
   },
+  "imageCollage": {
+    "loadError": "Image failed to load",
+    "loadErrorDescription": "A problem occurred while loading an image",
+    "previousImage": "Previous image",
+    "nextImage": "Next image",
+    "closeViewer": "Close",
+    "imageCountLabel": "Image {current} of {total}",
+    "noImagesAvailable": "No images available"
+  },
   "common": {
     "loading": "Loading...",
     "error": "An error occurred",

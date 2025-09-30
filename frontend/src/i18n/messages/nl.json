@@ -113,5 +113,14 @@
     "feature3": "Flexibele boekingsopties",
     "feature4": "Schilderachtige foto mogelijkheden",
     "bookingComingSoon": "Boekingsfunctionaliteit voor locatie {locationId} wordt binnenkort geïmplementeerd!"
+  },
+  "imageCollage": {
+    "loadError": "Afbeelding laden mislukt",
+    "loadErrorDescription": "Er is een probleem opgetreden bij het laden van een afbeelding",
+    "previousImage": "Vorige afbeelding",
+    "nextImage": "Volgende afbeelding",
+    "closeViewer": "Sluiten",
+    "imageCountLabel": "Afbeelding {current} van {total}",
+    "noImagesAvailable": "Geen afbeeldingen beschikbaar"
   }
 }

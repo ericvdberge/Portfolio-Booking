@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Users, Clock, Calendar } from 'lucide-react';
-import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import { ImageCollage } from '../components/ImageCollage';
+import { getLocationImages } from '../utils/getLocationImages';
 
 export default function LocationDetailsPage() {
   const params = useParams();
@@ -15,20 +16,12 @@ export default function LocationDetailsPage() {
   const t = useTranslations();
   const locationId = params.id as string;
 
-  const { data: location, isLoading, error } = useGetLocationById({ 
+  const { data: location, isLoading, error } = useGetLocationById({
     pathParams: { id: locationId }
   });
 
-  const getImage = () => {
-    if (!location?.id) return '/greece1.jpg';
-    
-    const hash = location.id.split('').reduce((a, b) => {
-      a = ((a << 5) - a) + b.charCodeAt(0);
-      return a & a;
-    }, 0) || 0;
-    const imageNumber = Math.abs(hash % 3) + 1;
-    return `/greece${imageNumber}.jpg`;
-  };
+  // Generate multiple images for the collage
+  const images = getLocationImages(location?.id, 4);
 
   const handleBookNow = () => {
     console.log('Book location:', locationId);
@@ -96,16 +89,7 @@ export default function LocationDetailsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Image and Description */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="relative">
-            <Image
-              src={getImage()}
-              alt={`${location.name} location`}
-              width={800}
-              height={400}
-              priority
-              className="w-full h-64 lg:h-96 object-cover rounded-lg"
-            />
-          </div>
+          <ImageCollage images={images} locationName={location.name} />
 
           <Card className="shadow-none border-none pl-0">
             <CardHeader className="pl-0">
