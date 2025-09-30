@@ -1,0 +1,100 @@
+openapi: 3.0.0
+info:
+  title: Location API - Location Details Image Collage Extension
+  version: 1.1.0
+  description: Extended Location API contract with imageUrls support
+
+paths:
+  /api/locations/{id}:
+    get:
+      summary: Get location by ID
+      description: Returns location details including optional image URLs array
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Location ID
+      responses:
+        '200':
+          description: Location found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+              examples:
+                withImages:
+                  summary: Location with multiple images
+                  value:
+                    id: "abc123"
+                    name: "Sunset Villa"
+                    address: "123 Beach Road"
+                    description: "Beautiful villa with ocean view"
+                    capacity: 50
+                    openTime: "09:00"
+                    closeTime: "22:00"
+                    imageUrls:
+                      - "/images/sunset-villa-1.jpg"
+                      - "/images/sunset-villa-2.jpg"
+                      - "/images/sunset-villa-3.jpg"
+                      - "/images/sunset-villa-4.jpg"
+                legacy:
+                  summary: Location without images (backward compat)
+                  value:
+                    id: "def456"
+                    name: "Mountain Lodge"
+                    address: "456 Peak Drive"
+                    description: "Cozy lodge in the mountains"
+                    capacity: 30
+                    openTime: "08:00"
+                    closeTime: "20:00"
+                    imageUrls: null
+        '404':
+          description: Location not found
+
+components:
+  schemas:
+    Location:
+      type: object
+      required:
+        - id
+        - name
+        - address
+        - capacity
+        - openTime
+        - closeTime
+      properties:
+        id:
+          type: string
+          description: Unique location identifier
+        name:
+          type: string
+          description: Location name
+        address:
+          type: string
+          description: Physical address
+        description:
+          type: string
+          nullable: true
+          description: Location description
+        capacity:
+          type: integer
+          minimum: 1
+          description: Maximum occupancy
+        openTime:
+          type: string
+          pattern: '^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
+          description: Opening time (HH:MM)
+        closeTime:
+          type: string
+          pattern: '^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
+          description: Closing time (HH:MM)
+        imageUrls:
+          type: array
+          items:
+            type: string
+            format: uri
+          nullable: true
+          maxItems: 100
+          description: Array of image URLs for the collage. Null/empty for backward compatibility.
