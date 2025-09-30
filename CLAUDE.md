@@ -114,3 +114,7 @@ This project implements a booking system using Clean Architecture principles wit
 5. Maintain clear separation between layers
 6. Follow dependency inversion principle
 7. Write comprehensive unit tests for policies and specifications
+
+## Project Constitution
+All development work MUST adhere to the principles defined in `.specify/memory/constitution.md` (v1.0.0).
+The constitution establishes 6 core principles governing architecture, design, and implementation practices.
