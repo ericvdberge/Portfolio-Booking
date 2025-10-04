@@ -1,0 +1,60 @@
+# Contract: prod-deploy.yml Workflow
+# Purpose: Production deployment workflow (calls reusable template)
+
+name: Production Deployment
+
+# TRIGGERS
+on:
+  push:
+    branches: [main]  # Only trigger on merge to main
+
+# JOBS
+
+jobs:
+  # --------------------------------------------------
+  # Job: deploy-production
+  # Purpose: Deploy to production environment using reusable template
+  # Runs for: Only on push to main (merged PR)
+  # --------------------------------------------------
+  deploy-production:
+    uses: ./.github/workflows/deploy-template.yml
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    with:
+      environment_type: 'production'
+      resource_group: ${{ vars.AZURE_RESOURCE_GROUP }}  # 'BookingSystem'
+      deployment_suffix: ''  # No suffix for production
+      image_tag: 'latest'
+      pr_number: ''  # Not applicable for production
+
+    secrets:
+      azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+      azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+      azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      db_password: ${{ secrets.DB_PASSWORD }}
+      user_principal_id: ${{ secrets.USER_PRINCIPAL_ID }}
+      github_token: ${{ secrets.GITHUB_TOKEN }}
+
+# CONTRACT SPECIFICATIONS
+
+# Input Requirements:
+# - Trigger: Push to main branch only
+# - Secrets: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID, DB_PASSWORD, USER_PRINCIPAL_ID, GITHUB_TOKEN
+# - Variables: AZURE_RESOURCE_GROUP (production resource group name)
+
+# Output Guarantees:
+# - Deploys to production resource group (BookingSystem)
+# - Uses 'latest' image tag
+# - No PR-specific configuration
+
+# Error Handling:
+# - Deployment failure: Fails workflow, notifies via GitHub Actions status
+
+# Behavioral Contracts:
+# - FR-002: Production deployments triggered only on push to main
+# - FR-003: Never triggered by pull_request events
+# - Uses reusable template for shared deployment logic
+# - Minimal code duplication (only environment-specific inputs)

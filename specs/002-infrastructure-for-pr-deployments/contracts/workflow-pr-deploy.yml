@@ -1,0 +1,106 @@
+# Contract: pr-deploy.yml Workflow
+# Purpose: PR preview deployment workflow (calls reusable template + adds PR comment)
+
+name: PR Preview Deployment
+
+# TRIGGERS
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+
+# JOBS
+
+jobs:
+  # --------------------------------------------------
+  # Job: deploy-preview
+  # Purpose: Deploy PR preview environment using reusable template
+  # Runs for: Only on pull_request events
+  # Required for merge: Branch protection rule enforces this job must pass
+  # --------------------------------------------------
+  deploy-preview:
+    uses: ./.github/workflows/deploy-template.yml
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    # Concurrency control: Cancel in-progress deployments for same PR
+    concurrency:
+      group: deploy-preview-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+
+    with:
+      environment_type: 'preview'
+      resource_group: 'BookingSystem-PR'
+      deployment_suffix: 'pr-${{ github.event.pull_request.number }}'
+      image_tag: 'pr-${{ github.event.pull_request.number }}'
+      pr_number: ${{ github.event.pull_request.number }}
+
+    secrets:
+      azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+      azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+      azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      db_password: ${{ secrets.DB_PASSWORD }}
+      github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  # --------------------------------------------------
+  # Job: comment-preview-url
+  # Purpose: Post preview URLs as PR comment
+  # Runs after: deploy-preview completes successfully
+  # --------------------------------------------------
+  comment-preview-url:
+    needs: deploy-preview
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Comment preview URL on PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat << 'EOF' | gh pr comment ${{ github.event.pull_request.number }} --body-file -
+          🚀 **Preview Deployment Ready**
+
+          **Frontend**: ${{ needs.deploy-preview.outputs.frontend_url }}
+          **Backend**: ${{ needs.deploy-preview.outputs.backend_url }}
+
+          ---
+          *Deployed from commit ${{ github.sha }}*
+          EOF
+
+# CONTRACT SPECIFICATIONS
+
+# Input Requirements:
+# - Trigger: Pull request events (opened, synchronize, reopened) to main
+# - Secrets: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID, DB_PASSWORD, GITHUB_TOKEN
+# - Pull Request: Must target main branch
+
+# Output Guarantees:
+# - Deploys to BookingSystem-PR resource group
+# - Uses PR-specific image tag (pr-123)
+# - Posts preview URLs as new PR comment (does not update existing)
+
+# Error Handling:
+# - Build failure: Stops workflow, no deployment, no PR comment
+# - Deployment failure: Fails job, blocks PR merge (via branch protection), no PR comment
+# - Comment failure: Fails comment job only (deployment succeeded)
+
+# Behavioral Contracts:
+# - FR-001: PR deployments triggered only on pull_request events to main
+# - FR-001a: Concurrent deployments to same PR are cancelled (cancel-in-progress: true)
+# - FR-003: Production never triggered by pull_request events
+# - FR-011: New PR comment created for each deployment (not updated)
+# - FR-017a: Failed deployment blocks merge (via branch protection on deploy-preview job)
+# - FR-003a: Uses reusable template for shared deployment logic
+
+# Concurrency:
+# - Group: deploy-preview-pr-{pr_number}
+# - Cancel in-progress: true (implements FR-001a)
+# - Ensures only latest commit deployment runs
+
+# Reusability:
+# - Calls deploy-template.yml with preview-specific inputs
+# - Adds PR commenting logic on top of shared deployment
+# - Minimal code duplication from production deployment
