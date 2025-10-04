@@ -1,0 +1,53 @@
+name: PR Preview Deployment
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+
+jobs:
+  deploy-preview:
+    uses: ./.github/workflows/deploy-template.yml
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    concurrency:
+      group: deploy-preview-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+
+    with:
+      environment_type: 'preview'
+      resource_group: 'BookingSystem-PR'
+      deployment_suffix: 'pr-${{ github.event.pull_request.number }}'
+      image_tag: 'pr-${{ github.event.pull_request.number }}'
+      pr_number: '${{ github.event.pull_request.number }}'
+
+    secrets:
+      azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+      azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+      azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      db_password: ${{ secrets.DB_PASSWORD }}
+      github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  comment-preview-url:
+    needs: deploy-preview
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Comment preview URL on PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat << 'EOF' | gh pr comment ${{ github.event.pull_request.number }} --body-file -
+          🚀 **Preview Deployment Ready**
+
+          **Frontend**: ${{ needs.deploy-preview.outputs.frontend_url }}
+          **Backend**: ${{ needs.deploy-preview.outputs.backend_url }}
+
+          ---
+          *Deployed from commit ${{ github.sha }}*
+          EOF

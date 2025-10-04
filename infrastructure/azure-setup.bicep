@@ -4,6 +4,16 @@ param location string = resourceGroup().location
 @description('Name prefix for all resources')
 param namePrefix string = 'booking'
 
+@description('Environment type: production or preview')
+@allowed([
+  'production'
+  'preview'
+])
+param environmentType string = 'production'
+
+@description('Pull request number (required for preview environments)')
+param prNumber string = ''
+
 @description('Container Apps Environment name')
 param environmentName string = '${namePrefix}-env'
 
@@ -35,6 +45,12 @@ param userPrincipalId string = ''
 
 @description('Deployment hash to force new revisions')
 param deploymentHash string
+
+// Calculated parameters
+var enableMultiRevision = (environmentType == 'preview')
+var databaseName = environmentType == 'preview' ? 'portfolio_booking_pr_${prNumber}' : 'portfolio_booking'
+var revisionMode = enableMultiRevision ? 'Multiple' : 'Single'
+var revisionSuffix = environmentType == 'preview' ? 'pr-${prNumber}' : deploymentHash
 
 // Key Vault
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
@@ -74,7 +90,7 @@ resource connectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' =
   name: 'connection-string'
   parent: keyVault
   properties: {
-    value: 'Host=${databaseApp.name};Database=portfolio_booking;Username=booking_user;Password=${databasePassword}'
+    value: 'Host=${databaseApp.name};Database=${databaseName};Username=booking_user;Password=${databasePassword}'
     contentType: 'text/plain'
   }
 }
@@ -205,7 +221,7 @@ resource databaseApp 'Microsoft.App/containerApps@2024-03-01' = {
           env: [
             {
               name: 'POSTGRES_DB'
-              value: 'portfolio_booking'
+              value: databaseName
             }
             {
               name: 'POSTGRES_USER'
@@ -252,6 +268,7 @@ resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
   properties: {
     managedEnvironmentId: containerAppEnvironment.id
     configuration: {
+      activeRevisionsMode: revisionMode
       ingress: {
         external: true
         targetPort: 80
@@ -272,7 +289,7 @@ resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
       ]
     }
     template: {
-      revisionSuffix: deploymentHash
+      revisionSuffix: revisionSuffix
       containers: [
         {
           name: 'backend'
@@ -308,6 +325,7 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
   properties: {
     managedEnvironmentId: containerAppEnvironment.id
     configuration: {
+      activeRevisionsMode: revisionMode
       ingress: {
         external: true
         targetPort: 80
@@ -316,7 +334,7 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
       }
     }
     template: {
-      revisionSuffix: deploymentHash
+      revisionSuffix: revisionSuffix
       containers: [
         {
           name: 'frontend'
