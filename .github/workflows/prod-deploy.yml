@@ -25,4 +25,3 @@ jobs:
       azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       db_password: ${{ secrets.DB_PASSWORD }}
       user_principal_id: ${{ secrets.USER_PRINCIPAL_ID }}
-      github_token: ${{ secrets.GITHUB_TOKEN }}

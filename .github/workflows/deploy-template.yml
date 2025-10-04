@@ -41,8 +41,6 @@ on:
         required: true
       user_principal_id:
         required: false  # Only needed for production
-      github_token:
-        required: false  # Only needed for PR comments
 
     outputs:
       frontend_url:
