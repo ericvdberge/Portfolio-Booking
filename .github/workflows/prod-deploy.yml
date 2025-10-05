@@ -6,7 +6,7 @@ on:
 
 jobs:
   deploy-production:
-    uses: ./template-deploy.yml
+    uses: .github/workflows/template-deploy.yml
     permissions:
       contents: read
       packages: write
