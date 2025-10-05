@@ -115,8 +115,8 @@ jobs:
 
             FRONTEND_URL=$(az containerapp revision show \
               --resource-group ${{ inputs.resource_group }} \
-              --app pbooking-frontend \
-              --name ${FRONTEND_REVISION} \
+              --name pbooking-frontend \
+              --revision ${FRONTEND_REVISION} \
               --query properties.fqdn -o tsv)
 
             # Get backend revision URL
@@ -127,8 +127,8 @@ jobs:
 
             BACKEND_URL=$(az containerapp revision show \
               --resource-group ${{ inputs.resource_group }} \
-              --app pbooking-backend \
-              --name ${BACKEND_REVISION} \
+              --name pbooking-backend \
+              --revision ${BACKEND_REVISION} \
               --query properties.fqdn -o tsv)
 
             # Add https:// prefix
