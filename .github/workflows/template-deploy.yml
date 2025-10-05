@@ -53,7 +53,7 @@ on:
 jobs:
   # Phase 1: Deploy with hello-world to discover URLs
   discover-urls:
-    uses: ericvdberge/Portfolio-Booking/.github/workflows/template-infra-deploy.yml@002-infrastructure-for-pr-deployments
+    uses: ./.github/workflows/template-infra-deploy.yml
     permissions:
       id-token: write
       contents: read
@@ -73,7 +73,7 @@ jobs:
   # Phase 2: Build images with discovered backend URL
   build-images:
     needs: discover-urls
-    uses: ericvdberge/Portfolio-Booking/.github/workflows/template-build-images.yml@002-infrastructure-for-pr-deployments
+    uses: ./.github/workflows/template-build-images.yml
     permissions:
       contents: read
       packages: write
@@ -84,7 +84,7 @@ jobs:
   # Phase 3: Deploy actual images
   final-deploy:
     needs: [discover-urls, build-images]
-    uses: ericvdberge/Portfolio-Booking/.github/workflows/template-infra-deploy.yml@002-infrastructure-for-pr-deployments
+    uses: ./.github/workflows/template-infra-deploy.yml
     permissions:
       id-token: write
       contents: read
