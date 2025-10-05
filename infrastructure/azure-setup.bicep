@@ -40,9 +40,6 @@ param frontendImage string = 'mcr.microsoft.com/azuredocs/containerapps-hellowor
 @description('Key Vault name')
 param keyVaultName string = '${namePrefix}kv${uniqueString(resourceGroup().id)}'
 
-@description('User principal ID for Key Vault access (optional)')
-param userPrincipalId string = ''
-
 @description('Deployment hash to force new revisions')
 param deploymentHash string
 

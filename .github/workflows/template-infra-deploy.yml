@@ -29,8 +29,6 @@ on:
         required: true
       db_password:
         required: true
-      user_principal_id:
-        required: false
       managed_identity_id:
         required: true
 
@@ -126,7 +124,6 @@ jobs:
             PARAMS="${PARAMS} backendImage=${{ inputs.backend_image }}"
             PARAMS="${PARAMS} frontendImage=${{ inputs.frontend_image }}"
             PARAMS="${PARAMS} databasePassword=${{ secrets.db_password }}"
-            PARAMS="${PARAMS} userPrincipalId=${{ secrets.user_principal_id }}"
             PARAMS="${PARAMS} deploymentHash=${DEPLOYMENT_HASH}"
             PARAMS="${PARAMS} managedIdentityId=${{ secrets.managed_identity_id }}"
           else
