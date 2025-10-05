@@ -53,7 +53,7 @@ on:
 jobs:
   # Phase 1: Deploy with hello-world to discover URLs
   discover-urls:
-    uses: ./.github/workflows/templates/infra-deploy-template.yml
+    uses: ./template-infra-deploy.yml
     permissions:
       id-token: write
       contents: read
@@ -73,20 +73,18 @@ jobs:
   # Phase 2: Build images with discovered backend URL
   build-images:
     needs: discover-urls
-    uses: ./.github/workflows/templates/build-images-template.yml
+    uses: ./template-build-images.yml
     permissions:
       contents: read
       packages: write
     with:
       image_tag: ${{ inputs.image_tag }}
       backend_api_url: ${{ needs.discover-urls.outputs.backend_url }}
-    secrets:
-      github_token: ${{ secrets.GITHUB_TOKEN }}
 
   # Phase 3: Deploy actual images
   final-deploy:
     needs: [discover-urls, build-images]
-    uses: ./.github/workflows/templates/infra-deploy-template.yml
+    uses: ./template-infra-deploy.yml
     permissions:
       id-token: write
       contents: read
