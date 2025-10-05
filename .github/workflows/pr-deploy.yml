@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy-preview:
-    uses: ./.github/workflows/deploy-template.yml
+    uses: ./.github/workflows/_template-deploy.yml
     permissions:
       contents: read
       packages: write
