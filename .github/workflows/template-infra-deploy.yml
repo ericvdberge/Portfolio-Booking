@@ -66,6 +66,50 @@ jobs:
           tenant-id: ${{ secrets.azure_tenant_id }}
           subscription-id: ${{ secrets.azure_subscription_id }}
 
+      - name: Delete existing PR revisions
+        if: inputs.environment_type == 'preview'
+        continue-on-error: true
+        run: |
+          REVISION_SUFFIX="pr-${{ inputs.pr_number }}"
+
+          echo "Checking for existing revisions with suffix: ${REVISION_SUFFIX}"
+
+          # Deactivate frontend revision if exists
+          FRONTEND_REVISIONS=$(az containerapp revision list \
+            --resource-group ${{ inputs.resource_group }} \
+            --name pbooking-frontend \
+            --query "[?ends_with(name, '-${REVISION_SUFFIX}')].name" -o tsv)
+
+          if [ -n "$FRONTEND_REVISIONS" ]; then
+            echo "Deactivating frontend revisions: $FRONTEND_REVISIONS"
+            echo "$FRONTEND_REVISIONS" | while read revision; do
+              az containerapp revision deactivate \
+                --resource-group ${{ inputs.resource_group }} \
+                --name pbooking-frontend \
+                --revision "$revision"
+            done
+          else
+            echo "No frontend revisions found"
+          fi
+
+          # Deactivate backend revision if exists
+          BACKEND_REVISIONS=$(az containerapp revision list \
+            --resource-group ${{ inputs.resource_group }} \
+            --name pbooking-backend \
+            --query "[?ends_with(name, '-${REVISION_SUFFIX}')].name" -o tsv)
+
+          if [ -n "$BACKEND_REVISIONS" ]; then
+            echo "Deactivating backend revisions: $BACKEND_REVISIONS"
+            echo "$BACKEND_REVISIONS" | while read revision; do
+              az containerapp revision deactivate \
+                --resource-group ${{ inputs.resource_group }} \
+                --name pbooking-backend \
+                --revision "$revision"
+            done
+          else
+            echo "No backend revisions found"
+          fi
+
       - name: Deploy infrastructure
         id: deploy
         run: |
