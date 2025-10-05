@@ -96,14 +96,6 @@ jobs:
           echo "Deploying to ${{ inputs.resource_group }} as ${DEPLOYMENT_NAME}"
           echo "Backend: ${{ inputs.backend_image }}"
           echo "Frontend: ${{ inputs.frontend_image }}"
-
-          # Execute the deployment
-          az deployment group create \
-            --resource-group ${{ inputs.resource_group }} \
-            --name ${DEPLOYMENT_NAME} \
-            --template-file ${TEMPLATE_FILE} \
-            --parameters ${PARAMS}
-
           echo "deployment-name=${DEPLOYMENT_NAME}" >> $GITHUB_OUTPUT
 
       - name: Get deployment URLs
