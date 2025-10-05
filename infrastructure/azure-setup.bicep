@@ -36,64 +36,14 @@ param backendImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworl
 @description('Frontend container image')
 param frontendImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 
-
-@description('Key Vault name')
-param keyVaultName string = '${namePrefix}kv${uniqueString(resourceGroup().id)}'
-
 @description('Deployment hash to force new revisions')
 param deploymentHash string
-
-@description('Managed Identity resource ID for Container Apps (created manually)')
-param managedIdentityId string
 
 // Calculated parameters
 var enableMultiRevision = (environmentType == 'preview')
 var databaseName = environmentType == 'preview' ? 'portfolio_booking_pr_${prNumber}' : 'portfolio_booking'
 var revisionMode = enableMultiRevision ? 'Multiple' : 'Single'
 var revisionSuffix = environmentType == 'preview' ? 'pr-${prNumber}' : deploymentHash
-
-// Key Vault
-resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
-  name: keyVaultName
-  location: location
-  properties: {
-    tenantId: subscription().tenantId
-    sku: {
-      family: 'A'
-      name: 'standard'
-    }
-    accessPolicies: []
-    enabledForDeployment: true
-    enabledForTemplateDeployment: true
-    enabledForDiskEncryption: false
-    enableRbacAuthorization: true
-    publicNetworkAccess: 'Enabled'
-    networkAcls: {
-      defaultAction: 'Allow'
-      bypass: 'AzureServices'
-    }
-  }
-}
-
-// Key Vault Secret for Database Password
-resource dbPasswordSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  name: 'database-password'
-  parent: keyVault
-  properties: {
-    value: databasePassword
-    contentType: 'text/plain'
-  }
-}
-
-// Key Vault Secret for Connection String
-resource connectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  name: 'connection-string'
-  parent: keyVault
-  properties: {
-    value: 'Host=${databaseApp.name};Database=${databaseName};Username=booking_user;Password=${databasePassword}'
-    contentType: 'text/plain'
-  }
-}
 
 // Log Analytics Workspace
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
@@ -161,12 +111,6 @@ resource storage 'Microsoft.App/managedEnvironments/storages@2024-03-01' = {
 resource databaseApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: '${namePrefix}-database'
   location: location
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${managedIdentityId}': {}
-    }
-  }
   properties: {
     managedEnvironmentId: containerAppEnvironment.id
     configuration: {
@@ -178,8 +122,7 @@ resource databaseApp 'Microsoft.App/containerApps@2024-03-01' = {
       secrets: [
         {
           name: 'db-password'
-          keyVaultUrl: dbPasswordSecret.properties.secretUri
-          identity: managedIdentityId
+          value: databasePassword
         }
       ]
     }
@@ -228,12 +171,6 @@ resource databaseApp 'Microsoft.App/containerApps@2024-03-01' = {
 resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: '${namePrefix}-backend'
   location: location
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${managedIdentityId}': {}
-    }
-  }
   properties: {
     managedEnvironmentId: containerAppEnvironment.id
     configuration: {
@@ -246,14 +183,8 @@ resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
       }
       secrets: [
         {
-          name: 'db-password'
-          keyVaultUrl: dbPasswordSecret.properties.secretUri
-          identity: managedIdentityId
-        }
-        {
           name: 'connection-string'
-          keyVaultUrl: connectionStringSecret.properties.secretUri
-          identity: managedIdentityId
+          value: 'Host=${databaseApp.name};Database=${databaseName};Username=booking_user;Password=${databasePassword}'
         }
       ]
     }

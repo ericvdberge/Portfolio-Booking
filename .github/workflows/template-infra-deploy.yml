@@ -29,8 +29,6 @@ on:
         required: true
       db_password:
         required: true
-      managed_identity_id:
-        required: true
 
     outputs:
       frontend_url:
@@ -144,7 +142,6 @@ jobs:
             --parameters frontendImage="${{ inputs.frontend_image }}" \
             --parameters databasePassword="${{ secrets.db_password }}" \
             --parameters deploymentHash="${DEPLOYMENT_HASH}" \
-            --parameters managedIdentityId="${{ secrets.managed_identity_id }}" \
             --verbose
 
           DEPLOYMENT_EXIT_CODE=$?
@@ -157,13 +154,6 @@ jobs:
               --resource-group ${{ inputs.resource_group }} \
               --name ${DEPLOYMENT_NAME} \
               --query "[?properties.provisioningState=='Failed'].{Operation: properties.targetResource.resourceName, Error: properties.statusMessage.error}" \
-              --output json || true
-
-            echo "===== Full Deployment Status ====="
-            az deployment group show \
-              --resource-group ${{ inputs.resource_group }} \
-              --name ${DEPLOYMENT_NAME} \
-              --query "{Status: properties.provisioningState, Error: properties.error}" \
               --output json || true
 
             exit $DEPLOYMENT_EXIT_CODE

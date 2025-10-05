@@ -39,8 +39,6 @@ on:
         required: true
       db_password:
         required: true
-      managed_identity_id:
-        required: true
 
     outputs:
       frontend_url:
@@ -68,7 +66,6 @@ jobs:
       azure_tenant_id: ${{ secrets.azure_tenant_id }}
       azure_subscription_id: ${{ secrets.azure_subscription_id }}
       db_password: ${{ secrets.db_password }}
-      managed_identity_id: ${{ secrets.managed_identity_id }}
 
   # Phase 2: Build images with discovered backend URL
   build-images:
@@ -99,4 +96,3 @@ jobs:
       azure_tenant_id: ${{ secrets.azure_tenant_id }}
       azure_subscription_id: ${{ secrets.azure_subscription_id }}
       db_password: ${{ secrets.db_password }}
-      managed_identity_id: ${{ secrets.managed_identity_id }}
