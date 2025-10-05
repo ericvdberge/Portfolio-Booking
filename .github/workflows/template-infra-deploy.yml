@@ -31,6 +31,8 @@ on:
         required: true
       user_principal_id:
         required: false
+      managed_identity_id:
+        required: true
 
     outputs:
       frontend_url:
@@ -126,6 +128,7 @@ jobs:
             PARAMS="${PARAMS} databasePassword=${{ secrets.db_password }}"
             PARAMS="${PARAMS} userPrincipalId=${{ secrets.user_principal_id }}"
             PARAMS="${PARAMS} deploymentHash=${DEPLOYMENT_HASH}"
+            PARAMS="${PARAMS} managedIdentityId=${{ secrets.managed_identity_id }}"
           else
             DEPLOYMENT_NAME="pr-${{ inputs.pr_number }}"
             PARAMS="namePrefix=pbooking location=swedencentral"
@@ -135,6 +138,7 @@ jobs:
             PARAMS="${PARAMS} frontendImage=${{ inputs.frontend_image }}"
             PARAMS="${PARAMS} databasePassword=${{ secrets.db_password }}"
             PARAMS="${PARAMS} deploymentHash=''"
+            PARAMS="${PARAMS} managedIdentityId=${{ secrets.managed_identity_id }}"
           fi
 
           echo "Deploying to ${{ inputs.resource_group }} as ${DEPLOYMENT_NAME}"

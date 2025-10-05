@@ -46,6 +46,9 @@ param userPrincipalId string = ''
 @description('Deployment hash to force new revisions')
 param deploymentHash string
 
+@description('Managed Identity resource ID for Container Apps (created manually)')
+param managedIdentityId string
+
 // Calculated parameters
 var enableMultiRevision = (environmentType == 'preview')
 var databaseName = environmentType == 'preview' ? 'portfolio_booking_pr_${prNumber}' : 'portfolio_booking'
@@ -143,35 +146,6 @@ resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' 
   }
 }
 
-// Managed Identity for Container Apps to access Key Vault
-resource containerAppIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
-  name: '${namePrefix}-identity'
-  location: location
-}
-
-// Role assignment for Key Vault Secrets User (Container App Identity)
-resource keyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(keyVault.id, containerAppIdentity.id, 'Key Vault Secrets User')
-  scope: keyVault
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6') // Key Vault Secrets User
-    principalId: containerAppIdentity.properties.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-// Role assignment for user access (Key Vault Administrator)
-resource userKeyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(userPrincipalId)) {
-  name: guid(keyVault.id, userPrincipalId, 'Key Vault Administrator')
-  scope: keyVault
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '00482a5a-887f-4fb3-b363-3b7fe8e74483') // Key Vault Administrator
-    principalId: userPrincipalId
-    principalType: 'User'
-  }
-}
-
-
 // Storage for Container Apps Environment
 resource storage 'Microsoft.App/managedEnvironments/storages@2024-03-01' = {
   name: 'postgres-storage'
@@ -190,11 +164,10 @@ resource storage 'Microsoft.App/managedEnvironments/storages@2024-03-01' = {
 resource databaseApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: '${namePrefix}-database'
   location: location
-  dependsOn: [keyVaultRoleAssignment]
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${containerAppIdentity.id}': {}
+      '${managedIdentityId}': {}
     }
   }
   properties: {
@@ -209,7 +182,7 @@ resource databaseApp 'Microsoft.App/containerApps@2024-03-01' = {
         {
           name: 'db-password'
           keyVaultUrl: dbPasswordSecret.properties.secretUri
-          identity: containerAppIdentity.id
+          identity: managedIdentityId
         }
       ]
     }
@@ -258,11 +231,10 @@ resource databaseApp 'Microsoft.App/containerApps@2024-03-01' = {
 resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: '${namePrefix}-backend'
   location: location
-  dependsOn: [keyVaultRoleAssignment]
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${containerAppIdentity.id}': {}
+      '${managedIdentityId}': {}
     }
   }
   properties: {
@@ -279,12 +251,12 @@ resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
         {
           name: 'db-password'
           keyVaultUrl: dbPasswordSecret.properties.secretUri
-          identity: containerAppIdentity.id
+          identity: managedIdentityId
         }
         {
           name: 'connection-string'
           keyVaultUrl: connectionStringSecret.properties.secretUri
-          identity: containerAppIdentity.id
+          identity: managedIdentityId
         }
       ]
     }

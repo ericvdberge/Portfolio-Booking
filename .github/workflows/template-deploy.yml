@@ -41,6 +41,8 @@ on:
         required: true
       user_principal_id:
         required: false  # Only needed for production
+      managed_identity_id:
+        required: true
 
     outputs:
       frontend_url:
@@ -69,6 +71,7 @@ jobs:
       azure_subscription_id: ${{ secrets.azure_subscription_id }}
       db_password: ${{ secrets.db_password }}
       user_principal_id: ${{ secrets.user_principal_id }}
+      managed_identity_id: ${{ secrets.managed_identity_id }}
 
   # Phase 2: Build images with discovered backend URL
   build-images:
@@ -100,3 +103,4 @@ jobs:
       azure_subscription_id: ${{ secrets.azure_subscription_id }}
       db_password: ${{ secrets.db_password }}
       user_principal_id: ${{ secrets.user_principal_id }}
+      managed_identity_id: ${{ secrets.managed_identity_id }}
