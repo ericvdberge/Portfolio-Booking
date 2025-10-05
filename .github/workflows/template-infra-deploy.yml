@@ -130,7 +130,8 @@ jobs:
           echo "Frontend: ${{ inputs.frontend_image }}"
           echo "deployment-name=${DEPLOYMENT_NAME}" >> $GITHUB_OUTPUT
 
-          # Execute the deployment with proper parameter formatting
+          # Execute the deployment with verbose logging
+          set +e  # Don't exit on error, we want to capture it
           az deployment group create \
             --resource-group ${{ inputs.resource_group }} \
             --name ${DEPLOYMENT_NAME} \
@@ -143,7 +144,30 @@ jobs:
             --parameters frontendImage="${{ inputs.frontend_image }}" \
             --parameters databasePassword="${{ secrets.db_password }}" \
             --parameters deploymentHash="${DEPLOYMENT_HASH}" \
-            --parameters managedIdentityId="${{ secrets.managed_identity_id }}"
+            --parameters managedIdentityId="${{ secrets.managed_identity_id }}" \
+            --verbose
+
+          DEPLOYMENT_EXIT_CODE=$?
+
+          if [ $DEPLOYMENT_EXIT_CODE -ne 0 ]; then
+            echo "::error::Deployment failed with exit code $DEPLOYMENT_EXIT_CODE"
+
+            echo "===== Deployment Error Details ====="
+            az deployment operation group list \
+              --resource-group ${{ inputs.resource_group }} \
+              --name ${DEPLOYMENT_NAME} \
+              --query "[?properties.provisioningState=='Failed'].{Operation: properties.targetResource.resourceName, Error: properties.statusMessage.error}" \
+              --output json || true
+
+            echo "===== Full Deployment Status ====="
+            az deployment group show \
+              --resource-group ${{ inputs.resource_group }} \
+              --name ${DEPLOYMENT_NAME} \
+              --query "{Status: properties.provisioningState, Error: properties.error}" \
+              --output json || true
+
+            exit $DEPLOYMENT_EXIT_CODE
+          fi
 
       - name: Get deployment URLs
         id: get-urls
