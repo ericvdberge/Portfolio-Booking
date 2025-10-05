@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy-preview:
-    uses: ./.github/workflows/deploy-template.yml
+    uses: ./.github/workflows/templates/deploy-template.yml
     permissions:
       contents: read
       packages: write
@@ -37,6 +37,9 @@ jobs:
       pull-requests: write
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Comment preview URL on PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

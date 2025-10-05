@@ -1,0 +1,104 @@
+name: Deploy Template (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      environment_type:
+        description: 'Deployment environment type'
+        required: true
+        type: string  # 'production' or 'preview'
+
+      resource_group:
+        description: 'Azure resource group name'
+        required: true
+        type: string  # 'BookingSystem' or 'BookingSystem-PR'
+
+      deployment_suffix:
+        description: 'Deployment suffix for multi-revision (empty for production)'
+        required: false
+        type: string
+        default: ''  # Empty for prod, 'pr-123' for preview
+
+      image_tag:
+        description: 'Docker image tag to deploy'
+        required: true
+        type: string  # 'latest' or 'pr-123'
+
+      pr_number:
+        description: 'Pull request number (for preview deployments only)'
+        required: false
+        type: string
+        default: ''
+
+    secrets:
+      azure_client_id:
+        required: true
+      azure_tenant_id:
+        required: true
+      azure_subscription_id:
+        required: true
+      db_password:
+        required: true
+      user_principal_id:
+        required: false  # Only needed for production
+
+    outputs:
+      frontend_url:
+        description: 'Frontend URL of deployed environment'
+        value: ${{ jobs.final-deploy.outputs.frontend_url }}
+      backend_url:
+        description: 'Backend URL of deployed environment'
+        value: ${{ jobs.final-deploy.outputs.backend_url }}
+
+jobs:
+  # Phase 1: Deploy with hello-world to discover URLs
+  discover-urls:
+    uses: ./.github/workflows/templates/infra-deploy-template.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      environment_type: ${{ inputs.environment_type }}
+      resource_group: ${{ inputs.resource_group }}
+      pr_number: ${{ inputs.pr_number }}
+      backend_image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+      frontend_image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+    secrets:
+      azure_client_id: ${{ secrets.azure_client_id }}
+      azure_tenant_id: ${{ secrets.azure_tenant_id }}
+      azure_subscription_id: ${{ secrets.azure_subscription_id }}
+      db_password: ${{ secrets.db_password }}
+      user_principal_id: ${{ secrets.user_principal_id }}
+
+  # Phase 2: Build images with discovered backend URL
+  build-images:
+    needs: discover-urls
+    uses: ./.github/workflows/templates/build-images-template.yml
+    permissions:
+      contents: read
+      packages: write
+    with:
+      image_tag: ${{ inputs.image_tag }}
+      backend_api_url: ${{ needs.discover-urls.outputs.backend_url }}
+    secrets:
+      github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  # Phase 3: Deploy actual images
+  final-deploy:
+    needs: [discover-urls, build-images]
+    uses: ./.github/workflows/templates/infra-deploy-template.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      environment_type: ${{ inputs.environment_type }}
+      resource_group: ${{ inputs.resource_group }}
+      pr_number: ${{ inputs.pr_number }}
+      backend_image: ${{ needs.build-images.outputs.backend_image }}
+      frontend_image: ${{ needs.build-images.outputs.frontend_image }}
+    secrets:
+      azure_client_id: ${{ secrets.azure_client_id }}
+      azure_tenant_id: ${{ secrets.azure_tenant_id }}
+      azure_subscription_id: ${{ secrets.azure_subscription_id }}
+      db_password: ${{ secrets.db_password }}
+      user_principal_id: ${{ secrets.user_principal_id }}

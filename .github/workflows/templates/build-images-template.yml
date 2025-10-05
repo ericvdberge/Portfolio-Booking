@@ -1,0 +1,70 @@
+name: Build and Push Images (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      image_tag:
+        required: true
+        type: string
+      backend_api_url:
+        description: 'Backend URL to embed in frontend build'
+        required: false
+        type: string
+        default: 'http://localhost:8080'
+
+    secrets:
+      github_token:
+        required: true
+
+    outputs:
+      backend_image:
+        description: 'Full backend image reference'
+        value: ${{ jobs.build.outputs.backend-image }}
+      frontend_image:
+        description: 'Full frontend image reference'
+        value: ${{ jobs.build.outputs.frontend-image }}
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE_NAME: ericvdberge/portfolio-booking/backend
+  FRONTEND_IMAGE_NAME: ericvdberge/portfolio-booking/frontend
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      backend-image: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:${{ inputs.image_tag }}
+      frontend-image: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ inputs.image_tag }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.github_token }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Booking.Api/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:${{ inputs.image_tag }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ inputs.image_tag }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ inputs.backend_api_url }}

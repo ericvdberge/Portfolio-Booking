@@ -1,0 +1,120 @@
+name: Infrastructure Deployment (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      environment_type:
+        required: true
+        type: string
+      resource_group:
+        required: true
+        type: string
+      pr_number:
+        required: false
+        type: string
+        default: ''
+      backend_image:
+        required: true
+        type: string
+      frontend_image:
+        required: true
+        type: string
+
+    secrets:
+      azure_client_id:
+        required: true
+      azure_tenant_id:
+        required: true
+      azure_subscription_id:
+        required: true
+      db_password:
+        required: true
+      user_principal_id:
+        required: false
+
+    outputs:
+      frontend_url:
+        description: 'Frontend URL'
+        value: ${{ jobs.deploy.outputs.frontend-url }}
+      backend_url:
+        description: 'Backend URL'
+        value: ${{ jobs.deploy.outputs.backend-url }}
+      deployment_name:
+        description: 'Deployment name'
+        value: ${{ jobs.deploy.outputs.deployment-name }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    outputs:
+      frontend-url: ${{ steps.get-urls.outputs.frontend-url }}
+      backend-url: ${{ steps.get-urls.outputs.backend-url }}
+      deployment-name: ${{ steps.deploy.outputs.deployment-name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.azure_client_id }}
+          tenant-id: ${{ secrets.azure_tenant_id }}
+          subscription-id: ${{ secrets.azure_subscription_id }}
+
+      - name: Deploy infrastructure
+        id: deploy
+        run: |
+          TEMPLATE_FILE="infrastructure/azure-setup.bicep"
+
+          if [ "${{ inputs.environment_type }}" == "production" ]; then
+            DEPLOYMENT_HASH=$(date +%s | sha256sum | head -c 5)
+            DEPLOYMENT_NAME="production-${DEPLOYMENT_HASH}"
+            PARAMS="namePrefix=pbooking location=swedencentral"
+            PARAMS="${PARAMS} environmentType=production"
+            PARAMS="${PARAMS} prNumber=''"
+            PARAMS="${PARAMS} backendImage=${{ inputs.backend_image }}"
+            PARAMS="${PARAMS} frontendImage=${{ inputs.frontend_image }}"
+            PARAMS="${PARAMS} databasePassword=${{ secrets.db_password }}"
+            PARAMS="${PARAMS} userPrincipalId=${{ secrets.user_principal_id }}"
+            PARAMS="${PARAMS} deploymentHash=${DEPLOYMENT_HASH}"
+          else
+            DEPLOYMENT_NAME="pr-${{ inputs.pr_number }}"
+            PARAMS="namePrefix=pbooking location=swedencentral"
+            PARAMS="${PARAMS} environmentType=preview"
+            PARAMS="${PARAMS} prNumber=${{ inputs.pr_number }}"
+            PARAMS="${PARAMS} backendImage=${{ inputs.backend_image }}"
+            PARAMS="${PARAMS} frontendImage=${{ inputs.frontend_image }}"
+            PARAMS="${PARAMS} databasePassword=${{ secrets.db_password }}"
+            PARAMS="${PARAMS} deploymentHash=''"
+          fi
+
+          echo "Deploying to ${{ inputs.resource_group }} as ${DEPLOYMENT_NAME}"
+          echo "Backend: ${{ inputs.backend_image }}"
+          echo "Frontend: ${{ inputs.frontend_image }}"
+          echo "deployment-name=${DEPLOYMENT_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Get deployment URLs
+        id: get-urls
+        run: |
+          DEPLOYMENT_NAME="${{ steps.deploy.outputs.deployment-name }}"
+
+          FRONTEND_URL=$(az deployment group show \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${DEPLOYMENT_NAME} \
+            --query properties.outputs.frontendUrl.value -o tsv)
+
+          BACKEND_URL=$(az deployment group show \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${DEPLOYMENT_NAME} \
+            --query properties.outputs.backendUrl.value -o tsv)
+
+          echo "Frontend: ${FRONTEND_URL}"
+          echo "Backend: ${BACKEND_URL}"
+
+          echo "frontend-url=${FRONTEND_URL}" >> $GITHUB_OUTPUT
+          echo "backend-url=${BACKEND_URL}" >> $GITHUB_OUTPUT
