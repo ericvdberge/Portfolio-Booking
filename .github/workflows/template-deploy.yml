@@ -43,14 +43,14 @@ on:
     outputs:
       frontend_url:
         description: 'Frontend URL of deployed environment'
-        value: ${{ jobs.final-deploy.outputs.frontend_url }}
+        value: ${{ jobs.update-images.outputs.frontend_url }}
       backend_url:
         description: 'Backend URL of deployed environment'
-        value: ${{ jobs.final-deploy.outputs.backend_url }}
+        value: ${{ jobs.update-images.outputs.backend_url }}
 
 jobs:
-  # Phase 1: Deploy with hello-world to discover URLs
-  discover-urls:
+  # Phase 1: Deploy infrastructure with hello-world images to create revisions and get URLs
+  deploy-infra:
     uses: ./.github/workflows/template-infra-deploy.yml
     permissions:
       id-token: write
@@ -67,21 +67,21 @@ jobs:
       azure_subscription_id: ${{ secrets.azure_subscription_id }}
       db_password: ${{ secrets.db_password }}
 
-  # Phase 2: Build images with discovered backend URL
+  # Phase 2: Build actual images with discovered backend URL
   build-images:
-    needs: discover-urls
+    needs: deploy-infra
     uses: ./.github/workflows/template-build-images.yml
     permissions:
       contents: read
       packages: write
     with:
       image_tag: ${{ inputs.image_tag }}
-      backend_api_url: ${{ needs.discover-urls.outputs.backend_url }}
+      backend_api_url: ${{ needs.deploy-infra.outputs.backend_url }}
 
-  # Phase 3: Deploy actual images
-  final-deploy:
-    needs: [discover-urls, build-images]
-    uses: ./.github/workflows/template-infra-deploy.yml
+  # Phase 3: Update container apps with actual images (no redeploy)
+  update-images:
+    needs: [deploy-infra, build-images]
+    uses: ./.github/workflows/template-infra-update.yml
     permissions:
       id-token: write
       contents: read
@@ -95,4 +95,3 @@ jobs:
       azure_client_id: ${{ secrets.azure_client_id }}
       azure_tenant_id: ${{ secrets.azure_tenant_id }}
       azure_subscription_id: ${{ secrets.azure_subscription_id }}
-      db_password: ${{ secrets.db_password }}

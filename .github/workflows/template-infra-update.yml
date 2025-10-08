@@ -1,0 +1,178 @@
+name: Update Container Images (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      environment_type:
+        required: true
+        type: string
+      resource_group:
+        required: true
+        type: string
+      pr_number:
+        required: false
+        type: string
+        default: ''
+      backend_image:
+        required: true
+        type: string
+      frontend_image:
+        required: true
+        type: string
+
+    secrets:
+      azure_client_id:
+        required: true
+      azure_tenant_id:
+        required: true
+      azure_subscription_id:
+        required: true
+
+    outputs:
+      frontend_url:
+        description: 'Frontend URL'
+        value: ${{ jobs.update.outputs.frontend-url }}
+      backend_url:
+        description: 'Backend URL'
+        value: ${{ jobs.update.outputs.backend-url }}
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    outputs:
+      frontend-url: ${{ steps.get-urls.outputs.frontend-url }}
+      backend-url: ${{ steps.get-urls.outputs.backend-url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.azure_client_id }}
+          tenant-id: ${{ secrets.azure_tenant_id }}
+          subscription-id: ${{ secrets.azure_subscription_id }}
+
+      - name: Update backend container app
+        id: update-backend
+        run: |
+          NAME_PREFIX="pbooking"
+
+          if [ "${{ inputs.environment_type }}" == "preview" ]; then
+            REVISION_SUFFIX="pr-${{ inputs.pr_number }}"
+          else
+            # For production, generate a new hash
+            REVISION_SUFFIX=$(date +%s | sha256sum | head -c 8)
+          fi
+
+          echo "Updating backend container app with revision suffix: ${REVISION_SUFFIX}"
+          echo "Backend image: ${{ inputs.backend_image }}"
+
+          # Update backend first
+          az containerapp update \
+            --name ${NAME_PREFIX}-backend \
+            --resource-group ${{ inputs.resource_group }} \
+            --image "${{ inputs.backend_image }}" \
+            --revision-suffix "${REVISION_SUFFIX}"
+
+          echo "Backend updated successfully"
+          echo "revision-suffix=${REVISION_SUFFIX}" >> $GITHUB_OUTPUT
+
+      - name: Update frontend container app
+        id: update-frontend
+        run: |
+          NAME_PREFIX="pbooking"
+          REVISION_SUFFIX="${{ steps.update-backend.outputs.revision-suffix }}"
+
+          echo "Updating frontend container app with revision suffix: ${REVISION_SUFFIX}"
+          echo "Frontend image: ${{ inputs.frontend_image }}"
+
+          # Update frontend (NEXT_PUBLIC_API_URL is already baked into the image at build time)
+          az containerapp update \
+            --name ${NAME_PREFIX}-frontend \
+            --resource-group ${{ inputs.resource_group }} \
+            --image "${{ inputs.frontend_image }}" \
+            --revision-suffix "${REVISION_SUFFIX}"
+
+          echo "Frontend updated successfully"
+
+      - name: Get deployment URLs
+        id: get-urls
+        run: |
+          NAME_PREFIX="pbooking"
+          REVISION_SUFFIX="${{ steps.update-images.outputs.revision-suffix }}"
+
+          if [ "${{ inputs.environment_type }}" == "preview" ]; then
+            # For PR environments, get the specific revision URLs
+            REVISION_PREFIX="pr-${{ inputs.pr_number }}"
+
+            echo "Getting revision-specific URLs for PR #${{ inputs.pr_number }}"
+
+            # Get frontend revision URL (latest active revision for this PR)
+            FRONTEND_REVISION=$(az containerapp revision list \
+              --resource-group ${{ inputs.resource_group }} \
+              --name ${NAME_PREFIX}-frontend \
+              --query "[?contains(name, '--${REVISION_PREFIX}') && properties.active].{name:name, created:properties.createdTime}" \
+              -o json | jq -r 'sort_by(.created) | reverse | .[0].name')
+
+            if [ -z "$FRONTEND_REVISION" ] || [ "$FRONTEND_REVISION" == "null" ]; then
+              echo "::error::Frontend revision not found for PR #${{ inputs.pr_number }}"
+              exit 1
+            fi
+
+            FRONTEND_FQDN=$(az containerapp revision show \
+              --resource-group ${{ inputs.resource_group }} \
+              --name ${NAME_PREFIX}-frontend \
+              --revision ${FRONTEND_REVISION} \
+              --query properties.fqdn -o tsv)
+
+            FRONTEND_URL="https://${FRONTEND_FQDN}"
+
+            # Get backend revision URL (latest active revision for this PR)
+            BACKEND_REVISION=$(az containerapp revision list \
+              --resource-group ${{ inputs.resource_group }} \
+              --name ${NAME_PREFIX}-backend \
+              --query "[?contains(name, '--${REVISION_PREFIX}') && properties.active].{name:name, created:properties.createdTime}" \
+              -o json | jq -r 'sort_by(.created) | reverse | .[0].name')
+
+            if [ -z "$BACKEND_REVISION" ] || [ "$BACKEND_REVISION" == "null" ]; then
+              echo "::error::Backend revision not found for PR #${{ inputs.pr_number }}"
+              exit 1
+            fi
+
+            BACKEND_FQDN=$(az containerapp revision show \
+              --resource-group ${{ inputs.resource_group }} \
+              --name ${NAME_PREFIX}-backend \
+              --revision ${BACKEND_REVISION} \
+              --query properties.fqdn -o tsv)
+
+            BACKEND_URL="https://${BACKEND_FQDN}"
+
+            echo "Frontend revision: ${FRONTEND_REVISION}"
+            echo "Backend revision: ${BACKEND_REVISION}"
+          else
+            # For production, get the main FQDN
+            FRONTEND_FQDN=$(az containerapp show \
+              --name ${NAME_PREFIX}-frontend \
+              --resource-group ${{ inputs.resource_group }} \
+              --query properties.configuration.ingress.fqdn -o tsv)
+
+            BACKEND_FQDN=$(az containerapp show \
+              --name ${NAME_PREFIX}-backend \
+              --resource-group ${{ inputs.resource_group }} \
+              --query properties.configuration.ingress.fqdn -o tsv)
+
+            FRONTEND_URL="https://${FRONTEND_FQDN}"
+            BACKEND_URL="https://${BACKEND_FQDN}"
+          fi
+
+          echo "Frontend URL: ${FRONTEND_URL}"
+          echo "Backend URL: ${BACKEND_URL}"
+
+          echo "frontend-url=${FRONTEND_URL}" >> $GITHUB_OUTPUT
+          echo "backend-url=${BACKEND_URL}" >> $GITHUB_OUTPUT
