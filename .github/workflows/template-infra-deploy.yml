@@ -69,21 +69,22 @@ jobs:
         continue-on-error: true
         run: |
           REVISION_SUFFIX="pr-${{ inputs.pr_number }}"
+          NAME_PREFIX="pbooking"
 
           echo "Checking for existing revisions with suffix: ${REVISION_SUFFIX}"
 
           # Deactivate frontend revision if exists
           FRONTEND_REVISIONS=$(az containerapp revision list \
             --resource-group ${{ inputs.resource_group }} \
-            --name pbooking-pr-frontend \
-            --query "[?ends_with(name, '-${REVISION_SUFFIX}')].name" -o tsv)
+            --name ${NAME_PREFIX}-frontend \
+            --query "[?ends_with(name, '-${REVISION_SUFFIX}')].name" -o tsv 2>/dev/null || true)
 
           if [ -n "$FRONTEND_REVISIONS" ]; then
             echo "Deactivating frontend revisions: $FRONTEND_REVISIONS"
             echo "$FRONTEND_REVISIONS" | while read revision; do
               az containerapp revision deactivate \
                 --resource-group ${{ inputs.resource_group }} \
-                --name pbooking-pr-frontend \
+                --name ${NAME_PREFIX}-frontend \
                 --revision "$revision"
             done
           else
@@ -93,19 +94,37 @@ jobs:
           # Deactivate backend revision if exists
           BACKEND_REVISIONS=$(az containerapp revision list \
             --resource-group ${{ inputs.resource_group }} \
-            --name pbooking-pr-backend \
-            --query "[?ends_with(name, '-${REVISION_SUFFIX}')].name" -o tsv)
+            --name ${NAME_PREFIX}-backend \
+            --query "[?ends_with(name, '-${REVISION_SUFFIX}')].name" -o tsv 2>/dev/null || true)
 
           if [ -n "$BACKEND_REVISIONS" ]; then
             echo "Deactivating backend revisions: $BACKEND_REVISIONS"
             echo "$BACKEND_REVISIONS" | while read revision; do
               az containerapp revision deactivate \
                 --resource-group ${{ inputs.resource_group }} \
-                --name pbooking-pr-backend \
+                --name ${NAME_PREFIX}-backend \
                 --revision "$revision"
             done
           else
             echo "No backend revisions found"
+          fi
+
+          # Deactivate database revision if exists
+          DATABASE_REVISIONS=$(az containerapp revision list \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${NAME_PREFIX}-database \
+            --query "[?ends_with(name, '-${REVISION_SUFFIX}')].name" -o tsv 2>/dev/null || true)
+
+          if [ -n "$DATABASE_REVISIONS" ]; then
+            echo "Deactivating database revisions: $DATABASE_REVISIONS"
+            echo "$DATABASE_REVISIONS" | while read revision; do
+              az containerapp revision deactivate \
+                --resource-group ${{ inputs.resource_group }} \
+                --name ${NAME_PREFIX}-database \
+                --revision "$revision"
+            done
+          else
+            echo "No database revisions found"
           fi
 
       - name: Deploy infrastructure
@@ -116,12 +135,12 @@ jobs:
           if [ "${{ inputs.environment_type }}" == "production" ]; then
             DEPLOYMENT_HASH=$(date +%s | sha256sum | head -c 5)
             DEPLOYMENT_NAME="production-${DEPLOYMENT_HASH}"
-            NAME_PREFIX="pbooking"
           else
             DEPLOYMENT_NAME="pr-${{ inputs.pr_number }}"
             DEPLOYMENT_HASH=""
-            NAME_PREFIX="pbooking-pr"
           fi
+
+          NAME_PREFIX="pbooking"
 
           echo "Deploying to ${{ inputs.resource_group }} as ${DEPLOYMENT_NAME}"
           echo "Backend: ${{ inputs.backend_image }}"
@@ -164,49 +183,16 @@ jobs:
         run: |
           DEPLOYMENT_NAME="${{ steps.deploy.outputs.deployment-name }}"
 
-          if [ "${{ inputs.environment_type }}" == "preview" ]; then
-            # For PR environments, get the specific revision URLs
-            REVISION_SUFFIX="pr-${{ inputs.pr_number }}"
+          # For all environments, get URLs from deployment outputs
+          FRONTEND_URL=$(az deployment group show \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${DEPLOYMENT_NAME} \
+            --query properties.outputs.frontendUrl.value -o tsv)
 
-            # Get frontend revision URL
-            FRONTEND_REVISION=$(az containerapp revision list \
-              --resource-group ${{ inputs.resource_group }} \
-              --name pbooking-pr-frontend \
-              --query "[?ends_with(name, '-${REVISION_SUFFIX}')].name" -o tsv | head -n 1)
-
-            FRONTEND_URL=$(az containerapp revision show \
-              --resource-group ${{ inputs.resource_group }} \
-              --name pbooking-pr-frontend \
-              --revision ${FRONTEND_REVISION} \
-              --query properties.fqdn -o tsv)
-
-            # Get backend revision URL
-            BACKEND_REVISION=$(az containerapp revision list \
-              --resource-group ${{ inputs.resource_group }} \
-              --name pbooking-pr-backend \
-              --query "[?ends_with(name, '-${REVISION_SUFFIX}')].name" -o tsv | head -n 1)
-
-            BACKEND_URL=$(az containerapp revision show \
-              --resource-group ${{ inputs.resource_group }} \
-              --name pbooking-pr-backend \
-              --revision ${BACKEND_REVISION} \
-              --query properties.fqdn -o tsv)
-
-            # Add https:// prefix
-            FRONTEND_URL="https://${FRONTEND_URL}"
-            BACKEND_URL="https://${BACKEND_URL}"
-          else
-            # For production, get URLs from deployment outputs
-            FRONTEND_URL=$(az deployment group show \
-              --resource-group ${{ inputs.resource_group }} \
-              --name ${DEPLOYMENT_NAME} \
-              --query properties.outputs.frontendUrl.value -o tsv)
-
-            BACKEND_URL=$(az deployment group show \
-              --resource-group ${{ inputs.resource_group }} \
-              --name ${DEPLOYMENT_NAME} \
-              --query properties.outputs.backendUrl.value -o tsv)
-          fi
+          BACKEND_URL=$(az deployment group show \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${DEPLOYMENT_NAME} \
+            --query properties.outputs.backendUrl.value -o tsv)
 
           echo "Frontend: ${FRONTEND_URL}"
           echo "Backend: ${BACKEND_URL}"

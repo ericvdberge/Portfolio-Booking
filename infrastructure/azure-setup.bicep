@@ -114,6 +114,7 @@ resource databaseApp 'Microsoft.App/containerApps@2024-03-01' = {
   properties: {
     managedEnvironmentId: containerAppEnvironment.id
     configuration: {
+      activeRevisionsMode: revisionMode
       ingress: {
         external: false
         targetPort: 5432
@@ -127,6 +128,7 @@ resource databaseApp 'Microsoft.App/containerApps@2024-03-01' = {
       ]
     }
     template: {
+      revisionSuffix: revisionSuffix
       containers: [
         {
           name: 'postgres'

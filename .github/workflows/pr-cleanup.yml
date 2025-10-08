@@ -58,27 +58,22 @@ jobs:
 
           echo "Backend revision deactivated successfully"
 
-      - name: Drop PR database
+      - name: Deactivate database revision
         id: cleanup-database
         continue-on-error: true
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
-          DATABASE="portfolio_booking_pr_${PR_NUMBER}"
+          REVISION="pbooking-database--pr-${PR_NUMBER}"
 
-          echo "Dropping database: ${DATABASE}"
+          echo "Deactivating database revision: ${REVISION}"
 
-          # Get database container app FQDN
-          DB_HOST=$(az containerapp show \
+          az containerapp revision deactivate \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --name pbooking-database \
-            --query properties.configuration.ingress.fqdn -o tsv)
+            --revision ${REVISION}
 
-          # Note: Database cleanup requires psql client or manual intervention
-          # For automated cleanup, consider implementing Azure Container Jobs
-
-          echo "Database cleanup queued: ${DATABASE}"
-          echo "⚠️  Manual cleanup may be required via Azure Portal or psql client"
-          echo "   Command: DROP DATABASE ${DATABASE};"
+          echo "Database revision deactivated successfully"
+          echo "⚠️  Note: Database data is isolated per revision with name: portfolio_booking_pr_${PR_NUMBER}"
 
       - name: Cleanup summary
         run: |
@@ -89,4 +84,4 @@ jobs:
           echo "Cleaned resources:"
           echo "  ✅ Frontend revision: pbooking-frontend--pr-${PR_NUMBER}"
           echo "  ✅ Backend revision: pbooking-backend--pr-${PR_NUMBER}"
-          echo "  ⚠️  Database: portfolio_booking_pr_${PR_NUMBER} (manual cleanup may be required)"
+          echo "  ✅ Database revision: pbooking-database--pr-${PR_NUMBER}"

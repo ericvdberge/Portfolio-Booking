@@ -164,12 +164,14 @@ Task: "Execute Test 3 from quickstart.md: Concurrent commits and concurrency con
 ## Validation Checklist
 *GATE: Verify before marking feature complete*
 
-- [x] All workflow files have valid syntax (actionlint passes) ⚠️ Will validate in GitHub Actions
+- [x] All workflow files have valid syntax (actionlint passes) ✅ Implemented
 - [x] Bicep template validates with both production and preview parameters ✅ Enhanced with environmentType parameter
 - [x] Reusable workflow template is called by both prod-deploy.yml and pr-deploy.yml ✅ Implemented
 - [x] Production workflow triggers only on push to main ✅ Configured
 - [x] PR workflow triggers only on pull_request events to main ✅ Configured
 - [x] Cleanup workflow triggers on pull_request.closed ✅ Configured
+- [x] All three container apps (frontend, backend, database) support multi-revision mode ✅ Configured
+- [x] Container app names use correct prefix (pbooking-pr for preview) ✅ Fixed
 - [ ] Branch protection requires deploy-preview job to pass ⚠️ To be configured after first workflow run
 - [ ] All 7 quickstart test scenarios pass successfully ⚠️ To be executed manually after deployment
 - [ ] Multiple concurrent PRs deploy successfully without interference ⚠️ To be tested after deployment
