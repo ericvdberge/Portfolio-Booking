@@ -62,99 +62,119 @@ jobs:
         id: update-backend
         run: |
           NAME_PREFIX="pbooking"
+          REVISION_LABEL="pr-${{ inputs.pr_number }}"
 
-          if [ "${{ inputs.environment_type }}" == "preview" ]; then
-            REVISION_SUFFIX="pr-${{ inputs.pr_number }}"
-          else
-            # For production, generate a new hash
-            REVISION_SUFFIX=$(date +%s | sha256sum | head -c 8)
-          fi
-
-          echo "Updating backend container app with revision suffix: ${REVISION_SUFFIX}"
+          echo "Updating backend container app for label: ${REVISION_LABEL}"
           echo "Backend image: ${{ inputs.backend_image }}"
 
-          # Update backend first
-          az containerapp update \
-            --name ${NAME_PREFIX}-backend \
+          # Update using revision copy - this creates a new revision but keeps the same label
+          # First, get the latest revision for this label
+          LATEST_REVISION=$(az containerapp revision list \
             --resource-group ${{ inputs.resource_group }} \
-            --image "${{ inputs.backend_image }}" \
-            --revision-suffix "${REVISION_SUFFIX}"
+            --name ${NAME_PREFIX}-backend \
+            --query "[?label=='${REVISION_LABEL}'].name" -o tsv | head -n 1)
 
-          echo "Backend updated successfully"
-          echo "revision-suffix=${REVISION_SUFFIX}" >> $GITHUB_OUTPUT
+          if [ -n "$LATEST_REVISION" ]; then
+            echo "Found existing revision with label ${REVISION_LABEL}: ${LATEST_REVISION}"
+            # Copy the revision with updated image, keeping the same label
+            az containerapp revision copy \
+              --resource-group ${{ inputs.resource_group }} \
+              --name ${NAME_PREFIX}-backend \
+              --from-revision ${LATEST_REVISION} \
+              --image "${{ inputs.backend_image }}" \
+              --revision-label "${REVISION_LABEL}"
+          else
+            echo "No existing revision found, creating new revision with label ${REVISION_LABEL}"
+            # Create new revision with label
+            az containerapp update \
+              --name ${NAME_PREFIX}-backend \
+              --resource-group ${{ inputs.resource_group }} \
+              --image "${{ inputs.backend_image }}" \
+              --set-env-vars "REVISION_LABEL=${REVISION_LABEL}"
+
+            # Set label on the latest revision
+            NEW_REVISION=$(az containerapp revision list \
+              --resource-group ${{ inputs.resource_group }} \
+              --name ${NAME_PREFIX}-backend \
+              --query "[0].name" -o tsv)
+
+            az containerapp revision label add \
+              --resource-group ${{ inputs.resource_group }} \
+              --name ${NAME_PREFIX}-backend \
+              --revision ${NEW_REVISION} \
+              --label "${REVISION_LABEL}"
+          fi
+
+          echo "Backend updated successfully with label ${REVISION_LABEL}"
+          echo "revision-label=${REVISION_LABEL}" >> $GITHUB_OUTPUT
 
       - name: Update frontend container app
         id: update-frontend
         run: |
           NAME_PREFIX="pbooking"
-          REVISION_SUFFIX="${{ steps.update-backend.outputs.revision-suffix }}"
+          REVISION_LABEL="pr-${{ inputs.pr_number }}"
 
-          echo "Updating frontend container app with revision suffix: ${REVISION_SUFFIX}"
+          echo "Updating frontend container app for label: ${REVISION_LABEL}"
           echo "Frontend image: ${{ inputs.frontend_image }}"
 
-          # Update frontend (NEXT_PUBLIC_API_URL is already baked into the image at build time)
-          az containerapp update \
-            --name ${NAME_PREFIX}-frontend \
+          # Update using revision copy - this creates a new revision but keeps the same label
+          LATEST_REVISION=$(az containerapp revision list \
             --resource-group ${{ inputs.resource_group }} \
-            --image "${{ inputs.frontend_image }}" \
-            --revision-suffix "${REVISION_SUFFIX}"
+            --name ${NAME_PREFIX}-frontend \
+            --query "[?label=='${REVISION_LABEL}'].name" -o tsv | head -n 1)
 
-          echo "Frontend updated successfully"
+          if [ -n "$LATEST_REVISION" ]; then
+            echo "Found existing revision with label ${REVISION_LABEL}: ${LATEST_REVISION}"
+            az containerapp revision copy \
+              --resource-group ${{ inputs.resource_group }} \
+              --name ${NAME_PREFIX}-frontend \
+              --from-revision ${LATEST_REVISION} \
+              --image "${{ inputs.frontend_image }}" \
+              --revision-label "${REVISION_LABEL}"
+          else
+            echo "No existing revision found, creating new revision with label ${REVISION_LABEL}"
+            az containerapp update \
+              --name ${NAME_PREFIX}-frontend \
+              --resource-group ${{ inputs.resource_group }} \
+              --image "${{ inputs.frontend_image }}"
+
+            NEW_REVISION=$(az containerapp revision list \
+              --resource-group ${{ inputs.resource_group }} \
+              --name ${NAME_PREFIX}-frontend \
+              --query "[0].name" -o tsv)
+
+            az containerapp revision label add \
+              --resource-group ${{ inputs.resource_group }} \
+              --name ${NAME_PREFIX}-frontend \
+              --revision ${NEW_REVISION} \
+              --label "${REVISION_LABEL}"
+          fi
+
+          echo "Frontend updated successfully with label ${REVISION_LABEL}"
 
       - name: Get deployment URLs
         id: get-urls
         run: |
           NAME_PREFIX="pbooking"
-          REVISION_SUFFIX="${{ steps.update-images.outputs.revision-suffix }}"
+          REVISION_LABEL="pr-${{ inputs.pr_number }}"
 
           if [ "${{ inputs.environment_type }}" == "preview" ]; then
-            # For PR environments, get the specific revision URLs
-            REVISION_PREFIX="pr-${{ inputs.pr_number }}"
+            # For PR environments, use the label-based URL (stable across updates)
+            # Label URL format: https://{app-name}---{label}.{region}.azurecontainerapps.io
 
-            echo "Getting revision-specific URLs for PR #${{ inputs.pr_number }}"
-
-            # Get frontend revision URL (latest active revision for this PR)
-            FRONTEND_REVISION=$(az containerapp revision list \
-              --resource-group ${{ inputs.resource_group }} \
+            # Get container app location
+            LOCATION=$(az containerapp show \
               --name ${NAME_PREFIX}-frontend \
-              --query "[?contains(name, '--${REVISION_PREFIX}') && properties.active].{name:name, created:properties.createdTime}" \
-              -o json | jq -r 'sort_by(.created) | reverse | .[0].name')
-
-            if [ -z "$FRONTEND_REVISION" ] || [ "$FRONTEND_REVISION" == "null" ]; then
-              echo "::error::Frontend revision not found for PR #${{ inputs.pr_number }}"
-              exit 1
-            fi
-
-            FRONTEND_FQDN=$(az containerapp revision show \
               --resource-group ${{ inputs.resource_group }} \
-              --name ${NAME_PREFIX}-frontend \
-              --revision ${FRONTEND_REVISION} \
-              --query properties.fqdn -o tsv)
+              --query location -o tsv)
 
-            FRONTEND_URL="https://${FRONTEND_FQDN}"
+            # Construct label-based URLs (these stay the same even when revision changes)
+            FRONTEND_URL="https://${NAME_PREFIX}-frontend---${REVISION_LABEL}.${LOCATION}.azurecontainerapps.io"
+            BACKEND_URL="https://${NAME_PREFIX}-backend---${REVISION_LABEL}.${LOCATION}.azurecontainerapps.io"
 
-            # Get backend revision URL (latest active revision for this PR)
-            BACKEND_REVISION=$(az containerapp revision list \
-              --resource-group ${{ inputs.resource_group }} \
-              --name ${NAME_PREFIX}-backend \
-              --query "[?contains(name, '--${REVISION_PREFIX}') && properties.active].{name:name, created:properties.createdTime}" \
-              -o json | jq -r 'sort_by(.created) | reverse | .[0].name')
-
-            if [ -z "$BACKEND_REVISION" ] || [ "$BACKEND_REVISION" == "null" ]; then
-              echo "::error::Backend revision not found for PR #${{ inputs.pr_number }}"
-              exit 1
-            fi
-
-            BACKEND_FQDN=$(az containerapp revision show \
-              --resource-group ${{ inputs.resource_group }} \
-              --name ${NAME_PREFIX}-backend \
-              --revision ${BACKEND_REVISION} \
-              --query properties.fqdn -o tsv)
-
-            BACKEND_URL="https://${BACKEND_FQDN}"
-
-            echo "Frontend revision: ${FRONTEND_REVISION}"
-            echo "Backend revision: ${BACKEND_REVISION}"
+            echo "Using label-based URLs (stable across updates):"
+            echo "Frontend label URL: ${FRONTEND_URL}"
+            echo "Backend label URL: ${BACKEND_URL}"
           else
             # For production, get the main FQDN
             FRONTEND_FQDN=$(az containerapp show \

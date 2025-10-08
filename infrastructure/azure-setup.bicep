@@ -40,10 +40,11 @@ param frontendImage string = 'mcr.microsoft.com/azuredocs/containerapps-hellowor
 param deploymentHash string
 
 // Calculated parameters
-var enableMultiRevision = (environmentType == 'preview')
+var enableMultiRevision = (environmentType == 'preview')  // Multiple mode for PR environments
 var databaseName = environmentType == 'preview' ? 'portfolio_booking_pr_${prNumber}' : 'portfolio_booking'
 var revisionMode = enableMultiRevision ? 'Multiple' : 'Single'
 var revisionSuffix = environmentType == 'preview' ? 'pr-${prNumber}' : deploymentHash
+var revisionLabel = environmentType == 'preview' ? 'pr-${prNumber}' : ''
 
 // Log Analytics Workspace
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
