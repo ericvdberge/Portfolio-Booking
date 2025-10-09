@@ -31,9 +31,11 @@ export function Header() {
               {t('locations')}
             </Link>
             <LanguageSwitcher />
-            <Button variant="ghost" size="sm">
-              {t('signIn')}
-            </Button>
+            <Link href="/login">
+              <Button variant="ghost" size="sm">
+                {t('signIn')}
+              </Button>
+            </Link>
           </nav>
         </div>
       </div>
