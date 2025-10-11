@@ -60,6 +60,7 @@ jobs:
       frontend-pr-url: ${{ steps.get-labeled-urls.outputs.frontend-pr-url || steps.get-urls.outputs.frontend-pr-url }}
       backend-pr-url: ${{ steps.get-labeled-urls.outputs.backend-pr-url || steps.get-urls.outputs.backend-pr-url }}
       deployment-name: ${{ steps.deploy.outputs.deployment-name }}
+      deployment-hash: ${{ steps.deploy.outputs.deployment-hash }}
 
     steps:
       - name: Checkout repository
@@ -72,38 +73,92 @@ jobs:
           tenant-id: ${{ secrets.azure_tenant_id }}
           subscription-id: ${{ secrets.azure_subscription_id }}
 
-      - name: Remove existing PR labels
+      - name: Remove existing PR revisions
         if: inputs.environment_type == 'preview'
         continue-on-error: true
         run: |
           NAME_PREFIX="pbooking"
           REVISION_LABEL="pr-${{ inputs.pr_number }}"
 
-          echo "Removing existing labels for PR ${{ inputs.pr_number }}"
+          echo "Removing existing revisions with label '${REVISION_LABEL}' for PR ${{ inputs.pr_number }}"
 
-          # Remove label from frontend if exists
-          az containerapp revision label remove \
+          # Find and deactivate revisions with the PR label for frontend
+          FRONTEND_LABELED_REVISIONS=$(az containerapp revision list \
             --resource-group ${{ inputs.resource_group }} \
             --name ${NAME_PREFIX}-frontend \
-            --label "$REVISION_LABEL" 2>/dev/null || echo "No frontend label to remove"
+            --query "[?properties.trafficWeight>0 && properties.fqdn!=null].{name:name,labels:properties.template.revisionSuffix}" \
+            --output json 2>/dev/null || echo "[]")
 
-          # Remove label from backend if exists
-          az containerapp revision label remove \
+          # Get revisions that have the PR label
+          FRONTEND_REVISIONS_WITH_LABEL=$(az containerapp revision list \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${NAME_PREFIX}-frontend \
+            --query "[].name" -o tsv 2>/dev/null | while read revision; do
+              if az containerapp revision show \
+                --resource-group ${{ inputs.resource_group }} \
+                --name ${NAME_PREFIX}-frontend \
+                --revision "$revision" \
+                --query "properties.labels.\"${REVISION_LABEL}\"" -o tsv 2>/dev/null | grep -q "^${REVISION_LABEL}$"; then
+                echo "$revision"
+              fi
+            done)
+
+          if [ -n "$FRONTEND_REVISIONS_WITH_LABEL" ]; then
+            echo "Found frontend revisions with label '${REVISION_LABEL}': $FRONTEND_REVISIONS_WITH_LABEL"
+            echo "$FRONTEND_REVISIONS_WITH_LABEL" | while read revision; do
+              if [ -n "$revision" ]; then
+                echo "Deactivating frontend revision: $revision"
+                az containerapp revision deactivate \
+                  --resource-group ${{ inputs.resource_group }} \
+                  --name ${NAME_PREFIX}-frontend \
+                  --revision "$revision" 2>/dev/null || echo "Failed to deactivate $revision"
+              fi
+            done
+          else
+            echo "No frontend revisions found with label '${REVISION_LABEL}'"
+          fi
+
+          # Find and deactivate revisions with the PR label for backend
+          BACKEND_REVISIONS_WITH_LABEL=$(az containerapp revision list \
             --resource-group ${{ inputs.resource_group }} \
             --name ${NAME_PREFIX}-backend \
-            --label "$REVISION_LABEL" 2>/dev/null || echo "No backend label to remove"
+            --query "[].name" -o tsv 2>/dev/null | while read revision; do
+              if az containerapp revision show \
+                --resource-group ${{ inputs.resource_group }} \
+                --name ${NAME_PREFIX}-backend \
+                --revision "$revision" \
+                --query "properties.labels.\"${REVISION_LABEL}\"" -o tsv 2>/dev/null | grep -q "^${REVISION_LABEL}$"; then
+                echo "$revision"
+              fi
+            done)
+
+          if [ -n "$BACKEND_REVISIONS_WITH_LABEL" ]; then
+            echo "Found backend revisions with label '${REVISION_LABEL}': $BACKEND_REVISIONS_WITH_LABEL"
+            echo "$BACKEND_REVISIONS_WITH_LABEL" | while read revision; do
+              if [ -n "$revision" ]; then
+                echo "Deactivating backend revision: $revision"
+                az containerapp revision deactivate \
+                  --resource-group ${{ inputs.resource_group }} \
+                  --name ${NAME_PREFIX}-backend \
+                  --revision "$revision" 2>/dev/null || echo "Failed to deactivate $revision"
+              fi
+            done
+          else
+            echo "No backend revisions found with label '${REVISION_LABEL}'"
+          fi
 
       - name: Deploy infrastructure
         id: deploy
         run: |
           TEMPLATE_FILE="infrastructure/azure-setup.bicep"
 
+          # Generate deployment hash for all environments to ensure unique revisions
+          DEPLOYMENT_HASH=$(date +%s | sha256sum | head -c 5)
+
           if [ "${{ inputs.environment_type }}" == "production" ]; then
-            DEPLOYMENT_HASH=$(date +%s | sha256sum | head -c 5)
             DEPLOYMENT_NAME="production-${DEPLOYMENT_HASH}"
           else
-            DEPLOYMENT_NAME="pr-${{ inputs.pr_number }}"
-            DEPLOYMENT_HASH=""
+            DEPLOYMENT_NAME="pr-${{ inputs.pr_number }}-${DEPLOYMENT_HASH}"
           fi
 
           NAME_PREFIX="pbooking"
@@ -111,7 +166,9 @@ jobs:
           echo "Deploying to ${{ inputs.resource_group }} as ${DEPLOYMENT_NAME}"
           echo "Backend: ${{ inputs.backend_image }}"
           echo "Frontend: ${{ inputs.frontend_image }}"
+          echo "Deployment hash: ${DEPLOYMENT_HASH}"
           echo "deployment-name=${DEPLOYMENT_NAME}" >> $GITHUB_OUTPUT
+          echo "deployment-hash=${DEPLOYMENT_HASH}" >> $GITHUB_OUTPUT
 
           # Execute the deployment with verbose logging
           set +e  # Don't exit on error, we want to capture it
@@ -186,18 +243,7 @@ jobs:
         run: |
           NAME_PREFIX="pbooking"
           REVISION_LABEL="pr-${{ inputs.pr_number }}"
-          DEPLOYMENT_NAME="${{ steps.deploy.outputs.deployment-name }}"
-
-          # Get the deployment hash that was used for this deployment
-          if [ "${{ inputs.environment_type }}" == "production" ]; then
-            DEPLOYMENT_HASH=$(date +%s | sha256sum | head -c 5)
-          else
-            # For preview, we still need to get the hash that was used
-            DEPLOYMENT_HASH=$(az deployment group show \
-              --resource-group ${{ inputs.resource_group }} \
-              --name ${DEPLOYMENT_NAME} \
-              --query properties.parameters.deploymentHash.value -o tsv)
-          fi
+          DEPLOYMENT_HASH="${{ steps.deploy.outputs.deployment-hash }}"
 
           echo "Applying revision labels for PR ${{ inputs.pr_number }} to revisions from deployment ${DEPLOYMENT_HASH}"
 
