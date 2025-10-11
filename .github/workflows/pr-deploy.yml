@@ -50,6 +50,10 @@ jobs:
           **Frontend**: ${{ needs.deploy-preview.outputs.frontend_url }}
           **Backend**: ${{ needs.deploy-preview.outputs.backend_url }}
 
+          **🏷️ PR-Specific URLs (labeled revisions):**
+          - **Frontend PR**: ${{ needs.deploy-preview.outputs.frontend_pr_url }}
+          - **Backend PR**: ${{ needs.deploy-preview.outputs.backend_pr_url }}
+
           ---
           *Deployed from commit ${{ github.sha }}*
           EOF

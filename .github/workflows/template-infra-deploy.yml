@@ -37,6 +37,12 @@ on:
       backend_url:
         description: 'Backend URL'
         value: ${{ jobs.deploy.outputs.backend-url }}
+      frontend_pr_url:
+        description: 'Frontend PR labeled URL (preview only)'
+        value: ${{ jobs.deploy.outputs.frontend-pr-url }}
+      backend_pr_url:
+        description: 'Backend PR labeled URL (preview only)'
+        value: ${{ jobs.deploy.outputs.backend-pr-url }}
       deployment_name:
         description: 'Deployment name'
         value: ${{ jobs.deploy.outputs.deployment-name }}
@@ -51,6 +57,8 @@ jobs:
     outputs:
       frontend-url: ${{ steps.get-urls.outputs.frontend-url }}
       backend-url: ${{ steps.get-urls.outputs.backend-url }}
+      frontend-pr-url: ${{ steps.get-urls.outputs.frontend-pr-url }}
+      backend-pr-url: ${{ steps.get-urls.outputs.backend-pr-url }}
       deployment-name: ${{ steps.deploy.outputs.deployment-name }}
 
     steps:
@@ -194,8 +202,23 @@ jobs:
             --name ${DEPLOYMENT_NAME} \
             --query properties.outputs.backendUrl.value -o tsv)
 
+          # Get PR-specific labeled URLs (only for preview environments)
+          FRONTEND_PR_URL=$(az deployment group show \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${DEPLOYMENT_NAME} \
+            --query properties.outputs.frontendPrUrl.value -o tsv 2>/dev/null || echo "")
+
+          BACKEND_PR_URL=$(az deployment group show \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${DEPLOYMENT_NAME} \
+            --query properties.outputs.backendPrUrl.value -o tsv 2>/dev/null || echo "")
+
           echo "Frontend: ${FRONTEND_URL}"
           echo "Backend: ${BACKEND_URL}"
+          echo "Frontend PR: ${FRONTEND_PR_URL}"
+          echo "Backend PR: ${BACKEND_PR_URL}"
 
           echo "frontend-url=${FRONTEND_URL}" >> $GITHUB_OUTPUT
           echo "backend-url=${BACKEND_URL}" >> $GITHUB_OUTPUT
+          echo "frontend-pr-url=${FRONTEND_PR_URL}" >> $GITHUB_OUTPUT
+          echo "backend-pr-url=${BACKEND_PR_URL}" >> $GITHUB_OUTPUT

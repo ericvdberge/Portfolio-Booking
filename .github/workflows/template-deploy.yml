@@ -47,6 +47,12 @@ on:
       backend_url:
         description: 'Backend URL of deployed environment'
         value: ${{ jobs.update-images.outputs.backend_url }}
+      frontend_pr_url:
+        description: 'Frontend PR labeled URL (preview only)'
+        value: ${{ jobs.deploy-infra.outputs.frontend_pr_url }}
+      backend_pr_url:
+        description: 'Backend PR labeled URL (preview only)'
+        value: ${{ jobs.deploy-infra.outputs.backend_pr_url }}
 
 jobs:
   # Phase 1: Deploy infrastructure with hello-world images to create revisions and get URLs

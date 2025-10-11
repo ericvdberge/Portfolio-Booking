@@ -130,6 +130,7 @@ resource databaseApp 'Microsoft.App/containerApps@2024-03-01' = {
     }
     template: {
       revisionSuffix: revisionSuffix
+      revisionLabel: revisionLabel
       containers: [
         {
           name: 'postgres'
@@ -193,6 +194,7 @@ resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
     }
     template: {
       revisionSuffix: revisionSuffix
+      revisionLabel: revisionLabel
       containers: [
         {
           name: 'backend'
@@ -238,16 +240,11 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
     }
     template: {
       revisionSuffix: revisionSuffix
+      revisionLabel: revisionLabel
       containers: [
         {
           name: 'frontend'
           image: frontendImage
-          env: [
-            {
-              name: 'NEXT_PUBLIC_API_URL'
-              value: 'https://${backendApp.properties.configuration.ingress.fqdn}'
-            }
-          ]
           resources: {
             cpu: json('0.25')
             memory: '0.5Gi'
@@ -266,3 +263,7 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
 output frontendUrl string = 'https://${frontendApp.properties.configuration.ingress.fqdn}'
 output backendUrl string = 'https://${backendApp.properties.configuration.ingress.fqdn}'
 output storageAccountName string = storageAccount.name
+
+// PR-specific labeled URLs (only populated for preview environments)
+output frontendPrUrl string = environmentType == 'preview' ? 'https://${revisionLabel}---${frontendApp.properties.configuration.ingress.fqdn}' : ''
+output backendPrUrl string = environmentType == 'preview' ? 'https://${revisionLabel}---${backendApp.properties.configuration.ingress.fqdn}' : ''
