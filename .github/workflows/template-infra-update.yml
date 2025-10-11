@@ -35,6 +35,12 @@ on:
       backend_url:
         description: 'Backend URL'
         value: ${{ jobs.update.outputs.backend-url }}
+      frontend_pr_url:
+        description: 'Frontend PR labeled URL (preview only)'
+        value: ${{ jobs.update.outputs.frontend-url }}
+      backend_pr_url:
+        description: 'Backend PR labeled URL (preview only)'
+        value: ${{ jobs.update.outputs.backend-url }}
 
 jobs:
   update:
@@ -66,6 +72,13 @@ jobs:
 
           echo "Updating backend container app for label: ${REVISION_LABEL}"
           echo "Backend image: ${{ inputs.backend_image }}"
+
+          # List all revisions for debugging
+          echo "All backend revisions:"
+          az containerapp revision list \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${NAME_PREFIX}-backend \
+            --query "[].{Name:name, Label:label, Active:active}" -o table
 
           # Get the revision associated with this label
           LABELED_REVISION=$(az containerapp revision list \
@@ -109,8 +122,9 @@ jobs:
 
             echo "Backend updated successfully"
           else
-            echo "::warning::No revision found with label ${REVISION_LABEL}"
-            echo "This might be the first deployment for this PR"
+            echo "::warning::No revision found with label ${REVISION_LABEL} for backend"
+            echo "::warning::This may indicate the infra deployment step did not complete successfully"
+            echo "::warning::Expected behavior: infra-deploy creates labeled revisions, update-images updates them"
           fi
 
           echo "revision-label=${REVISION_LABEL}" >> $GITHUB_OUTPUT
@@ -123,6 +137,13 @@ jobs:
 
           echo "Updating frontend container app for label: ${REVISION_LABEL}"
           echo "Frontend image: ${{ inputs.frontend_image }}"
+
+          # List all revisions for debugging
+          echo "All frontend revisions:"
+          az containerapp revision list \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${NAME_PREFIX}-frontend \
+            --query "[].{Name:name, Label:label, Active:active}" -o table
 
           # Get the revision associated with this label
           LABELED_REVISION=$(az containerapp revision list \
@@ -166,8 +187,9 @@ jobs:
 
             echo "Frontend updated successfully"
           else
-            echo "::warning::No revision found with label ${REVISION_LABEL}"
-            echo "This might be the first deployment for this PR"
+            echo "::warning::No revision found with label ${REVISION_LABEL} for frontend"
+            echo "::warning::This may indicate the infra deployment step did not complete successfully"
+            echo "::warning::Expected behavior: infra-deploy creates labeled revisions, update-images updates them"
           fi
 
       - name: Get deployment URLs

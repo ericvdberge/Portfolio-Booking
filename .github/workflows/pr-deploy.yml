@@ -43,14 +43,15 @@ jobs:
       - name: Comment preview URL on PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FRONTEND_URL: ${{ needs.deploy-preview.outputs.frontend_pr_url }}
+          BACKEND_URL: ${{ needs.deploy-preview.outputs.backend_pr_url }}
+          COMMIT_SHA: ${{ github.sha }}
         run: |
-          cat << 'EOF' | gh pr comment ${{ github.event.pull_request.number }} --body-file -
-          🚀 **Preview Deployment Ready**
+          gh pr comment ${{ github.event.pull_request.number }} --body "🚀 **Preview Deployment Ready**
 
           **🏷️ PR-Specific URLs (labeled revisions):**
-          - **Frontend PR**: ${{ needs.deploy-preview.outputs.frontend_pr_url }}
-          - **Backend PR**: ${{ needs.deploy-preview.outputs.backend_pr_url }}
+          - **Frontend PR**: ${FRONTEND_URL}
+          - **Backend PR**: ${BACKEND_URL}
 
           ---
-          *Deployed from commit ${{ github.sha }}*
-          EOF
+          *Deployed from commit ${COMMIT_SHA}*"
