@@ -43,7 +43,10 @@ param deploymentHash string
 var enableMultiRevision = (environmentType == 'preview')  // Multiple mode for PR environments
 var databaseName = environmentType == 'preview' ? 'portfolio_booking_pr_${prNumber}' : 'portfolio_booking'
 var revisionMode = enableMultiRevision ? 'Multiple' : 'Single'
-var revisionSuffix = deploymentHash  // Always use deployment hash for unique revisions
+
+// Revision naming: unique for each deployment, labels for stable URLs
+var revisionSuffix = environmentType == 'preview' ? deploymentHash : deploymentHash
+var revisionLabel = environmentType == 'preview' ? 'pr-${prNumber}' : ''
 
 // Log Analytics Workspace
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
@@ -192,6 +195,11 @@ resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
     }
     template: {
       revisionSuffix: revisionSuffix
+      metadata: revisionLabel != '' ? {
+        labels: {
+          revision: revisionLabel
+        }
+      } : {}
       containers: [
         {
           name: 'backend'
@@ -237,6 +245,11 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
     }
     template: {
       revisionSuffix: revisionSuffix
+      metadata: revisionLabel != '' ? {
+        labels: {
+          revision: revisionLabel
+        }
+      } : {}
       containers: [
         {
           name: 'frontend'
@@ -255,7 +268,13 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
   }
 }
 
-// Outputs
-output frontendUrl string = 'https://${frontendApp.properties.configuration.ingress.fqdn}'
-output backendUrl string = 'https://${backendApp.properties.configuration.ingress.fqdn}'
+// Outputs - use label-based URLs for preview environments
+output frontendUrl string = environmentType == 'preview'
+  ? 'https://${revisionLabel}---${frontendApp.name}.${split(frontendApp.properties.configuration.ingress.fqdn, '.')[1]}.${split(frontendApp.properties.configuration.ingress.fqdn, '.')[2]}.${split(frontendApp.properties.configuration.ingress.fqdn, '.')[3]}'
+  : 'https://${frontendApp.properties.configuration.ingress.fqdn}'
+
+output backendUrl string = environmentType == 'preview'
+  ? 'https://${revisionLabel}---${backendApp.name}.${split(backendApp.properties.configuration.ingress.fqdn, '.')[1]}.${split(backendApp.properties.configuration.ingress.fqdn, '.')[2]}.${split(backendApp.properties.configuration.ingress.fqdn, '.')[3]}'
+  : 'https://${backendApp.properties.configuration.ingress.fqdn}'
+
 output storageAccountName string = storageAccount.name
