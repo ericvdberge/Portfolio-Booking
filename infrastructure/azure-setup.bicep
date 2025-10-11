@@ -195,11 +195,6 @@ resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
     }
     template: {
       revisionSuffix: revisionSuffix
-      metadata: revisionLabel != '' ? {
-        labels: {
-          revision: revisionLabel
-        }
-      } : {}
       containers: [
         {
           name: 'backend'
@@ -245,11 +240,6 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
     }
     template: {
       revisionSuffix: revisionSuffix
-      metadata: revisionLabel != '' ? {
-        labels: {
-          revision: revisionLabel
-        }
-      } : {}
       containers: [
         {
           name: 'frontend'
@@ -268,13 +258,13 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
   }
 }
 
-// Outputs - use label-based URLs for preview environments
+// Outputs - construct label-based URLs for preview environments
 output frontendUrl string = environmentType == 'preview'
-  ? 'https://${revisionLabel}---${frontendApp.name}.${split(frontendApp.properties.configuration.ingress.fqdn, '.')[1]}.${split(frontendApp.properties.configuration.ingress.fqdn, '.')[2]}.${split(frontendApp.properties.configuration.ingress.fqdn, '.')[3]}'
+  ? 'https://${revisionLabel}---${frontendApp.name}.${substring(frontendApp.properties.configuration.ingress.fqdn, indexOf(frontendApp.properties.configuration.ingress.fqdn, '.') + 1)}'
   : 'https://${frontendApp.properties.configuration.ingress.fqdn}'
 
 output backendUrl string = environmentType == 'preview'
-  ? 'https://${revisionLabel}---${backendApp.name}.${split(backendApp.properties.configuration.ingress.fqdn, '.')[1]}.${split(backendApp.properties.configuration.ingress.fqdn, '.')[2]}.${split(backendApp.properties.configuration.ingress.fqdn, '.')[3]}'
+  ? 'https://${revisionLabel}---${backendApp.name}.${substring(backendApp.properties.configuration.ingress.fqdn, indexOf(backendApp.properties.configuration.ingress.fqdn, '.') + 1)}'
   : 'https://${backendApp.properties.configuration.ingress.fqdn}'
 
 output storageAccountName string = storageAccount.name

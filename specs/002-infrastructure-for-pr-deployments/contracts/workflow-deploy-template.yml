@@ -96,6 +96,9 @@ jobs:
         run: |
           DEPLOYMENT_HASH=$(date +%s | sha256sum | head -c 8)
           DEPLOYMENT_NAME="pr-${{ inputs.pr_number }}-init"
+          REVISION_LABEL="pr-${{ inputs.pr_number }}"
+
+          # Deploy infrastructure
           az deployment group create \
             --resource-group ${{ inputs.resource_group }} \
             --name ${DEPLOYMENT_NAME} \
@@ -105,6 +108,21 @@ jobs:
                         backendImage=mcr.microsoft.com/azuredocs/containerapps-helloworld:latest \
                         frontendImage=mcr.microsoft.com/azuredocs/containerapps-helloworld:latest \
                         databasePassword="${{ secrets.db_password }}" deploymentHash=${DEPLOYMENT_HASH}
+
+          # Apply revision labels for stable URLs
+          REVISION_NAME="pbooking-backend--${DEPLOYMENT_HASH}"
+          az containerapp revision label add \
+            --name pbooking-backend \
+            --resource-group ${{ inputs.resource_group }} \
+            --revision ${REVISION_NAME} \
+            --label ${REVISION_LABEL}
+
+          REVISION_NAME="pbooking-frontend--${DEPLOYMENT_HASH}"
+          az containerapp revision label add \
+            --name pbooking-frontend \
+            --resource-group ${{ inputs.resource_group }} \
+            --revision ${REVISION_NAME} \
+            --label ${REVISION_LABEL}
 
       - name: Get initial URLs
         id: get-urls
@@ -166,6 +184,8 @@ jobs:
           file: ./frontend/Dockerfile
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ inputs.image_tag }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ inputs.environment_type == 'preview' && needs.create-revision.outputs.backend-url || 'https://pbooking-backend.swedencentral.azurecontainerapps.io' }}
 
   # --------------------------------------------------
   # Job: deploy
@@ -195,6 +215,23 @@ jobs:
           tenant-id: ${{ secrets.azure_tenant_id }}
           subscription-id: ${{ secrets.azure_subscription_id }}
 
+      - name: Clean up old revisions (preview only)
+        if: inputs.environment_type == 'preview'
+        run: |
+          REVISION_LABEL="pr-${{ inputs.pr_number }}"
+          echo "Removing existing revisions with label '${REVISION_LABEL}' for PR ${{ inputs.pr_number }}"
+
+          # Remove existing labels from all revisions
+          az containerapp revision label remove \
+            --name pbooking-frontend \
+            --resource-group ${{ inputs.resource_group }} \
+            --label ${REVISION_LABEL} || echo "No frontend revisions found with label '${REVISION_LABEL}'"
+
+          az containerapp revision label remove \
+            --name pbooking-backend \
+            --resource-group ${{ inputs.resource_group }} \
+            --label ${REVISION_LABEL} || echo "No backend revisions found with label '${REVISION_LABEL}'"
+
       - name: Deploy/Update infrastructure
         run: |
           DEPLOYMENT_HASH=$(date +%s | sha256sum | head -c 8)
@@ -215,6 +252,8 @@ jobs:
           else
             # Preview deployment - create new revision with same label
             DEPLOYMENT_NAME="pr-${{ inputs.pr_number }}-${DEPLOYMENT_HASH}"
+            REVISION_LABEL="pr-${{ inputs.pr_number }}"
+
             az deployment group create \
               --resource-group ${{ inputs.resource_group }} \
               --name ${DEPLOYMENT_NAME} \
@@ -224,6 +263,22 @@ jobs:
                           backendImage=${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:${{ inputs.image_tag }} \
                           frontendImage=${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ inputs.image_tag }} \
                           databasePassword="${{ secrets.db_password }}" deploymentHash=${DEPLOYMENT_HASH}
+
+            # Apply revision labels for stable URLs
+            BACKEND_REVISION="pbooking-backend--${DEPLOYMENT_HASH}"
+            FRONTEND_REVISION="pbooking-frontend--${DEPLOYMENT_HASH}"
+
+            az containerapp revision label add \
+              --name pbooking-backend \
+              --resource-group ${{ inputs.resource_group }} \
+              --revision ${BACKEND_REVISION} \
+              --label ${REVISION_LABEL}
+
+            az containerapp revision label add \
+              --name pbooking-frontend \
+              --resource-group ${{ inputs.resource_group }} \
+              --revision ${FRONTEND_REVISION} \
+              --label ${REVISION_LABEL}
           fi
 
       - name: Get deployment URLs (production only)
