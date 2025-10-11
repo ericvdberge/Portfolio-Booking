@@ -181,16 +181,17 @@ jobs:
           echo "Applying label '${REVISION_LABEL}' to new revisions"
 
           # Get the latest revision names for frontend and backend
+          # Query for revisions containing the deployment hash
           FRONTEND_REVISION=$(az containerapp revision list \
             --resource-group ${{ inputs.resource_group }} \
             --name ${NAME_PREFIX}-frontend \
-            --query "[?properties.trafficWeight>0 || contains(name, '${DEPLOYMENT_HASH}')].name | [0]" \
+            --query "[?contains(name, '${DEPLOYMENT_HASH}')].name | [0]" \
             -o tsv)
 
           BACKEND_REVISION=$(az containerapp revision list \
             --resource-group ${{ inputs.resource_group }} \
             --name ${NAME_PREFIX}-backend \
-            --query "[?properties.trafficWeight>0 || contains(name, '${DEPLOYMENT_HASH}')].name | [0]" \
+            --query "[?contains(name, '${DEPLOYMENT_HASH}')].name | [0]" \
             -o tsv)
 
           echo "Frontend revision: ${FRONTEND_REVISION}"
