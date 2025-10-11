@@ -82,70 +82,21 @@ jobs:
 
           echo "Removing existing revisions with label '${REVISION_LABEL}' for PR ${{ inputs.pr_number }}"
 
-          # Find and deactivate revisions with the PR label for frontend
-          FRONTEND_LABELED_REVISIONS=$(az containerapp revision list \
+          # Remove existing PR label from frontend if it exists (simpler approach)
+          echo "Attempting to remove label '${REVISION_LABEL}' from frontend..."
+          az containerapp revision label remove \
             --resource-group ${{ inputs.resource_group }} \
             --name ${NAME_PREFIX}-frontend \
-            --query "[?properties.trafficWeight>0 && properties.fqdn!=null].{name:name,labels:properties.template.revisionSuffix}" \
-            --output json 2>/dev/null || echo "[]")
+            --label ${REVISION_LABEL} \
+            --yes 2>/dev/null || echo "No existing frontend label '${REVISION_LABEL}' to remove"
 
-          # Get revisions that have the PR label
-          FRONTEND_REVISIONS_WITH_LABEL=$(az containerapp revision list \
-            --resource-group ${{ inputs.resource_group }} \
-            --name ${NAME_PREFIX}-frontend \
-            --query "[].name" -o tsv 2>/dev/null | while read revision; do
-              if az containerapp revision show \
-                --resource-group ${{ inputs.resource_group }} \
-                --name ${NAME_PREFIX}-frontend \
-                --revision "$revision" \
-                --query "properties.labels.\"${REVISION_LABEL}\"" -o tsv 2>/dev/null | grep -q "^${REVISION_LABEL}$"; then
-                echo "$revision"
-              fi
-            done)
-
-          if [ -n "$FRONTEND_REVISIONS_WITH_LABEL" ]; then
-            echo "Found frontend revisions with label '${REVISION_LABEL}': $FRONTEND_REVISIONS_WITH_LABEL"
-            echo "$FRONTEND_REVISIONS_WITH_LABEL" | while read revision; do
-              if [ -n "$revision" ]; then
-                echo "Deactivating frontend revision: $revision"
-                az containerapp revision deactivate \
-                  --resource-group ${{ inputs.resource_group }} \
-                  --name ${NAME_PREFIX}-frontend \
-                  --revision "$revision" 2>/dev/null || echo "Failed to deactivate $revision"
-              fi
-            done
-          else
-            echo "No frontend revisions found with label '${REVISION_LABEL}'"
-          fi
-
-          # Find and deactivate revisions with the PR label for backend
-          BACKEND_REVISIONS_WITH_LABEL=$(az containerapp revision list \
+          # Remove existing PR label from backend if it exists (simpler approach)
+          echo "Attempting to remove label '${REVISION_LABEL}' from backend..."
+          az containerapp revision label remove \
             --resource-group ${{ inputs.resource_group }} \
             --name ${NAME_PREFIX}-backend \
-            --query "[].name" -o tsv 2>/dev/null | while read revision; do
-              if az containerapp revision show \
-                --resource-group ${{ inputs.resource_group }} \
-                --name ${NAME_PREFIX}-backend \
-                --revision "$revision" \
-                --query "properties.labels.\"${REVISION_LABEL}\"" -o tsv 2>/dev/null | grep -q "^${REVISION_LABEL}$"; then
-                echo "$revision"
-              fi
-            done)
-
-          if [ -n "$BACKEND_REVISIONS_WITH_LABEL" ]; then
-            echo "Found backend revisions with label '${REVISION_LABEL}': $BACKEND_REVISIONS_WITH_LABEL"
-            echo "$BACKEND_REVISIONS_WITH_LABEL" | while read revision; do
-              if [ -n "$revision" ]; then
-                echo "Deactivating backend revision: $revision"
-                az containerapp revision deactivate \
-                  --resource-group ${{ inputs.resource_group }} \
-                  --name ${NAME_PREFIX}-backend \
-                  --revision "$revision" 2>/dev/null || echo "Failed to deactivate $revision"
-              fi
-            done
-          else
-            echo "No backend revisions found with label '${REVISION_LABEL}'"
-          fi
+            --label ${REVISION_LABEL} \
+            --yes 2>/dev/null || echo "No existing backend label '${REVISION_LABEL}' to remove"
 
       - name: Deploy infrastructure
         id: deploy
@@ -276,13 +227,12 @@ jobs:
               --label "$REVISION_LABEL" \
               --verbose
 
-            # Verify the label was applied
-            echo "Verifying frontend label was applied:"
-            az containerapp revision show \
+            # Verify the label was applied by checking traffic distribution
+            echo "Verifying frontend label '${REVISION_LABEL}' was applied:"
+            az containerapp ingress traffic show \
               --resource-group ${{ inputs.resource_group }} \
               --name ${NAME_PREFIX}-frontend \
-              --revision "$FRONTEND_REVISION" \
-              --query "properties.template.revisionLabel" -o tsv
+              --output table || echo "Could not verify frontend traffic"
           else
             echo "No active frontend revision found"
           fi
@@ -302,13 +252,12 @@ jobs:
               --label "$REVISION_LABEL" \
               --verbose
 
-            # Verify the label was applied
-            echo "Verifying backend label was applied:"
-            az containerapp revision show \
+            # Verify the label was applied by checking traffic distribution
+            echo "Verifying backend label '${REVISION_LABEL}' was applied:"
+            az containerapp ingress traffic show \
               --resource-group ${{ inputs.resource_group }} \
               --name ${NAME_PREFIX}-backend \
-              --revision "$BACKEND_REVISION" \
-              --query "properties.template.revisionLabel" -o tsv
+              --output table || echo "Could not verify backend traffic"
           else
             echo "No active backend revision found"
           fi
