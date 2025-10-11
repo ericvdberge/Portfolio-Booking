@@ -132,7 +132,8 @@ jobs:
               --name ${NAME_PREFIX}-backend \
               --resource-group ${{ inputs.resource_group }} \
               --label ${REVISION_LABEL} \
-              --revision ${NEW_REVISION}
+              --revision ${NEW_REVISION} \
+              --yes
 
             # Set traffic weight for the labeled revision
             echo "Setting traffic weight for labeled revision"
@@ -214,7 +215,8 @@ jobs:
               --name ${NAME_PREFIX}-frontend \
               --resource-group ${{ inputs.resource_group }} \
               --label ${REVISION_LABEL} \
-              --revision ${NEW_REVISION}
+              --revision ${NEW_REVISION} \
+              --yes
 
             # Set traffic weight for the labeled revision
             echo "Setting traffic weight for labeled revision"
