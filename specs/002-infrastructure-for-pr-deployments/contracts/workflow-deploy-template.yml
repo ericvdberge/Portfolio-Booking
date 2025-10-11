@@ -113,52 +113,96 @@ jobs:
           echo "Getting revision names for label assignment..."
           echo "Looking for revisions containing hash: ${DEPLOYMENT_HASH}"
 
-          # Debug: List all revisions to understand naming pattern
-          echo "All backend revisions:"
+          # Debug: List all revisions with details
+          echo "All backend revisions with creation time:"
           az containerapp revision list \
             --name pbooking-backend \
             --resource-group ${{ inputs.resource_group }} \
-            --query "[].name" -o table
+            --query "[].{Name:name, Created:properties.createdTime, Active:properties.active}" -o table
 
-          echo "All frontend revisions:"
+          echo "All frontend revisions with creation time:"
           az containerapp revision list \
             --name pbooking-frontend \
             --resource-group ${{ inputs.resource_group }} \
-            --query "[].name" -o table
+            --query "[].{Name:name, Created:properties.createdTime, Active:properties.active}" -o table
 
-          # Get the latest revision (most recently created)
-          BACKEND_REVISION=$(az containerapp revision list \
+          # Try multiple methods to get the correct revision
+          echo "Method 1: Latest by creation time"
+          BACKEND_REVISION_1=$(az containerapp revision list \
             --name pbooking-backend \
             --resource-group ${{ inputs.resource_group }} \
-            --query "max_by([], &properties.createdTime).name" -o tsv)
+            --query "max_by([], &properties.createdTime).name" -o tsv 2>/dev/null || echo "")
 
-          FRONTEND_REVISION=$(az containerapp revision list \
+          FRONTEND_REVISION_1=$(az containerapp revision list \
             --name pbooking-frontend \
             --resource-group ${{ inputs.resource_group }} \
-            --query "max_by([], &properties.createdTime).name" -o tsv)
+            --query "max_by([], &properties.createdTime).name" -o tsv 2>/dev/null || echo "")
 
-          echo "Backend revision: ${BACKEND_REVISION}"
-          echo "Frontend revision: ${FRONTEND_REVISION}"
+          echo "Method 2: By deployment hash suffix"
+          BACKEND_REVISION_2=$(az containerapp revision list \
+            --name pbooking-backend \
+            --resource-group ${{ inputs.resource_group }} \
+            --query "[?ends_with(name, '${DEPLOYMENT_HASH}')].name | [0]" -o tsv 2>/dev/null || echo "")
 
-          if [ -n "${BACKEND_REVISION}" ]; then
+          FRONTEND_REVISION_2=$(az containerapp revision list \
+            --name pbooking-frontend \
+            --resource-group ${{ inputs.resource_group }} \
+            --query "[?ends_with(name, '${DEPLOYMENT_HASH}')].name | [0]" -o tsv 2>/dev/null || echo "")
+
+          echo "Method 3: Active revision"
+          BACKEND_REVISION_3=$(az containerapp revision list \
+            --name pbooking-backend \
+            --resource-group ${{ inputs.resource_group }} \
+            --query "[?properties.active].name | [0]" -o tsv 2>/dev/null || echo "")
+
+          FRONTEND_REVISION_3=$(az containerapp revision list \
+            --name pbooking-frontend \
+            --resource-group ${{ inputs.resource_group }} \
+            --query "[?properties.active].name | [0]" -o tsv 2>/dev/null || echo "")
+
+          # Choose the best revision (prefer by hash, then by time, then active)
+          BACKEND_REVISION="${BACKEND_REVISION_2:-${BACKEND_REVISION_1:-$BACKEND_REVISION_3}}"
+          FRONTEND_REVISION="${FRONTEND_REVISION_2:-${FRONTEND_REVISION_1:-$FRONTEND_REVISION_3}}"
+
+          echo "Selected backend revision: '${BACKEND_REVISION}'"
+          echo "Selected frontend revision: '${FRONTEND_REVISION}'"
+
+          # Apply labels with more verbose output
+          if [ -n "${BACKEND_REVISION}" ] && [ "${BACKEND_REVISION}" != "null" ]; then
+            echo "Attempting to add label '${REVISION_LABEL}' to backend revision '${BACKEND_REVISION}'"
             az containerapp revision label add \
               --name pbooking-backend \
               --resource-group ${{ inputs.resource_group }} \
               --revision ${BACKEND_REVISION} \
               --label ${REVISION_LABEL} \
-              --yes
-            echo "Applied label '${REVISION_LABEL}' to backend revision '${BACKEND_REVISION}'"
+              --yes \
+              --verbose && echo "✅ Backend label applied successfully" || echo "❌ Backend label failed"
+          else
+            echo "❌ No valid backend revision found"
           fi
 
-          if [ -n "${FRONTEND_REVISION}" ]; then
+          if [ -n "${FRONTEND_REVISION}" ] && [ "${FRONTEND_REVISION}" != "null" ]; then
+            echo "Attempting to add label '${REVISION_LABEL}' to frontend revision '${FRONTEND_REVISION}'"
             az containerapp revision label add \
               --name pbooking-frontend \
               --resource-group ${{ inputs.resource_group }} \
               --revision ${FRONTEND_REVISION} \
               --label ${REVISION_LABEL} \
-              --yes
-            echo "Applied label '${REVISION_LABEL}' to frontend revision '${FRONTEND_REVISION}'"
+              --yes \
+              --verbose && echo "✅ Frontend label applied successfully" || echo "❌ Frontend label failed"
+          else
+            echo "❌ No valid frontend revision found"
           fi
+
+          # Verify labels were applied
+          echo "Verifying label assignment..."
+          az containerapp ingress traffic show \
+            --name pbooking-backend \
+            --resource-group ${{ inputs.resource_group }} || echo "Could not show backend traffic"
+
+          az containerapp ingress traffic show \
+            --name pbooking-frontend \
+            --resource-group ${{ inputs.resource_group }} || echo "Could not show frontend traffic"
 
       - name: Get initial URLs
         id: get-urls
@@ -255,18 +299,20 @@ jobs:
         if: inputs.environment_type == 'preview'
         run: |
           REVISION_LABEL="pr-${{ inputs.pr_number }}"
-          echo "Removing existing revisions with label '${REVISION_LABEL}' for PR ${{ inputs.pr_number }}"
+          echo "Removing existing labels '${REVISION_LABEL}' from old revisions for PR ${{ inputs.pr_number }}"
 
-          # Remove existing labels from all revisions
+          # Remove existing labels from all revisions (this transfers traffic back to latest)
           az containerapp revision label remove \
             --name pbooking-frontend \
             --resource-group ${{ inputs.resource_group }} \
-            --label ${REVISION_LABEL} || echo "No frontend revisions found with label '${REVISION_LABEL}'"
+            --label ${REVISION_LABEL} \
+            --yes || echo "No frontend revisions found with label '${REVISION_LABEL}'"
 
           az containerapp revision label remove \
             --name pbooking-backend \
             --resource-group ${{ inputs.resource_group }} \
-            --label ${REVISION_LABEL} || echo "No backend revisions found with label '${REVISION_LABEL}'"
+            --label ${REVISION_LABEL} \
+            --yes || echo "No backend revisions found with label '${REVISION_LABEL}'"
 
       - name: Deploy/Update infrastructure
         run: |
@@ -300,42 +346,38 @@ jobs:
                           frontendImage=${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ inputs.image_tag }} \
                           databasePassword="${{ secrets.db_password }}" deploymentHash=${DEPLOYMENT_HASH}
 
-            # Get actual revision names and apply labels
-            echo "Getting revision names for label assignment..."
-            echo "Looking for revisions containing hash: ${DEPLOYMENT_HASH}"
+            # Move labels to the new revisions (for updates)
+            echo "Moving labels to new revisions with built images..."
 
-            # Get the latest revision (most recently created)
             BACKEND_REVISION=$(az containerapp revision list \
               --name pbooking-backend \
               --resource-group ${{ inputs.resource_group }} \
-              --query "max_by([], &properties.createdTime).name" -o tsv)
+              --query "max_by([], &properties.createdTime).name" -o tsv 2>/dev/null || echo "")
 
             FRONTEND_REVISION=$(az containerapp revision list \
               --name pbooking-frontend \
               --resource-group ${{ inputs.resource_group }} \
-              --query "max_by([], &properties.createdTime).name" -o tsv)
+              --query "max_by([], &properties.createdTime).name" -o tsv 2>/dev/null || echo "")
 
-            echo "Backend revision: ${BACKEND_REVISION}"
-            echo "Frontend revision: ${FRONTEND_REVISION}"
+            echo "Moving label '${REVISION_LABEL}' to backend revision: '${BACKEND_REVISION}'"
+            echo "Moving label '${REVISION_LABEL}' to frontend revision: '${FRONTEND_REVISION}'"
 
-            if [ -n "${BACKEND_REVISION}" ]; then
+            if [ -n "${BACKEND_REVISION}" ] && [ "${BACKEND_REVISION}" != "null" ]; then
               az containerapp revision label add \
                 --name pbooking-backend \
                 --resource-group ${{ inputs.resource_group }} \
                 --revision ${BACKEND_REVISION} \
                 --label ${REVISION_LABEL} \
-                --yes
-              echo "Applied label '${REVISION_LABEL}' to backend revision '${BACKEND_REVISION}'"
+                --yes && echo "✅ Backend label moved to new revision" || echo "❌ Backend label move failed"
             fi
 
-            if [ -n "${FRONTEND_REVISION}" ]; then
+            if [ -n "${FRONTEND_REVISION}" ] && [ "${FRONTEND_REVISION}" != "null" ]; then
               az containerapp revision label add \
                 --name pbooking-frontend \
                 --resource-group ${{ inputs.resource_group }} \
                 --revision ${FRONTEND_REVISION} \
                 --label ${REVISION_LABEL} \
-                --yes
-              echo "Applied label '${REVISION_LABEL}' to frontend revision '${FRONTEND_REVISION}'"
+                --yes && echo "✅ Frontend label moved to new revision" || echo "❌ Frontend label move failed"
             fi
           fi
 
