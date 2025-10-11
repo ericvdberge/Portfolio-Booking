@@ -55,8 +55,6 @@ jobs:
       contents: read
 
     outputs:
-      frontend-url: ${{ steps.get-urls.outputs.frontend-url }}
-      backend-url: ${{ steps.get-urls.outputs.backend-url }}
       frontend-pr-url: ${{ steps.get-labeled-urls.outputs.frontend-pr-url || steps.get-urls.outputs.frontend-pr-url }}
       backend-pr-url: ${{ steps.get-labeled-urls.outputs.backend-pr-url || steps.get-urls.outputs.backend-pr-url }}
       deployment-name: ${{ steps.deploy.outputs.deployment-name }}
@@ -135,7 +133,6 @@ jobs:
             --parameters frontendImage="${{ inputs.frontend_image }}" \
             --parameters databasePassword="${{ secrets.db_password }}" \
             --parameters deploymentHash="${DEPLOYMENT_HASH}" \
-            --verbose
 
           DEPLOYMENT_EXIT_CODE=$?
 
@@ -157,17 +154,6 @@ jobs:
         run: |
           DEPLOYMENT_NAME="${{ steps.deploy.outputs.deployment-name }}"
 
-          # For all environments, get URLs from deployment outputs
-          FRONTEND_URL=$(az deployment group show \
-            --resource-group ${{ inputs.resource_group }} \
-            --name ${DEPLOYMENT_NAME} \
-            --query properties.outputs.frontendUrl.value -o tsv)
-
-          BACKEND_URL=$(az deployment group show \
-            --resource-group ${{ inputs.resource_group }} \
-            --name ${DEPLOYMENT_NAME} \
-            --query properties.outputs.backendUrl.value -o tsv)
-
           # Get PR-specific labeled URLs (only for preview environments)
           FRONTEND_PR_URL=$(az deployment group show \
             --resource-group ${{ inputs.resource_group }} \
@@ -179,13 +165,9 @@ jobs:
             --name ${DEPLOYMENT_NAME} \
             --query properties.outputs.backendPrUrl.value -o tsv 2>/dev/null || echo "")
 
-          echo "Frontend: ${FRONTEND_URL}"
-          echo "Backend: ${BACKEND_URL}"
           echo "Frontend PR: ${FRONTEND_PR_URL}"
           echo "Backend PR: ${BACKEND_PR_URL}"
 
-          echo "frontend-url=${FRONTEND_URL}" >> $GITHUB_OUTPUT
-          echo "backend-url=${BACKEND_URL}" >> $GITHUB_OUTPUT
           echo "frontend-pr-url=${FRONTEND_PR_URL}" >> $GITHUB_OUTPUT
           echo "backend-pr-url=${BACKEND_PR_URL}" >> $GITHUB_OUTPUT
 
@@ -196,71 +178,47 @@ jobs:
           REVISION_LABEL="pr-${{ inputs.pr_number }}"
           DEPLOYMENT_HASH="${{ steps.deploy.outputs.deployment-hash }}"
 
-          echo "Applying revision labels for PR ${{ inputs.pr_number }}"
-          echo "Looking for revisions with deployment hash: ${DEPLOYMENT_HASH}"
+          echo "Applying label '${REVISION_LABEL}' to new revisions"
 
-          # Debug: List all current revisions
-          echo "=== All frontend revisions ==="
-          az containerapp revision list \
-            --resource-group ${{ inputs.resource_group }} \
-            --name ${NAME_PREFIX}-frontend \
-            --query "[].{name:name,createdTime:properties.createdTime,active:properties.active}" -o table
-
-          echo "=== All backend revisions ==="
-          az containerapp revision list \
-            --resource-group ${{ inputs.resource_group }} \
-            --name ${NAME_PREFIX}-backend \
-            --query "[].{name:name,createdTime:properties.createdTime,active:properties.active}" -o table
-
-          # Get the most recent active revision for frontend (simpler approach)
+          # Get the latest revision names for frontend and backend
           FRONTEND_REVISION=$(az containerapp revision list \
             --resource-group ${{ inputs.resource_group }} \
             --name ${NAME_PREFIX}-frontend \
-            --query "[?properties.active] | sort_by(@, &properties.createdTime) | [-1].name" -o tsv)
+            --query "[?properties.trafficWeight>0 || contains(name, '${DEPLOYMENT_HASH}')].name | [0]" \
+            -o tsv)
 
-          if [ -n "$FRONTEND_REVISION" ]; then
-            echo "Applying label '${REVISION_LABEL}' to frontend revision: $FRONTEND_REVISION"
-            az containerapp revision label add \
-              --resource-group ${{ inputs.resource_group }} \
-              --name ${NAME_PREFIX}-frontend \
-              --revision "$FRONTEND_REVISION" \
-              --label "$REVISION_LABEL" \
-              --verbose
-
-            # Verify the label was applied by checking traffic distribution
-            echo "Verifying frontend label '${REVISION_LABEL}' was applied:"
-            az containerapp ingress traffic show \
-              --resource-group ${{ inputs.resource_group }} \
-              --name ${NAME_PREFIX}-frontend \
-              --output table || echo "Could not verify frontend traffic"
-          else
-            echo "No active frontend revision found"
-          fi
-
-          # Get the most recent active revision for backend (simpler approach)
           BACKEND_REVISION=$(az containerapp revision list \
             --resource-group ${{ inputs.resource_group }} \
             --name ${NAME_PREFIX}-backend \
-            --query "[?properties.active] | sort_by(@, &properties.createdTime) | [-1].name" -o tsv)
+            --query "[?properties.trafficWeight>0 || contains(name, '${DEPLOYMENT_HASH}')].name | [0]" \
+            -o tsv)
 
-          if [ -n "$BACKEND_REVISION" ]; then
-            echo "Applying label '${REVISION_LABEL}' to backend revision: $BACKEND_REVISION"
+          echo "Frontend revision: ${FRONTEND_REVISION}"
+          echo "Backend revision: ${BACKEND_REVISION}"
+
+          # Apply labels to the new revisions
+          if [ -n "${FRONTEND_REVISION}" ]; then
+            echo "Applying label to frontend revision ${FRONTEND_REVISION}"
             az containerapp revision label add \
+              --name ${NAME_PREFIX}-frontend \
               --resource-group ${{ inputs.resource_group }} \
-              --name ${NAME_PREFIX}-backend \
-              --revision "$BACKEND_REVISION" \
-              --label "$REVISION_LABEL" \
-              --verbose
-
-            # Verify the label was applied by checking traffic distribution
-            echo "Verifying backend label '${REVISION_LABEL}' was applied:"
-            az containerapp ingress traffic show \
-              --resource-group ${{ inputs.resource_group }} \
-              --name ${NAME_PREFIX}-backend \
-              --output table || echo "Could not verify backend traffic"
+              --label ${REVISION_LABEL} \
+              --revision ${FRONTEND_REVISION}
           else
-            echo "No active backend revision found"
+            echo "::warning::No frontend revision found to label"
           fi
+
+          if [ -n "${BACKEND_REVISION}" ]; then
+            echo "Applying label to backend revision ${BACKEND_REVISION}"
+            az containerapp revision label add \
+              --name ${NAME_PREFIX}-backend \
+              --resource-group ${{ inputs.resource_group }} \
+              --label ${REVISION_LABEL} \
+              --revision ${BACKEND_REVISION}
+          else
+            echo "::warning::No backend revision found to label"
+          fi
+
 
       - name: Get labeled URLs after applying labels
         if: inputs.environment_type == 'preview'

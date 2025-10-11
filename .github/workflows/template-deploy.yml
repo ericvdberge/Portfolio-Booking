@@ -41,12 +41,6 @@ on:
         required: true
 
     outputs:
-      frontend_url:
-        description: 'Frontend URL of deployed environment'
-        value: ${{ jobs.update-images.outputs.frontend_url }}
-      backend_url:
-        description: 'Backend URL of deployed environment'
-        value: ${{ jobs.update-images.outputs.backend_url }}
       frontend_pr_url:
         description: 'Frontend PR labeled URL (preview only)'
         value: ${{ jobs.deploy-infra.outputs.frontend_pr_url }}

@@ -47,9 +47,6 @@ jobs:
           cat << 'EOF' | gh pr comment ${{ github.event.pull_request.number }} --body-file -
           🚀 **Preview Deployment Ready**
 
-          **Frontend**: ${{ needs.deploy-preview.outputs.frontend_url }}
-          **Backend**: ${{ needs.deploy-preview.outputs.backend_url }}
-
           **🏷️ PR-Specific URLs (labeled revisions):**
           - **Frontend PR**: ${{ needs.deploy-preview.outputs.frontend_pr_url }}
           - **Backend PR**: ${{ needs.deploy-preview.outputs.backend_pr_url }}
