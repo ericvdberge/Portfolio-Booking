@@ -245,13 +245,27 @@ jobs:
           REVISION_LABEL="pr-${{ inputs.pr_number }}"
           DEPLOYMENT_HASH="${{ steps.deploy.outputs.deployment-hash }}"
 
-          echo "Applying revision labels for PR ${{ inputs.pr_number }} to revisions from deployment ${DEPLOYMENT_HASH}"
+          echo "Applying revision labels for PR ${{ inputs.pr_number }}"
+          echo "Looking for revisions with deployment hash: ${DEPLOYMENT_HASH}"
 
-          # Find the specific revision created by this deployment (ends with the deployment hash)
+          # Debug: List all current revisions
+          echo "=== All frontend revisions ==="
+          az containerapp revision list \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${NAME_PREFIX}-frontend \
+            --query "[].{name:name,createdTime:properties.createdTime,active:properties.active}" -o table
+
+          echo "=== All backend revisions ==="
+          az containerapp revision list \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${NAME_PREFIX}-backend \
+            --query "[].{name:name,createdTime:properties.createdTime,active:properties.active}" -o table
+
+          # Get the most recent active revision for frontend (simpler approach)
           FRONTEND_REVISION=$(az containerapp revision list \
             --resource-group ${{ inputs.resource_group }} \
             --name ${NAME_PREFIX}-frontend \
-            --query "[?ends_with(name, '-${DEPLOYMENT_HASH}')].name" -o tsv | head -1)
+            --query "[?properties.active] | sort_by(@, &properties.createdTime) | [-1].name" -o tsv)
 
           if [ -n "$FRONTEND_REVISION" ]; then
             echo "Applying label '${REVISION_LABEL}' to frontend revision: $FRONTEND_REVISION"
@@ -259,21 +273,25 @@ jobs:
               --resource-group ${{ inputs.resource_group }} \
               --name ${NAME_PREFIX}-frontend \
               --revision "$FRONTEND_REVISION" \
-              --label "$REVISION_LABEL"
-          else
-            echo "No frontend revision found with suffix: ${DEPLOYMENT_HASH}"
-            echo "Available frontend revisions:"
-            az containerapp revision list \
+              --label "$REVISION_LABEL" \
+              --verbose
+
+            # Verify the label was applied
+            echo "Verifying frontend label was applied:"
+            az containerapp revision show \
               --resource-group ${{ inputs.resource_group }} \
               --name ${NAME_PREFIX}-frontend \
-              --query "[].name" -o tsv
+              --revision "$FRONTEND_REVISION" \
+              --query "properties.template.revisionLabel" -o tsv
+          else
+            echo "No active frontend revision found"
           fi
 
-          # Find the specific revision created by this deployment (ends with the deployment hash)
+          # Get the most recent active revision for backend (simpler approach)
           BACKEND_REVISION=$(az containerapp revision list \
             --resource-group ${{ inputs.resource_group }} \
             --name ${NAME_PREFIX}-backend \
-            --query "[?ends_with(name, '-${DEPLOYMENT_HASH}')].name" -o tsv | head -1)
+            --query "[?properties.active] | sort_by(@, &properties.createdTime) | [-1].name" -o tsv)
 
           if [ -n "$BACKEND_REVISION" ]; then
             echo "Applying label '${REVISION_LABEL}' to backend revision: $BACKEND_REVISION"
@@ -281,14 +299,18 @@ jobs:
               --resource-group ${{ inputs.resource_group }} \
               --name ${NAME_PREFIX}-backend \
               --revision "$BACKEND_REVISION" \
-              --label "$REVISION_LABEL"
-          else
-            echo "No backend revision found with suffix: ${DEPLOYMENT_HASH}"
-            echo "Available backend revisions:"
-            az containerapp revision list \
+              --label "$REVISION_LABEL" \
+              --verbose
+
+            # Verify the label was applied
+            echo "Verifying backend label was applied:"
+            az containerapp revision show \
               --resource-group ${{ inputs.resource_group }} \
               --name ${NAME_PREFIX}-backend \
-              --query "[].name" -o tsv
+              --revision "$BACKEND_REVISION" \
+              --query "properties.template.revisionLabel" -o tsv
+          else
+            echo "No active backend revision found"
           fi
 
       - name: Get labeled URLs after applying labels
