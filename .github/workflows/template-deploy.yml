@@ -43,10 +43,10 @@ on:
     outputs:
       frontend_pr_url:
         description: 'Frontend PR labeled URL (preview only)'
-        value: ${{ jobs.deploy-infra.outputs.frontend_pr_url }}
+        value: ${{ jobs.update-images.outputs.frontend_url || jobs.deploy-infra.outputs.frontend_pr_url }}
       backend_pr_url:
         description: 'Backend PR labeled URL (preview only)'
-        value: ${{ jobs.deploy-infra.outputs.backend_pr_url }}
+        value: ${{ jobs.update-images.outputs.backend_url || jobs.deploy-infra.outputs.backend_pr_url }}
 
 jobs:
   # Phase 1: Deploy infrastructure with hello-world images to create revisions and get URLs
@@ -76,7 +76,7 @@ jobs:
       packages: write
     with:
       image_tag: ${{ inputs.image_tag }}
-      backend_api_url: ${{ needs.deploy-infra.outputs.backend_url }}
+      backend_api_url: ${{ needs.deploy-infra.outputs.backend_pr_url || needs.deploy-infra.outputs.backend_url }}
 
   # Phase 3: Update container apps with actual images (no redeploy)
   update-images:
