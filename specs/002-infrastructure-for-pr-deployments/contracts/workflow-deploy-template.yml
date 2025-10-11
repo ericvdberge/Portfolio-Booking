@@ -109,20 +109,56 @@ jobs:
                         frontendImage=mcr.microsoft.com/azuredocs/containerapps-helloworld:latest \
                         databasePassword="${{ secrets.db_password }}" deploymentHash=${DEPLOYMENT_HASH}
 
-          # Apply revision labels for stable URLs
-          REVISION_NAME="pbooking-backend--${DEPLOYMENT_HASH}"
-          az containerapp revision label add \
+          # Get actual revision names and apply labels
+          echo "Getting revision names for label assignment..."
+          echo "Looking for revisions containing hash: ${DEPLOYMENT_HASH}"
+
+          # Debug: List all revisions to understand naming pattern
+          echo "All backend revisions:"
+          az containerapp revision list \
             --name pbooking-backend \
             --resource-group ${{ inputs.resource_group }} \
-            --revision ${REVISION_NAME} \
-            --label ${REVISION_LABEL}
+            --query "[].name" -o table
 
-          REVISION_NAME="pbooking-frontend--${DEPLOYMENT_HASH}"
-          az containerapp revision label add \
+          echo "All frontend revisions:"
+          az containerapp revision list \
             --name pbooking-frontend \
             --resource-group ${{ inputs.resource_group }} \
-            --revision ${REVISION_NAME} \
-            --label ${REVISION_LABEL}
+            --query "[].name" -o table
+
+          # Get the latest revision (most recently created)
+          BACKEND_REVISION=$(az containerapp revision list \
+            --name pbooking-backend \
+            --resource-group ${{ inputs.resource_group }} \
+            --query "max_by([], &properties.createdTime).name" -o tsv)
+
+          FRONTEND_REVISION=$(az containerapp revision list \
+            --name pbooking-frontend \
+            --resource-group ${{ inputs.resource_group }} \
+            --query "max_by([], &properties.createdTime).name" -o tsv)
+
+          echo "Backend revision: ${BACKEND_REVISION}"
+          echo "Frontend revision: ${FRONTEND_REVISION}"
+
+          if [ -n "${BACKEND_REVISION}" ]; then
+            az containerapp revision label add \
+              --name pbooking-backend \
+              --resource-group ${{ inputs.resource_group }} \
+              --revision ${BACKEND_REVISION} \
+              --label ${REVISION_LABEL} \
+              --yes
+            echo "Applied label '${REVISION_LABEL}' to backend revision '${BACKEND_REVISION}'"
+          fi
+
+          if [ -n "${FRONTEND_REVISION}" ]; then
+            az containerapp revision label add \
+              --name pbooking-frontend \
+              --resource-group ${{ inputs.resource_group }} \
+              --revision ${FRONTEND_REVISION} \
+              --label ${REVISION_LABEL} \
+              --yes
+            echo "Applied label '${REVISION_LABEL}' to frontend revision '${FRONTEND_REVISION}'"
+          fi
 
       - name: Get initial URLs
         id: get-urls
@@ -264,21 +300,43 @@ jobs:
                           frontendImage=${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ inputs.image_tag }} \
                           databasePassword="${{ secrets.db_password }}" deploymentHash=${DEPLOYMENT_HASH}
 
-            # Apply revision labels for stable URLs
-            BACKEND_REVISION="pbooking-backend--${DEPLOYMENT_HASH}"
-            FRONTEND_REVISION="pbooking-frontend--${DEPLOYMENT_HASH}"
+            # Get actual revision names and apply labels
+            echo "Getting revision names for label assignment..."
+            echo "Looking for revisions containing hash: ${DEPLOYMENT_HASH}"
 
-            az containerapp revision label add \
+            # Get the latest revision (most recently created)
+            BACKEND_REVISION=$(az containerapp revision list \
               --name pbooking-backend \
               --resource-group ${{ inputs.resource_group }} \
-              --revision ${BACKEND_REVISION} \
-              --label ${REVISION_LABEL}
+              --query "max_by([], &properties.createdTime).name" -o tsv)
 
-            az containerapp revision label add \
+            FRONTEND_REVISION=$(az containerapp revision list \
               --name pbooking-frontend \
               --resource-group ${{ inputs.resource_group }} \
-              --revision ${FRONTEND_REVISION} \
-              --label ${REVISION_LABEL}
+              --query "max_by([], &properties.createdTime).name" -o tsv)
+
+            echo "Backend revision: ${BACKEND_REVISION}"
+            echo "Frontend revision: ${FRONTEND_REVISION}"
+
+            if [ -n "${BACKEND_REVISION}" ]; then
+              az containerapp revision label add \
+                --name pbooking-backend \
+                --resource-group ${{ inputs.resource_group }} \
+                --revision ${BACKEND_REVISION} \
+                --label ${REVISION_LABEL} \
+                --yes
+              echo "Applied label '${REVISION_LABEL}' to backend revision '${BACKEND_REVISION}'"
+            fi
+
+            if [ -n "${FRONTEND_REVISION}" ]; then
+              az containerapp revision label add \
+                --name pbooking-frontend \
+                --resource-group ${{ inputs.resource_group }} \
+                --revision ${FRONTEND_REVISION} \
+                --label ${REVISION_LABEL} \
+                --yes
+              echo "Applied label '${REVISION_LABEL}' to frontend revision '${FRONTEND_REVISION}'"
+            fi
           fi
 
       - name: Get deployment URLs (production only)
