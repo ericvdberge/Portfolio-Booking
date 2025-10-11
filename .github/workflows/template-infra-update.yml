@@ -178,17 +178,25 @@ jobs:
 
           if [ "${{ inputs.environment_type }}" == "preview" ]; then
             # For PR environments, use the label-based URL (stable across updates)
-            # Label URL format: https://{app-name}---{label}.{region}.azurecontainerapps.io
+            # Get the base FQDN and construct proper labeled URLs
 
-            # Get container app location
-            LOCATION=$(az containerapp show \
+            FRONTEND_FQDN=$(az containerapp show \
               --name ${NAME_PREFIX}-frontend \
               --resource-group ${{ inputs.resource_group }} \
-              --query location -o tsv)
+              --query properties.configuration.ingress.fqdn -o tsv)
 
-            # Construct label-based URLs (these stay the same even when revision changes)
-            FRONTEND_URL="https://${NAME_PREFIX}-frontend---${REVISION_LABEL}.${LOCATION}.azurecontainerapps.io"
-            BACKEND_URL="https://${NAME_PREFIX}-backend---${REVISION_LABEL}.${LOCATION}.azurecontainerapps.io"
+            BACKEND_FQDN=$(az containerapp show \
+              --name ${NAME_PREFIX}-backend \
+              --resource-group ${{ inputs.resource_group }} \
+              --query properties.configuration.ingress.fqdn -o tsv)
+
+            # Extract the domain suffix after the app name
+            FRONTEND_DOMAIN_SUFFIX="${FRONTEND_FQDN#*.}"
+            BACKEND_DOMAIN_SUFFIX="${BACKEND_FQDN#*.}"
+
+            # Construct the correct labeled URL format: app-name---label.domain
+            FRONTEND_URL="https://${NAME_PREFIX}-frontend---${REVISION_LABEL}.${FRONTEND_DOMAIN_SUFFIX}"
+            BACKEND_URL="https://${NAME_PREFIX}-backend---${REVISION_LABEL}.${BACKEND_DOMAIN_SUFFIX}"
 
             echo "Using label-based URLs (stable across updates):"
             echo "Frontend label URL: ${FRONTEND_URL}"

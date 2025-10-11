@@ -250,20 +250,49 @@ jobs:
           NAME_PREFIX="pbooking"
           REVISION_LABEL="pr-${{ inputs.pr_number }}"
 
-          # Get the FQDN for each app
-          FRONTEND_FQDN=$(az containerapp show \
-            --resource-group ${{ inputs.resource_group }} \
+          # Get the actual labeled URL from the ingress traffic configuration
+          FRONTEND_LABELED_URL=$(az containerapp ingress traffic show \
             --name ${NAME_PREFIX}-frontend \
-            --query properties.configuration.ingress.fqdn -o tsv)
-
-          BACKEND_FQDN=$(az containerapp show \
             --resource-group ${{ inputs.resource_group }} \
-            --name ${NAME_PREFIX}-backend \
-            --query properties.configuration.ingress.fqdn -o tsv)
+            --query "[?label=='${REVISION_LABEL}'].latestRevision" -o tsv)
 
-          # Construct labeled URLs
-          FRONTEND_LABELED_URL="https://${REVISION_LABEL}---${FRONTEND_FQDN}"
-          BACKEND_LABELED_URL="https://${REVISION_LABEL}---${BACKEND_FQDN}"
+          BACKEND_LABELED_URL=$(az containerapp ingress traffic show \
+            --name ${NAME_PREFIX}-backend \
+            --resource-group ${{ inputs.resource_group }} \
+            --query "[?label=='${REVISION_LABEL}'].latestRevision" -o tsv)
+
+          # If we got revision names, construct the proper URLs
+          if [ -n "${FRONTEND_LABELED_URL}" ]; then
+            # Get the base FQDN
+            FRONTEND_FQDN=$(az containerapp show \
+              --resource-group ${{ inputs.resource_group }} \
+              --name ${NAME_PREFIX}-frontend \
+              --query properties.configuration.ingress.fqdn -o tsv)
+
+            # Extract the domain suffix after the app name
+            DOMAIN_SUFFIX="${FRONTEND_FQDN#*.}"
+
+            # Construct the correct labeled URL format: app-name---label.domain
+            FRONTEND_LABELED_URL="https://${NAME_PREFIX}-frontend---${REVISION_LABEL}.${DOMAIN_SUFFIX}"
+          else
+            FRONTEND_LABELED_URL=""
+          fi
+
+          if [ -n "${BACKEND_LABELED_URL}" ]; then
+            # Get the base FQDN
+            BACKEND_FQDN=$(az containerapp show \
+              --resource-group ${{ inputs.resource_group }} \
+              --name ${NAME_PREFIX}-backend \
+              --query properties.configuration.ingress.fqdn -o tsv)
+
+            # Extract the domain suffix after the app name
+            DOMAIN_SUFFIX="${BACKEND_FQDN#*.}"
+
+            # Construct the correct labeled URL format: app-name---label.domain
+            BACKEND_LABELED_URL="https://${NAME_PREFIX}-backend---${REVISION_LABEL}.${DOMAIN_SUFFIX}"
+          else
+            BACKEND_LABELED_URL=""
+          fi
 
           echo "Frontend labeled URL: ${FRONTEND_LABELED_URL}"
           echo "Backend labeled URL: ${BACKEND_LABELED_URL}"
