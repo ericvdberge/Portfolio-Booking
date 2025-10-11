@@ -220,6 +220,28 @@ jobs:
             echo "::warning::No backend revision found to label"
           fi
 
+      - name: Set traffic weight for labeled revisions
+        if: inputs.environment_type == 'preview'
+        run: |
+          NAME_PREFIX="pbooking"
+          REVISION_LABEL="pr-${{ inputs.pr_number }}"
+
+          echo "Setting traffic weight for labeled revisions"
+
+          # Set traffic to 100% for the labeled revision on frontend
+          az containerapp ingress traffic set \
+            --name ${NAME_PREFIX}-frontend \
+            --resource-group ${{ inputs.resource_group }} \
+            --label-weight ${REVISION_LABEL}=100
+
+          # Set traffic to 100% for the labeled revision on backend
+          az containerapp ingress traffic set \
+            --name ${NAME_PREFIX}-backend \
+            --resource-group ${{ inputs.resource_group }} \
+            --label-weight ${REVISION_LABEL}=100
+
+          echo "Traffic weight set successfully"
+
 
       - name: Get labeled URLs after applying labels
         if: inputs.environment_type == 'preview'
