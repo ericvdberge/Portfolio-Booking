@@ -44,7 +44,6 @@ var enableMultiRevision = (environmentType == 'preview')  // Multiple mode for P
 var databaseName = environmentType == 'preview' ? 'portfolio_booking_pr_${prNumber}' : 'portfolio_booking'
 var revisionMode = enableMultiRevision ? 'Multiple' : 'Single'
 var revisionSuffix = environmentType == 'preview' ? 'pr-${prNumber}' : deploymentHash
-var revisionLabel = environmentType == 'preview' ? 'pr-${prNumber}' : ''
 
 // Log Analytics Workspace
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
@@ -130,7 +129,6 @@ resource databaseApp 'Microsoft.App/containerApps@2024-03-01' = {
     }
     template: {
       revisionSuffix: revisionSuffix
-      revisionLabel: revisionLabel
       containers: [
         {
           name: 'postgres'
@@ -194,7 +192,6 @@ resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
     }
     template: {
       revisionSuffix: revisionSuffix
-      revisionLabel: revisionLabel
       containers: [
         {
           name: 'backend'
@@ -240,7 +237,6 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
     }
     template: {
       revisionSuffix: revisionSuffix
-      revisionLabel: revisionLabel
       containers: [
         {
           name: 'frontend'
@@ -263,7 +259,3 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
 output frontendUrl string = 'https://${frontendApp.properties.configuration.ingress.fqdn}'
 output backendUrl string = 'https://${backendApp.properties.configuration.ingress.fqdn}'
 output storageAccountName string = storageAccount.name
-
-// PR-specific labeled URLs (only populated for preview environments)
-output frontendPrUrl string = environmentType == 'preview' ? 'https://${revisionLabel}---${frontendApp.properties.configuration.ingress.fqdn}' : ''
-output backendPrUrl string = environmentType == 'preview' ? 'https://${revisionLabel}---${backendApp.properties.configuration.ingress.fqdn}' : ''

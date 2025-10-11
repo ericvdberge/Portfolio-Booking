@@ -57,8 +57,8 @@ jobs:
     outputs:
       frontend-url: ${{ steps.get-urls.outputs.frontend-url }}
       backend-url: ${{ steps.get-urls.outputs.backend-url }}
-      frontend-pr-url: ${{ steps.get-urls.outputs.frontend-pr-url }}
-      backend-pr-url: ${{ steps.get-urls.outputs.backend-pr-url }}
+      frontend-pr-url: ${{ steps.get-labeled-urls.outputs.frontend-pr-url || steps.get-urls.outputs.frontend-pr-url }}
+      backend-pr-url: ${{ steps.get-labeled-urls.outputs.backend-pr-url || steps.get-urls.outputs.backend-pr-url }}
       deployment-name: ${{ steps.deploy.outputs.deployment-name }}
 
     steps:
@@ -222,3 +222,71 @@ jobs:
           echo "backend-url=${BACKEND_URL}" >> $GITHUB_OUTPUT
           echo "frontend-pr-url=${FRONTEND_PR_URL}" >> $GITHUB_OUTPUT
           echo "backend-pr-url=${BACKEND_PR_URL}" >> $GITHUB_OUTPUT
+
+      - name: Apply revision labels for PR environments
+        if: inputs.environment_type == 'preview'
+        run: |
+          NAME_PREFIX="pbooking"
+          REVISION_SUFFIX="pr-${{ inputs.pr_number }}"
+          REVISION_LABEL="pr-${{ inputs.pr_number }}"
+
+          echo "Applying revision labels for PR ${{ inputs.pr_number }}"
+
+          # Apply label to frontend revision
+          FRONTEND_REVISION=$(az containerapp revision list \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${NAME_PREFIX}-frontend \
+            --query "[?ends_with(name, '-${REVISION_SUFFIX}')].name" -o tsv | head -1)
+
+          if [ -n "$FRONTEND_REVISION" ]; then
+            echo "Applying label '${REVISION_LABEL}' to frontend revision: $FRONTEND_REVISION"
+            az containerapp revision label add \
+              --resource-group ${{ inputs.resource_group }} \
+              --name ${NAME_PREFIX}-frontend \
+              --revision "$FRONTEND_REVISION" \
+              --label "$REVISION_LABEL"
+          fi
+
+          # Apply label to backend revision
+          BACKEND_REVISION=$(az containerapp revision list \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${NAME_PREFIX}-backend \
+            --query "[?ends_with(name, '-${REVISION_SUFFIX}')].name" -o tsv | head -1)
+
+          if [ -n "$BACKEND_REVISION" ]; then
+            echo "Applying label '${REVISION_LABEL}' to backend revision: $BACKEND_REVISION"
+            az containerapp revision label add \
+              --resource-group ${{ inputs.resource_group }} \
+              --name ${NAME_PREFIX}-backend \
+              --revision "$BACKEND_REVISION" \
+              --label "$REVISION_LABEL"
+          fi
+
+      - name: Get labeled URLs after applying labels
+        if: inputs.environment_type == 'preview'
+        id: get-labeled-urls
+        run: |
+          NAME_PREFIX="pbooking"
+          REVISION_LABEL="pr-${{ inputs.pr_number }}"
+
+          # Get the FQDN for each app
+          FRONTEND_FQDN=$(az containerapp show \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${NAME_PREFIX}-frontend \
+            --query properties.configuration.ingress.fqdn -o tsv)
+
+          BACKEND_FQDN=$(az containerapp show \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${NAME_PREFIX}-backend \
+            --query properties.configuration.ingress.fqdn -o tsv)
+
+          # Construct labeled URLs
+          FRONTEND_LABELED_URL="https://${REVISION_LABEL}---${FRONTEND_FQDN}"
+          BACKEND_LABELED_URL="https://${REVISION_LABEL}---${BACKEND_FQDN}"
+
+          echo "Frontend labeled URL: ${FRONTEND_LABELED_URL}"
+          echo "Backend labeled URL: ${BACKEND_LABELED_URL}"
+
+          # Update the outputs with actual labeled URLs
+          echo "frontend-pr-url=${FRONTEND_LABELED_URL}" >> $GITHUB_OUTPUT
+          echo "backend-pr-url=${BACKEND_LABELED_URL}" >> $GITHUB_OUTPUT
