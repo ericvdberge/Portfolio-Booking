@@ -67,45 +67,52 @@ jobs:
           echo "Updating backend container app for label: ${REVISION_LABEL}"
           echo "Backend image: ${{ inputs.backend_image }}"
 
-          # Update using revision copy - this creates a new revision but keeps the same label
-          # First, get the latest revision for this label
-          LATEST_REVISION=$(az containerapp revision list \
+          # Get the revision associated with this label
+          LABELED_REVISION=$(az containerapp revision list \
             --resource-group ${{ inputs.resource_group }} \
             --name ${NAME_PREFIX}-backend \
             --query "[?label=='${REVISION_LABEL}'].name" -o tsv | head -n 1)
 
-          if [ -n "$LATEST_REVISION" ]; then
-            echo "Found existing revision with label ${REVISION_LABEL}: ${LATEST_REVISION}"
-            # Copy the revision with updated image, keeping the same label
-            az containerapp revision copy \
-              --resource-group ${{ inputs.resource_group }} \
-              --name ${NAME_PREFIX}-backend \
-              --from-revision ${LATEST_REVISION} \
-              --image "${{ inputs.backend_image }}" \
-              --revision-label "${REVISION_LABEL}"
-          else
-            echo "No existing revision found, creating new revision with label ${REVISION_LABEL}"
-            # Create new revision with label
-            az containerapp update \
-              --name ${NAME_PREFIX}-backend \
-              --resource-group ${{ inputs.resource_group }} \
-              --image "${{ inputs.backend_image }}" \
-              --set-env-vars "REVISION_LABEL=${REVISION_LABEL}"
+          if [ -n "$LABELED_REVISION" ]; then
+            echo "Found revision with label ${REVISION_LABEL}: ${LABELED_REVISION}"
 
-            # Set label on the latest revision
+            # Create a new revision with the updated image, copying from the labeled revision
+            echo "Creating new revision with image: ${{ inputs.backend_image }}"
+            az containerapp revision copy \
+              --name ${NAME_PREFIX}-backend \
+              --resource-group ${{ inputs.resource_group }} \
+              --from-revision ${LABELED_REVISION} \
+              --image "${{ inputs.backend_image }}"
+
+            # Get the newly created revision
             NEW_REVISION=$(az containerapp revision list \
               --resource-group ${{ inputs.resource_group }} \
               --name ${NAME_PREFIX}-backend \
               --query "[0].name" -o tsv)
 
+            echo "New revision created: ${NEW_REVISION}"
+
+            # Apply the PR label to the new revision (this removes it from the old one)
+            echo "Moving label ${REVISION_LABEL} to new revision"
             az containerapp revision label add \
-              --resource-group ${{ inputs.resource_group }} \
               --name ${NAME_PREFIX}-backend \
-              --revision ${NEW_REVISION} \
-              --label "${REVISION_LABEL}"
+              --resource-group ${{ inputs.resource_group }} \
+              --label ${REVISION_LABEL} \
+              --revision ${NEW_REVISION}
+
+            # Set traffic weight for the labeled revision
+            echo "Setting traffic weight for labeled revision"
+            az containerapp ingress traffic set \
+              --name ${NAME_PREFIX}-backend \
+              --resource-group ${{ inputs.resource_group }} \
+              --label-weight ${REVISION_LABEL}=100
+
+            echo "Backend updated successfully"
+          else
+            echo "::warning::No revision found with label ${REVISION_LABEL}"
+            echo "This might be the first deployment for this PR"
           fi
 
-          echo "Backend updated successfully with label ${REVISION_LABEL}"
           echo "revision-label=${REVISION_LABEL}" >> $GITHUB_OUTPUT
 
       - name: Update frontend container app
@@ -117,40 +124,51 @@ jobs:
           echo "Updating frontend container app for label: ${REVISION_LABEL}"
           echo "Frontend image: ${{ inputs.frontend_image }}"
 
-          # Update using revision copy - this creates a new revision but keeps the same label
-          LATEST_REVISION=$(az containerapp revision list \
+          # Get the revision associated with this label
+          LABELED_REVISION=$(az containerapp revision list \
             --resource-group ${{ inputs.resource_group }} \
             --name ${NAME_PREFIX}-frontend \
             --query "[?label=='${REVISION_LABEL}'].name" -o tsv | head -n 1)
 
-          if [ -n "$LATEST_REVISION" ]; then
-            echo "Found existing revision with label ${REVISION_LABEL}: ${LATEST_REVISION}"
+          if [ -n "$LABELED_REVISION" ]; then
+            echo "Found revision with label ${REVISION_LABEL}: ${LABELED_REVISION}"
+
+            # Create a new revision with the updated image, copying from the labeled revision
+            echo "Creating new revision with image: ${{ inputs.frontend_image }}"
             az containerapp revision copy \
-              --resource-group ${{ inputs.resource_group }} \
-              --name ${NAME_PREFIX}-frontend \
-              --from-revision ${LATEST_REVISION} \
-              --image "${{ inputs.frontend_image }}" \
-              --revision-label "${REVISION_LABEL}"
-          else
-            echo "No existing revision found, creating new revision with label ${REVISION_LABEL}"
-            az containerapp update \
               --name ${NAME_PREFIX}-frontend \
               --resource-group ${{ inputs.resource_group }} \
+              --from-revision ${LABELED_REVISION} \
               --image "${{ inputs.frontend_image }}"
 
+            # Get the newly created revision
             NEW_REVISION=$(az containerapp revision list \
               --resource-group ${{ inputs.resource_group }} \
               --name ${NAME_PREFIX}-frontend \
               --query "[0].name" -o tsv)
 
-            az containerapp revision label add \
-              --resource-group ${{ inputs.resource_group }} \
-              --name ${NAME_PREFIX}-frontend \
-              --revision ${NEW_REVISION} \
-              --label "${REVISION_LABEL}"
-          fi
+            echo "New revision created: ${NEW_REVISION}"
 
-          echo "Frontend updated successfully with label ${REVISION_LABEL}"
+            # Apply the PR label to the new revision (this removes it from the old one)
+            echo "Moving label ${REVISION_LABEL} to new revision"
+            az containerapp revision label add \
+              --name ${NAME_PREFIX}-frontend \
+              --resource-group ${{ inputs.resource_group }} \
+              --label ${REVISION_LABEL} \
+              --revision ${NEW_REVISION}
+
+            # Set traffic weight for the labeled revision
+            echo "Setting traffic weight for labeled revision"
+            az containerapp ingress traffic set \
+              --name ${NAME_PREFIX}-frontend \
+              --resource-group ${{ inputs.resource_group }} \
+              --label-weight ${REVISION_LABEL}=100
+
+            echo "Frontend updated successfully"
+          else
+            echo "::warning::No revision found with label ${REVISION_LABEL}"
+            echo "This might be the first deployment for this PR"
+          fi
 
       - name: Get deployment URLs
         id: get-urls
