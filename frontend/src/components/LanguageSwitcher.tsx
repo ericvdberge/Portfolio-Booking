@@ -60,7 +60,7 @@ export function LanguageSwitcher() {
       }}
     >
       {locales.map((lang) => (
-        <SelectItem key={lang} value={lang} textValue={languageNames[lang]}>
+        <SelectItem key={lang} textValue={languageNames[lang]}>
           <div className="flex items-center gap-2">
             <FlagIcon locale={lang} />
             {languageNames[lang]}
