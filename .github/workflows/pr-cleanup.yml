@@ -26,54 +26,74 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deactivate frontend revision
-        id: cleanup-frontend
+      - name: Cleanup PR revisions
+        id: cleanup
         continue-on-error: true
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
-          REVISION="pbooking-frontend--pr-${PR_NUMBER}"
+          NAME_PREFIX="pbooking"
+          REVISION_LABEL="pr-${PR_NUMBER}"
 
-          echo "Deactivating frontend revision: ${REVISION}"
+          echo "🧹 Cleaning up revisions with label '${REVISION_LABEL}' for PR #${PR_NUMBER}"
 
-          az containerapp revision deactivate \
+          # Find and remove frontend revision with this label
+          echo "Finding frontend revision with label '${REVISION_LABEL}'..."
+          FRONTEND_LABELED_REVISION=$(az containerapp ingress traffic show \
             --resource-group ${{ env.RESOURCE_GROUP }} \
-            --name pbooking-frontend \
-            --revision ${REVISION}
+            --name ${NAME_PREFIX}-frontend \
+            --query "[?label=='${REVISION_LABEL}'].revisionName | [0]" -o tsv 2>/dev/null || echo "")
 
-          echo "Frontend revision deactivated successfully"
+          if [ -n "${FRONTEND_LABELED_REVISION}" ]; then
+            echo "Found frontend revision: ${FRONTEND_LABELED_REVISION}"
 
-      - name: Deactivate backend revision
-        id: cleanup-backend
-        continue-on-error: true
-        run: |
-          PR_NUMBER=${{ github.event.pull_request.number }}
-          REVISION="pbooking-backend--pr-${PR_NUMBER}"
+            # Remove the label first
+            echo "Removing label '${REVISION_LABEL}' from frontend..."
+            az containerapp revision label remove \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --name ${NAME_PREFIX}-frontend \
+              --label ${REVISION_LABEL} \
+              --yes 2>/dev/null || echo "Could not remove label"
 
-          echo "Deactivating backend revision: ${REVISION}"
+            # Deactivate the revision
+            echo "Deactivating frontend revision: ${FRONTEND_LABELED_REVISION}"
+            az containerapp revision deactivate \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --name ${NAME_PREFIX}-frontend \
+              --revision ${FRONTEND_LABELED_REVISION} || echo "Could not deactivate ${FRONTEND_LABELED_REVISION}"
+          else
+            echo "No frontend revision found with label '${REVISION_LABEL}'"
+          fi
 
-          az containerapp revision deactivate \
+          # Find and remove backend revision with this label
+          echo "Finding backend revision with label '${REVISION_LABEL}'..."
+          BACKEND_LABELED_REVISION=$(az containerapp ingress traffic show \
             --resource-group ${{ env.RESOURCE_GROUP }} \
-            --name pbooking-backend \
-            --revision ${REVISION}
+            --name ${NAME_PREFIX}-backend \
+            --query "[?label=='${REVISION_LABEL}'].revisionName | [0]" -o tsv 2>/dev/null || echo "")
 
-          echo "Backend revision deactivated successfully"
+          if [ -n "${BACKEND_LABELED_REVISION}" ]; then
+            echo "Found backend revision: ${BACKEND_LABELED_REVISION}"
 
-      - name: Deactivate database revision
-        id: cleanup-database
-        continue-on-error: true
-        run: |
-          PR_NUMBER=${{ github.event.pull_request.number }}
-          REVISION="pbooking-database--pr-${PR_NUMBER}"
+            # Remove the label first
+            echo "Removing label '${REVISION_LABEL}' from backend..."
+            az containerapp revision label remove \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --name ${NAME_PREFIX}-backend \
+              --label ${REVISION_LABEL} \
+              --yes 2>/dev/null || echo "Could not remove label"
 
-          echo "Deactivating database revision: ${REVISION}"
+            # Deactivate the revision
+            echo "Deactivating backend revision: ${BACKEND_LABELED_REVISION}"
+            az containerapp revision deactivate \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --name ${NAME_PREFIX}-backend \
+              --revision ${BACKEND_LABELED_REVISION} || echo "Could not deactivate ${BACKEND_LABELED_REVISION}"
+          else
+            echo "No backend revision found with label '${REVISION_LABEL}'"
+          fi
 
-          az containerapp revision deactivate \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --name pbooking-database \
-            --revision ${REVISION}
-
-          echo "Database revision deactivated successfully"
-          echo "⚠️  Note: Database data is isolated per revision with name: portfolio_booking_pr_${PR_NUMBER}"
+          echo "✅ Cleanup completed for PR #${PR_NUMBER}"
+          echo "⚠️  Note: Database data is isolated per PR with database name: portfolio_booking_pr_${PR_NUMBER}"
 
       - name: Cleanup summary
         run: |
@@ -82,6 +102,6 @@ jobs:
           echo "🧹 Cleanup completed for PR #${PR_NUMBER}"
           echo ""
           echo "Cleaned resources:"
-          echo "  ✅ Frontend revision: pbooking-frontend--pr-${PR_NUMBER}"
-          echo "  ✅ Backend revision: pbooking-backend--pr-${PR_NUMBER}"
-          echo "  ✅ Database revision: pbooking-database--pr-${PR_NUMBER}"
+          echo "  ✅ Removed label 'pr-${PR_NUMBER}' and deactivated associated revisions"
+          echo "  ✅ Frontend and Backend revisions cleaned up"
+          echo "  ⚠️  Database data preserved in: portfolio_booking_pr_${PR_NUMBER}"
