@@ -248,7 +248,7 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
             {
               name: 'NEXT_PUBLIC_API_URL'
               value: environmentType == 'preview'
-                ? 'https://${revisionLabel}---${backendApp.name}.${substring(backendApp.properties.configuration.ingress.fqdn, indexOf(backendApp.properties.configuration.ingress.fqdn, '.') + 1)}'
+                ? 'https://${backendApp.name}---${revisionLabel}.${substring(backendApp.properties.configuration.ingress.fqdn, indexOf(backendApp.properties.configuration.ingress.fqdn, '.') + 1)}'
                 : 'https://${backendApp.properties.configuration.ingress.fqdn}'
             }
           ]
