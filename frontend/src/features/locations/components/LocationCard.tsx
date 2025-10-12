@@ -28,8 +28,7 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
     return () => clearTimeout(timer);
   }, [delay]);
 
-  const handleBookNow = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleBookNow = () => {
     onBookNow?.(location.id || '');
   };
 
