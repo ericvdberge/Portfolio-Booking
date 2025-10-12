@@ -6,11 +6,6 @@ on:
       image_tag:
         required: true
         type: string
-      backend_api_url:
-        description: 'Backend URL to embed in frontend build'
-        required: false
-        type: string
-        default: 'http://localhost:8080'
 
     outputs:
       backend_image:
@@ -62,5 +57,3 @@ jobs:
           file: ./frontend/Dockerfile
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ inputs.image_tag }}
-          build-args: |
-            NEXT_PUBLIC_API_URL=${{ inputs.backend_api_url }}

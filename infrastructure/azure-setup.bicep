@@ -244,6 +244,14 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
         {
           name: 'frontend'
           image: frontendImage
+          env: [
+            {
+              name: 'NEXT_PUBLIC_API_URL'
+              value: environmentType == 'preview'
+                ? 'https://${revisionLabel}---${backendApp.name}.${substring(backendApp.properties.configuration.ingress.fqdn, indexOf(backendApp.properties.configuration.ingress.fqdn, '.') + 1)}'
+                : 'https://${backendApp.properties.configuration.ingress.fqdn}'
+            }
+          ]
           resources: {
             cpu: json('0.25')
             memory: '0.5Gi'
@@ -259,12 +267,12 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
 }
 
 // Outputs - construct label-based URLs for preview environments
-output frontendUrl string = environmentType == 'preview'
-  ? 'https://${revisionLabel}---${frontendApp.name}.${substring(frontendApp.properties.configuration.ingress.fqdn, indexOf(frontendApp.properties.configuration.ingress.fqdn, '.') + 1)}'
-  : 'https://${frontendApp.properties.configuration.ingress.fqdn}'
-
-output backendUrl string = environmentType == 'preview'
-  ? 'https://${revisionLabel}---${backendApp.name}.${substring(backendApp.properties.configuration.ingress.fqdn, indexOf(backendApp.properties.configuration.ingress.fqdn, '.') + 1)}'
-  : 'https://${backendApp.properties.configuration.ingress.fqdn}'
-
+output frontendUrl string = 'https://${frontendApp.properties.configuration.ingress.fqdn}'
+output backendUrl string = 'https://${backendApp.properties.configuration.ingress.fqdn}'
+output frontendPrUrl string = environmentType == 'preview'
+  ? 'https://${frontendApp.name}---${revisionLabel}.${substring(frontendApp.properties.configuration.ingress.fqdn, indexOf(frontendApp.properties.configuration.ingress.fqdn, '.') + 1)}'
+  : ''
+output backendPrUrl string = environmentType == 'preview'
+  ? 'https://${backendApp.name}---${revisionLabel}.${substring(backendApp.properties.configuration.ingress.fqdn, indexOf(backendApp.properties.configuration.ingress.fqdn, '.') + 1)}'
+  : ''
 output storageAccountName string = storageAccount.name

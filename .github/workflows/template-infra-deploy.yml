@@ -58,8 +58,10 @@ jobs:
       contents: read
 
     outputs:
-      frontend-pr-url: ${{ steps.get-labeled-urls.outputs.frontend-pr-url || steps.get-urls.outputs.frontend-pr-url }}
-      backend-pr-url: ${{ steps.get-labeled-urls.outputs.backend-pr-url || steps.get-urls.outputs.backend-pr-url }}
+      frontend-url: ${{ steps.get-urls.outputs.frontend-url }}
+      backend-url: ${{ steps.get-urls.outputs.backend-url }}
+      frontend-pr-url: ${{ steps.get-urls.outputs.frontend-pr-url }}
+      backend-pr-url: ${{ steps.get-urls.outputs.backend-pr-url }}
       deployment-name: ${{ steps.deploy.outputs.deployment-name }}
       deployment-hash: ${{ steps.deploy.outputs.deployment-hash }}
 
@@ -157,6 +159,17 @@ jobs:
         run: |
           DEPLOYMENT_NAME="${{ steps.deploy.outputs.deployment-name }}"
 
+          # Get base URLs
+          FRONTEND_URL=$(az deployment group show \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${DEPLOYMENT_NAME} \
+            --query properties.outputs.frontendUrl.value -o tsv 2>/dev/null || echo "")
+
+          BACKEND_URL=$(az deployment group show \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${DEPLOYMENT_NAME} \
+            --query properties.outputs.backendUrl.value -o tsv 2>/dev/null || echo "")
+
           # Get PR-specific labeled URLs (only for preview environments)
           FRONTEND_PR_URL=$(az deployment group show \
             --resource-group ${{ inputs.resource_group }} \
@@ -168,9 +181,13 @@ jobs:
             --name ${DEPLOYMENT_NAME} \
             --query properties.outputs.backendPrUrl.value -o tsv 2>/dev/null || echo "")
 
-          echo "Frontend PR: ${FRONTEND_PR_URL}"
-          echo "Backend PR: ${BACKEND_PR_URL}"
+          echo "Frontend URL: ${FRONTEND_URL}"
+          echo "Backend URL: ${BACKEND_URL}"
+          echo "Frontend PR URL: ${FRONTEND_PR_URL}"
+          echo "Backend PR URL: ${BACKEND_PR_URL}"
 
+          echo "frontend-url=${FRONTEND_URL}" >> $GITHUB_OUTPUT
+          echo "backend-url=${BACKEND_URL}" >> $GITHUB_OUTPUT
           echo "frontend-pr-url=${FRONTEND_PR_URL}" >> $GITHUB_OUTPUT
           echo "backend-pr-url=${BACKEND_PR_URL}" >> $GITHUB_OUTPUT
 
@@ -244,62 +261,3 @@ jobs:
             --label-weight ${REVISION_LABEL}=100
 
           echo "Traffic weight set successfully"
-
-
-      - name: Get labeled URLs after applying labels
-        if: inputs.environment_type == 'preview'
-        id: get-labeled-urls
-        run: |
-          NAME_PREFIX="pbooking"
-          REVISION_LABEL="pr-${{ inputs.pr_number }}"
-
-          # Get the actual labeled URL from the ingress traffic configuration
-          FRONTEND_LABELED_URL=$(az containerapp ingress traffic show \
-            --name ${NAME_PREFIX}-frontend \
-            --resource-group ${{ inputs.resource_group }} \
-            --query "[?label=='${REVISION_LABEL}'].latestRevision" -o tsv)
-
-          BACKEND_LABELED_URL=$(az containerapp ingress traffic show \
-            --name ${NAME_PREFIX}-backend \
-            --resource-group ${{ inputs.resource_group }} \
-            --query "[?label=='${REVISION_LABEL}'].latestRevision" -o tsv)
-
-          # If we got revision names, construct the proper URLs
-          if [ -n "${FRONTEND_LABELED_URL}" ]; then
-            # Get the base FQDN
-            FRONTEND_FQDN=$(az containerapp show \
-              --resource-group ${{ inputs.resource_group }} \
-              --name ${NAME_PREFIX}-frontend \
-              --query properties.configuration.ingress.fqdn -o tsv)
-
-            # Extract the domain suffix after the app name
-            DOMAIN_SUFFIX="${FRONTEND_FQDN#*.}"
-
-            # Construct the correct labeled URL format: app-name---label.domain
-            FRONTEND_LABELED_URL="https://${NAME_PREFIX}-frontend---${REVISION_LABEL}.${DOMAIN_SUFFIX}"
-          else
-            FRONTEND_LABELED_URL=""
-          fi
-
-          if [ -n "${BACKEND_LABELED_URL}" ]; then
-            # Get the base FQDN
-            BACKEND_FQDN=$(az containerapp show \
-              --resource-group ${{ inputs.resource_group }} \
-              --name ${NAME_PREFIX}-backend \
-              --query properties.configuration.ingress.fqdn -o tsv)
-
-            # Extract the domain suffix after the app name
-            DOMAIN_SUFFIX="${BACKEND_FQDN#*.}"
-
-            # Construct the correct labeled URL format: app-name---label.domain
-            BACKEND_LABELED_URL="https://${NAME_PREFIX}-backend---${REVISION_LABEL}.${DOMAIN_SUFFIX}"
-          else
-            BACKEND_LABELED_URL=""
-          fi
-
-          echo "Frontend labeled URL: ${FRONTEND_LABELED_URL}"
-          echo "Backend labeled URL: ${BACKEND_LABELED_URL}"
-
-          # Update the outputs with actual labeled URLs
-          echo "frontend-pr-url=${FRONTEND_LABELED_URL}" >> $GITHUB_OUTPUT
-          echo "backend-pr-url=${BACKEND_LABELED_URL}" >> $GITHUB_OUTPUT

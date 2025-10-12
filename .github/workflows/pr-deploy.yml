@@ -48,10 +48,8 @@ jobs:
           COMMIT_SHA: ${{ github.sha }}
         run: |
           gh pr comment ${{ github.event.pull_request.number }} --body "🚀 **Preview Deployment Ready**
-
-          **🏷️ PR-Specific URLs (labeled revisions):**
-          - **Frontend PR**: ${FRONTEND_URL}
-          - **Backend PR**: ${BACKEND_URL}
+          - **Frontend**: ${FRONTEND_URL}
+          - **Backend**: ${BACKEND_URL}
 
           ---
           *Deployed from commit ${COMMIT_SHA}*"

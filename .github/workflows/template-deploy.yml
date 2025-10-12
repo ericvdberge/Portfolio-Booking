@@ -43,14 +43,24 @@ on:
     outputs:
       frontend_pr_url:
         description: 'Frontend PR labeled URL (preview only)'
-        value: ${{ jobs.update-images.outputs.frontend_pr_url || jobs.deploy-infra.outputs.frontend_pr_url }}
+        value: ${{ jobs.deploy-infra.outputs.frontend_pr_url }}
       backend_pr_url:
         description: 'Backend PR labeled URL (preview only)'
-        value: ${{ jobs.update-images.outputs.backend_pr_url || jobs.deploy-infra.outputs.backend_pr_url }}
+        value: ${{ jobs.deploy-infra.outputs.backend_pr_url }}
 
 jobs:
-  # Phase 1: Deploy infrastructure with hello-world images to create revisions and get URLs
+  # Phase 1: Build Docker images
+  build-images:
+    uses: ./.github/workflows/template-build-images.yml
+    permissions:
+      contents: read
+      packages: write
+    with:
+      image_tag: ${{ inputs.image_tag }}
+
+  # Phase 2: Deploy infrastructure with actual images
   deploy-infra:
+    needs: build-images
     uses: ./.github/workflows/template-infra-deploy.yml
     permissions:
       id-token: write
@@ -59,40 +69,10 @@ jobs:
       environment_type: ${{ inputs.environment_type }}
       resource_group: ${{ inputs.resource_group }}
       pr_number: ${{ inputs.pr_number }}
-      backend_image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
-      frontend_image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
-    secrets:
-      azure_client_id: ${{ secrets.azure_client_id }}
-      azure_tenant_id: ${{ secrets.azure_tenant_id }}
-      azure_subscription_id: ${{ secrets.azure_subscription_id }}
-      db_password: ${{ secrets.db_password }}
-
-  # Phase 2: Build actual images with discovered backend URL
-  build-images:
-    needs: deploy-infra
-    uses: ./.github/workflows/template-build-images.yml
-    permissions:
-      contents: read
-      packages: write
-    with:
-      image_tag: ${{ inputs.image_tag }}
-      backend_api_url: ${{ needs.deploy-infra.outputs.backend_pr_url || needs.deploy-infra.outputs.backend_url }}
-
-  # Phase 3: Update container apps with actual images (no redeploy)
-  update-images:
-    needs: [deploy-infra, build-images]
-    uses: ./.github/workflows/template-infra-update.yml
-    permissions:
-      id-token: write
-      contents: read
-    with:
-      environment_type: ${{ inputs.environment_type }}
-      resource_group: ${{ inputs.resource_group }}
-      pr_number: ${{ inputs.pr_number }}
-      deployment_hash: ${{ needs.deploy-infra.outputs.deployment_hash }}
       backend_image: ${{ needs.build-images.outputs.backend_image }}
       frontend_image: ${{ needs.build-images.outputs.frontend_image }}
     secrets:
       azure_client_id: ${{ secrets.azure_client_id }}
       azure_tenant_id: ${{ secrets.azure_tenant_id }}
       azure_subscription_id: ${{ secrets.azure_subscription_id }}
+      db_password: ${{ secrets.db_password }}
