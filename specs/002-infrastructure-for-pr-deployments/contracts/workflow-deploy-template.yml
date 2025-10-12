@@ -1,0 +1,435 @@
+# Contract: deploy-template.yml Workflow (Reusable)
+# Purpose: Reusable workflow template containing shared deployment logic
+
+name: Deploy Template (Reusable)
+
+# TRIGGERS
+on:
+  workflow_call:
+    inputs:
+      environment_type:
+        description: 'Deployment environment type'
+        required: true
+        type: string  # 'production' or 'preview'
+
+      resource_group:
+        description: 'Azure resource group name'
+        required: true
+        type: string  # 'BookingSystem' or 'BookingSystem-PR'
+
+      deployment_suffix:
+        description: 'Deployment suffix for multi-revision (empty for production)'
+        required: false
+        type: string
+        default: ''  # Empty for prod, 'pr-123' for preview
+
+      image_tag:
+        description: 'Docker image tag to deploy'
+        required: true
+        type: string  # 'latest' or 'pr-123'
+
+      pr_number:
+        description: 'Pull request number (for preview deployments only)'
+        required: false
+        type: string
+        default: ''
+
+    secrets:
+      azure_client_id:
+        required: true
+      azure_tenant_id:
+        required: true
+      azure_subscription_id:
+        required: true
+      db_password:
+        required: true
+      user_principal_id:
+        required: false  # Only needed for production
+      github_token:
+        required: false  # Only needed for PR comments
+
+    outputs:
+      frontend_url:
+        description: 'Frontend URL of deployed environment'
+        value: ${{ jobs.deploy.outputs.frontend-url }}
+      backend_url:
+        description: 'Backend URL of deployed environment'
+        value: ${{ jobs.deploy.outputs.backend-url }}
+
+# ENVIRONMENT VARIABLES
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE_NAME: ericvdberge/portfolio-booking/backend
+  FRONTEND_IMAGE_NAME: ericvdberge/portfolio-booking/frontend
+
+# JOBS
+
+jobs:
+  # --------------------------------------------------
+  # Job: create-revision (PR only)
+  # Purpose: Create initial revision with PR label for correct URL
+  # Runs for: Preview deployments only
+  # --------------------------------------------------
+  create-revision:
+    runs-on: ubuntu-latest
+    if: inputs.environment_type == 'preview'
+    permissions:
+      id-token: write
+      contents: read
+
+    outputs:
+      frontend-url: ${{ steps.get-urls.outputs.frontend-url }}
+      backend-url: ${{ steps.get-urls.outputs.backend-url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.azure_client_id }}
+          tenant-id: ${{ secrets.azure_tenant_id }}
+          subscription-id: ${{ secrets.azure_subscription_id }}
+
+      - name: Create initial PR revision
+        run: |
+          DEPLOYMENT_HASH=$(date +%s | sha256sum | head -c 8)
+          DEPLOYMENT_NAME="pr-${{ inputs.pr_number }}-init"
+          REVISION_LABEL="pr-${{ inputs.pr_number }}"
+
+          # Deploy infrastructure
+          az deployment group create \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${DEPLOYMENT_NAME} \
+            --template-file infrastructure/azure-setup.bicep \
+            --parameters namePrefix=pbooking location=swedencentral \
+                        environmentType=preview prNumber=${{ inputs.pr_number }} \
+                        backendImage=mcr.microsoft.com/azuredocs/containerapps-helloworld:latest \
+                        frontendImage=mcr.microsoft.com/azuredocs/containerapps-helloworld:latest \
+                        databasePassword="${{ secrets.db_password }}" deploymentHash=${DEPLOYMENT_HASH}
+
+          # Get actual revision names and apply labels
+          echo "Getting revision names for label assignment..."
+          echo "Looking for revisions containing hash: ${DEPLOYMENT_HASH}"
+
+          # Debug: List all revisions with details
+          echo "All backend revisions with creation time:"
+          az containerapp revision list \
+            --name pbooking-backend \
+            --resource-group ${{ inputs.resource_group }} \
+            --query "[].{Name:name, Created:properties.createdTime, Active:properties.active}" -o table
+
+          echo "All frontend revisions with creation time:"
+          az containerapp revision list \
+            --name pbooking-frontend \
+            --resource-group ${{ inputs.resource_group }} \
+            --query "[].{Name:name, Created:properties.createdTime, Active:properties.active}" -o table
+
+          # Try multiple methods to get the correct revision
+          echo "Method 1: Latest by creation time"
+          BACKEND_REVISION_1=$(az containerapp revision list \
+            --name pbooking-backend \
+            --resource-group ${{ inputs.resource_group }} \
+            --query "max_by([], &properties.createdTime).name" -o tsv 2>/dev/null || echo "")
+
+          FRONTEND_REVISION_1=$(az containerapp revision list \
+            --name pbooking-frontend \
+            --resource-group ${{ inputs.resource_group }} \
+            --query "max_by([], &properties.createdTime).name" -o tsv 2>/dev/null || echo "")
+
+          echo "Method 2: By deployment hash suffix"
+          BACKEND_REVISION_2=$(az containerapp revision list \
+            --name pbooking-backend \
+            --resource-group ${{ inputs.resource_group }} \
+            --query "[?ends_with(name, '${DEPLOYMENT_HASH}')].name | [0]" -o tsv 2>/dev/null || echo "")
+
+          FRONTEND_REVISION_2=$(az containerapp revision list \
+            --name pbooking-frontend \
+            --resource-group ${{ inputs.resource_group }} \
+            --query "[?ends_with(name, '${DEPLOYMENT_HASH}')].name | [0]" -o tsv 2>/dev/null || echo "")
+
+          echo "Method 3: Active revision"
+          BACKEND_REVISION_3=$(az containerapp revision list \
+            --name pbooking-backend \
+            --resource-group ${{ inputs.resource_group }} \
+            --query "[?properties.active].name | [0]" -o tsv 2>/dev/null || echo "")
+
+          FRONTEND_REVISION_3=$(az containerapp revision list \
+            --name pbooking-frontend \
+            --resource-group ${{ inputs.resource_group }} \
+            --query "[?properties.active].name | [0]" -o tsv 2>/dev/null || echo "")
+
+          # Choose the best revision (prefer by hash, then by time, then active)
+          BACKEND_REVISION="${BACKEND_REVISION_2:-${BACKEND_REVISION_1:-$BACKEND_REVISION_3}}"
+          FRONTEND_REVISION="${FRONTEND_REVISION_2:-${FRONTEND_REVISION_1:-$FRONTEND_REVISION_3}}"
+
+          echo "Selected backend revision: '${BACKEND_REVISION}'"
+          echo "Selected frontend revision: '${FRONTEND_REVISION}'"
+
+          # Apply labels with more verbose output
+          if [ -n "${BACKEND_REVISION}" ] && [ "${BACKEND_REVISION}" != "null" ]; then
+            echo "Attempting to add label '${REVISION_LABEL}' to backend revision '${BACKEND_REVISION}'"
+            az containerapp revision label add \
+              --name pbooking-backend \
+              --resource-group ${{ inputs.resource_group }} \
+              --revision ${BACKEND_REVISION} \
+              --label ${REVISION_LABEL} \
+              --yes \
+              --verbose && echo "✅ Backend label applied successfully" || echo "❌ Backend label failed"
+          else
+            echo "❌ No valid backend revision found"
+          fi
+
+          if [ -n "${FRONTEND_REVISION}" ] && [ "${FRONTEND_REVISION}" != "null" ]; then
+            echo "Attempting to add label '${REVISION_LABEL}' to frontend revision '${FRONTEND_REVISION}'"
+            az containerapp revision label add \
+              --name pbooking-frontend \
+              --resource-group ${{ inputs.resource_group }} \
+              --revision ${FRONTEND_REVISION} \
+              --label ${REVISION_LABEL} \
+              --yes \
+              --verbose && echo "✅ Frontend label applied successfully" || echo "❌ Frontend label failed"
+          else
+            echo "❌ No valid frontend revision found"
+          fi
+
+          # Verify labels were applied
+          echo "Verifying label assignment..."
+          az containerapp ingress traffic show \
+            --name pbooking-backend \
+            --resource-group ${{ inputs.resource_group }} || echo "Could not show backend traffic"
+
+          az containerapp ingress traffic show \
+            --name pbooking-frontend \
+            --resource-group ${{ inputs.resource_group }} || echo "Could not show frontend traffic"
+
+      - name: Get initial URLs
+        id: get-urls
+        run: |
+          DEPLOYMENT_NAME="pr-${{ inputs.pr_number }}-init"
+          FRONTEND_URL=$(az deployment group show \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${DEPLOYMENT_NAME} \
+            --query properties.outputs.frontendUrl.value -o tsv)
+          BACKEND_URL=$(az deployment group show \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${DEPLOYMENT_NAME} \
+            --query properties.outputs.backendUrl.value -o tsv)
+          echo "frontend-url=${FRONTEND_URL}" >> $GITHUB_OUTPUT
+          echo "backend-url=${BACKEND_URL}" >> $GITHUB_OUTPUT
+
+  # --------------------------------------------------
+  # Job: build-and-push
+  # Purpose: Build Docker images and push to GitHub Container Registry
+  # Runs for: Both production and preview deployments
+  # --------------------------------------------------
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: [create-revision]
+    if: always() && (needs.create-revision.result == 'success' || inputs.environment_type == 'production')
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      backend-tag: ${{ steps.build-backend.outputs.tags }}
+      frontend-tag: ${{ steps.build-frontend.outputs.tags }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push backend image
+        id: build-backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Booking.Api/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:${{ inputs.image_tag }}
+
+      - name: Build and push frontend image
+        id: build-frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ inputs.image_tag }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ inputs.environment_type == 'preview' && needs.create-revision.outputs.backend-url || 'https://pbooking-backend.swedencentral.azurecontainerapps.io' }}
+
+  # --------------------------------------------------
+  # Job: deploy
+  # Purpose: Deploy/update infrastructure with built images
+  # Runs for: Both production and preview deployments
+  # --------------------------------------------------
+  deploy:
+    needs: [build-and-push, create-revision]
+    if: always() && needs.build-and-push.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    outputs:
+      frontend-url: ${{ inputs.environment_type == 'preview' && needs.create-revision.outputs.frontend-url || steps.get-urls.outputs.frontend-url }}
+      backend-url: ${{ inputs.environment_type == 'preview' && needs.create-revision.outputs.backend-url || steps.get-urls.outputs.backend-url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.azure_client_id }}
+          tenant-id: ${{ secrets.azure_tenant_id }}
+          subscription-id: ${{ secrets.azure_subscription_id }}
+
+      - name: Clean up old revisions (preview only)
+        if: inputs.environment_type == 'preview'
+        run: |
+          REVISION_LABEL="pr-${{ inputs.pr_number }}"
+          echo "Removing existing labels '${REVISION_LABEL}' from old revisions for PR ${{ inputs.pr_number }}"
+
+          # Remove existing labels from all revisions (this transfers traffic back to latest)
+          az containerapp revision label remove \
+            --name pbooking-frontend \
+            --resource-group ${{ inputs.resource_group }} \
+            --label ${REVISION_LABEL} \
+            --yes || echo "No frontend revisions found with label '${REVISION_LABEL}'"
+
+          az containerapp revision label remove \
+            --name pbooking-backend \
+            --resource-group ${{ inputs.resource_group }} \
+            --label ${REVISION_LABEL} \
+            --yes || echo "No backend revisions found with label '${REVISION_LABEL}'"
+
+      - name: Deploy/Update infrastructure
+        run: |
+          DEPLOYMENT_HASH=$(date +%s | sha256sum | head -c 8)
+
+          if [ "${{ inputs.environment_type }}" == "production" ]; then
+            # Production deployment - create new deployment
+            DEPLOYMENT_NAME="production-${DEPLOYMENT_HASH}"
+            az deployment group create \
+              --resource-group ${{ inputs.resource_group }} \
+              --name ${DEPLOYMENT_NAME} \
+              --template-file infrastructure/azure-setup.bicep \
+              --parameters namePrefix=pbooking location=swedencentral \
+                          environmentType=production prNumber="" \
+                          backendImage=${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:${{ inputs.image_tag }} \
+                          frontendImage=${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ inputs.image_tag }} \
+                          databasePassword="${{ secrets.db_password }}" \
+                          deploymentHash=${DEPLOYMENT_HASH}
+          else
+            # Preview deployment - create new revision with same label
+            DEPLOYMENT_NAME="pr-${{ inputs.pr_number }}-${DEPLOYMENT_HASH}"
+            REVISION_LABEL="pr-${{ inputs.pr_number }}"
+
+            az deployment group create \
+              --resource-group ${{ inputs.resource_group }} \
+              --name ${DEPLOYMENT_NAME} \
+              --template-file infrastructure/azure-setup.bicep \
+              --parameters namePrefix=pbooking location=swedencentral \
+                          environmentType=preview prNumber=${{ inputs.pr_number }} \
+                          backendImage=${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:${{ inputs.image_tag }} \
+                          frontendImage=${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ inputs.image_tag }} \
+                          databasePassword="${{ secrets.db_password }}" deploymentHash=${DEPLOYMENT_HASH}
+
+            # Move labels to the new revisions (for updates)
+            echo "Moving labels to new revisions with built images..."
+
+            BACKEND_REVISION=$(az containerapp revision list \
+              --name pbooking-backend \
+              --resource-group ${{ inputs.resource_group }} \
+              --query "max_by([], &properties.createdTime).name" -o tsv 2>/dev/null || echo "")
+
+            FRONTEND_REVISION=$(az containerapp revision list \
+              --name pbooking-frontend \
+              --resource-group ${{ inputs.resource_group }} \
+              --query "max_by([], &properties.createdTime).name" -o tsv 2>/dev/null || echo "")
+
+            echo "Moving label '${REVISION_LABEL}' to backend revision: '${BACKEND_REVISION}'"
+            echo "Moving label '${REVISION_LABEL}' to frontend revision: '${FRONTEND_REVISION}'"
+
+            if [ -n "${BACKEND_REVISION}" ] && [ "${BACKEND_REVISION}" != "null" ]; then
+              az containerapp revision label add \
+                --name pbooking-backend \
+                --resource-group ${{ inputs.resource_group }} \
+                --revision ${BACKEND_REVISION} \
+                --label ${REVISION_LABEL} \
+                --yes && echo "✅ Backend label moved to new revision" || echo "❌ Backend label move failed"
+            fi
+
+            if [ -n "${FRONTEND_REVISION}" ] && [ "${FRONTEND_REVISION}" != "null" ]; then
+              az containerapp revision label add \
+                --name pbooking-frontend \
+                --resource-group ${{ inputs.resource_group }} \
+                --revision ${FRONTEND_REVISION} \
+                --label ${REVISION_LABEL} \
+                --yes && echo "✅ Frontend label moved to new revision" || echo "❌ Frontend label move failed"
+            fi
+          fi
+
+      - name: Get deployment URLs (production only)
+        if: inputs.environment_type == 'production'
+        id: get-urls
+        run: |
+          DEPLOYMENT_NAME=$(az deployment group list \
+            --resource-group ${{ inputs.resource_group }} \
+            --query "[?contains(name, 'production-')].name | [0]" -o tsv)
+          FRONTEND_URL=$(az deployment group show \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${DEPLOYMENT_NAME} \
+            --query properties.outputs.frontendUrl.value -o tsv)
+          BACKEND_URL=$(az deployment group show \
+            --resource-group ${{ inputs.resource_group }} \
+            --name ${DEPLOYMENT_NAME} \
+            --query properties.outputs.backendUrl.value -o tsv)
+          echo "frontend-url=${FRONTEND_URL}" >> $GITHUB_OUTPUT
+          echo "backend-url=${BACKEND_URL}" >> $GITHUB_OUTPUT
+
+# CONTRACT SPECIFICATIONS
+
+# Input Requirements:
+# - inputs.environment_type: Must be 'production' or 'preview'
+# - inputs.resource_group: Azure resource group name
+# - inputs.image_tag: Docker image tag (e.g., 'latest', 'pr-123')
+# - inputs.pr_number: Required when environment_type is 'preview'
+# - secrets: All required secrets must be provided by caller workflow
+
+# Output Guarantees:
+# - Builds and pushes Docker images with specified tag
+# - Deploys infrastructure to specified resource group
+# - Returns frontend and backend URLs as outputs
+
+# Error Handling:
+# - Build failure: Stops workflow, no deployment occurs
+# - Deployment failure: Fails job, caller workflow receives failure status
+# - URL extraction failure: Fails job
+
+# Behavioral Contracts:
+# - Shared logic: Reused by both production and preview deployments
+# - Single Bicep template: Uses azure-setup.bicep with environment-specific parameters
+# - Production: Single job flow - build then deploy with new revision
+# - Preview: Three job flow - create revision (pr-x label), build images, update containers
+# - Preview revision suffix: Always 'pr-{number}' for consistent URLs
+# - Production revision suffix: Uses deployment hash for uniqueness
+# - Image tags: Customizable per deployment type
+# - Idempotent: Safe to run multiple times (Azure handles updates)
+
+# Reusability:
+# - Called by prod-deploy.yml with production inputs
+# - Called by pr-deploy.yml with preview inputs
+# - Eliminates ~80% workflow code duplication
+# - Works with single Bicep template (100% infrastructure code reuse)

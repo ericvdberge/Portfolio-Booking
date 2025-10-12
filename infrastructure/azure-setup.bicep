@@ -4,6 +4,16 @@ param location string = resourceGroup().location
 @description('Name prefix for all resources')
 param namePrefix string = 'booking'
 
+@description('Environment type: production or preview')
+@allowed([
+  'production'
+  'preview'
+])
+param environmentType string = 'production'
+
+@description('Pull request number (required for preview environments)')
+param prNumber string = ''
+
 @description('Container Apps Environment name')
 param environmentName string = '${namePrefix}-env'
 
@@ -26,58 +36,17 @@ param backendImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworl
 @description('Frontend container image')
 param frontendImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 
-
-@description('Key Vault name')
-param keyVaultName string = '${namePrefix}kv${uniqueString(resourceGroup().id)}'
-
-@description('User principal ID for Key Vault access (optional)')
-param userPrincipalId string = ''
-
 @description('Deployment hash to force new revisions')
 param deploymentHash string
 
-// Key Vault
-resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
-  name: keyVaultName
-  location: location
-  properties: {
-    tenantId: subscription().tenantId
-    sku: {
-      family: 'A'
-      name: 'standard'
-    }
-    accessPolicies: []
-    enabledForDeployment: true
-    enabledForTemplateDeployment: true
-    enabledForDiskEncryption: false
-    enableRbacAuthorization: true
-    publicNetworkAccess: 'Enabled'
-    networkAcls: {
-      defaultAction: 'Allow'
-      bypass: 'AzureServices'
-    }
-  }
-}
+// Calculated parameters
+var enableMultiRevision = (environmentType == 'preview')  // Multiple mode for PR environments
+var databaseName = environmentType == 'preview' ? 'portfolio_booking_pr_${prNumber}' : 'portfolio_booking'
+var revisionMode = enableMultiRevision ? 'Multiple' : 'Single'
 
-// Key Vault Secret for Database Password
-resource dbPasswordSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  name: 'database-password'
-  parent: keyVault
-  properties: {
-    value: databasePassword
-    contentType: 'text/plain'
-  }
-}
-
-// Key Vault Secret for Connection String
-resource connectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  name: 'connection-string'
-  parent: keyVault
-  properties: {
-    value: 'Host=${databaseApp.name};Database=portfolio_booking;Username=booking_user;Password=${databasePassword}'
-    contentType: 'text/plain'
-  }
-}
+// Revision naming: unique for each deployment, labels for stable URLs
+var revisionSuffix = environmentType == 'preview' ? deploymentHash : deploymentHash
+var revisionLabel = environmentType == 'preview' ? 'pr-${prNumber}' : ''
 
 // Log Analytics Workspace
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
@@ -127,35 +96,6 @@ resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' 
   }
 }
 
-// Managed Identity for Container Apps to access Key Vault
-resource containerAppIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
-  name: '${namePrefix}-identity'
-  location: location
-}
-
-// Role assignment for Key Vault Secrets User (Container App Identity)
-resource keyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(keyVault.id, containerAppIdentity.id, 'Key Vault Secrets User')
-  scope: keyVault
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6') // Key Vault Secrets User
-    principalId: containerAppIdentity.properties.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-// Role assignment for user access (Key Vault Administrator)
-resource userKeyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(userPrincipalId)) {
-  name: guid(keyVault.id, userPrincipalId, 'Key Vault Administrator')
-  scope: keyVault
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '00482a5a-887f-4fb3-b363-3b7fe8e74483') // Key Vault Administrator
-    principalId: userPrincipalId
-    principalType: 'User'
-  }
-}
-
-
 // Storage for Container Apps Environment
 resource storage 'Microsoft.App/managedEnvironments/storages@2024-03-01' = {
   name: 'postgres-storage'
@@ -174,16 +114,10 @@ resource storage 'Microsoft.App/managedEnvironments/storages@2024-03-01' = {
 resource databaseApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: '${namePrefix}-database'
   location: location
-  dependsOn: [keyVaultRoleAssignment]
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${containerAppIdentity.id}': {}
-    }
-  }
   properties: {
     managedEnvironmentId: containerAppEnvironment.id
     configuration: {
+      activeRevisionsMode: revisionMode
       ingress: {
         external: false
         targetPort: 5432
@@ -192,12 +126,12 @@ resource databaseApp 'Microsoft.App/containerApps@2024-03-01' = {
       secrets: [
         {
           name: 'db-password'
-          keyVaultUrl: dbPasswordSecret.properties.secretUri
-          identity: containerAppIdentity.id
+          value: databasePassword
         }
       ]
     }
     template: {
+      revisionSuffix: revisionSuffix
       containers: [
         {
           name: 'postgres'
@@ -205,7 +139,7 @@ resource databaseApp 'Microsoft.App/containerApps@2024-03-01' = {
           env: [
             {
               name: 'POSTGRES_DB'
-              value: 'portfolio_booking'
+              value: databaseName
             }
             {
               name: 'POSTGRES_USER'
@@ -242,16 +176,10 @@ resource databaseApp 'Microsoft.App/containerApps@2024-03-01' = {
 resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: '${namePrefix}-backend'
   location: location
-  dependsOn: [keyVaultRoleAssignment]
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${containerAppIdentity.id}': {}
-    }
-  }
   properties: {
     managedEnvironmentId: containerAppEnvironment.id
     configuration: {
+      activeRevisionsMode: revisionMode
       ingress: {
         external: true
         targetPort: 80
@@ -260,19 +188,13 @@ resource backendApp 'Microsoft.App/containerApps@2024-03-01' = {
       }
       secrets: [
         {
-          name: 'db-password'
-          keyVaultUrl: dbPasswordSecret.properties.secretUri
-          identity: containerAppIdentity.id
-        }
-        {
           name: 'connection-string'
-          keyVaultUrl: connectionStringSecret.properties.secretUri
-          identity: containerAppIdentity.id
+          value: 'Host=${databaseApp.name};Database=${databaseName};Username=booking_user;Password=${databasePassword}'
         }
       ]
     }
     template: {
-      revisionSuffix: deploymentHash
+      revisionSuffix: revisionSuffix
       containers: [
         {
           name: 'backend'
@@ -308,6 +230,7 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
   properties: {
     managedEnvironmentId: containerAppEnvironment.id
     configuration: {
+      activeRevisionsMode: revisionMode
       ingress: {
         external: true
         targetPort: 80
@@ -316,7 +239,7 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
       }
     }
     template: {
-      revisionSuffix: deploymentHash
+      revisionSuffix: revisionSuffix
       containers: [
         {
           name: 'frontend'
@@ -324,7 +247,9 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
           env: [
             {
               name: 'NEXT_PUBLIC_API_URL'
-              value: 'https://${backendApp.properties.configuration.ingress.fqdn}'
+              value: environmentType == 'preview'
+                ? 'https://${backendApp.name}---${revisionLabel}.${substring(backendApp.properties.configuration.ingress.fqdn, indexOf(backendApp.properties.configuration.ingress.fqdn, '.') + 1)}'
+                : 'https://${backendApp.properties.configuration.ingress.fqdn}'
             }
           ]
           resources: {
@@ -341,7 +266,13 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
   }
 }
 
-// Outputs
+// Outputs - construct label-based URLs for preview environments
 output frontendUrl string = 'https://${frontendApp.properties.configuration.ingress.fqdn}'
 output backendUrl string = 'https://${backendApp.properties.configuration.ingress.fqdn}'
+output frontendPrUrl string = environmentType == 'preview'
+  ? 'https://${frontendApp.name}---${revisionLabel}.${substring(frontendApp.properties.configuration.ingress.fqdn, indexOf(frontendApp.properties.configuration.ingress.fqdn, '.') + 1)}'
+  : ''
+output backendPrUrl string = environmentType == 'preview'
+  ? 'https://${backendApp.name}---${revisionLabel}.${substring(backendApp.properties.configuration.ingress.fqdn, indexOf(backendApp.properties.configuration.ingress.fqdn, '.') + 1)}'
+  : ''
 output storageAccountName string = storageAccount.name
