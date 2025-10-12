@@ -1,6 +1,7 @@
 import { BookingApiContext } from "./bookingApiContext";
+import { env } from 'next-runtime-env';
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const baseUrl = env('NEXT_PUBLIC_API_URL') || "http://localhost:8080";
 
 export type ErrorWrapper<TError> =
   | TError
