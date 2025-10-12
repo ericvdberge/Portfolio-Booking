@@ -5,6 +5,7 @@ import { QueryProvider } from "@/providers/query-provider";
 import { Header } from "@/components/Header";
 import { LocaleProvider } from '@/providers/locale-provider';
 import { PublicEnvScript } from "next-runtime-env";
+import { HeroUIProvider } from "@/providers/heroui-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,14 +38,16 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <LocaleProvider initialMessages={initialMessages}>
-          <QueryProvider>
-            <Header />
-            <main>
-              {children}
-            </main>
-          </QueryProvider>
-        </LocaleProvider>
+        <HeroUIProvider>
+          <LocaleProvider initialMessages={initialMessages}>
+            <QueryProvider>
+              <Header />
+              <main>
+                {children}
+              </main>
+            </QueryProvider>
+          </LocaleProvider>
+        </HeroUIProvider>
       </body>
     </html>
   );

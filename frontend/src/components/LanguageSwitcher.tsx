@@ -2,13 +2,7 @@
 
 import { useLocale } from 'next-intl';
 import { useState, useTransition } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectItem } from '@heroui/react';
 import { locales, type Locale } from '@/i18n/config';
 import Image from 'next/image';
 
@@ -45,25 +39,34 @@ export function LanguageSwitcher() {
   };
 
   return (
-    <Select value={locale} onValueChange={handleLanguageChange} disabled={isPending}>
-      <SelectTrigger className="w-36">
-        <SelectValue>
+    <Select
+      selectedKeys={[locale]}
+      onSelectionChange={(keys) => {
+        const selected = Array.from(keys)[0] as string;
+        if (selected) handleLanguageChange(selected);
+      }}
+      isDisabled={isPending}
+      className="w-36"
+      size="sm"
+      aria-label="Select language"
+      renderValue={(items) => {
+        const selected = items[0];
+        return selected ? (
           <div className="flex items-center gap-2">
-            <FlagIcon locale={locale} />
-            {languageNames[locale]}
+            <FlagIcon locale={selected.key as Locale} />
+            {languageNames[selected.key as Locale]}
           </div>
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        {locales.map((lang) => (
-          <SelectItem key={lang} value={lang}>
-            <div className="flex items-center gap-2">
-              <FlagIcon locale={lang} />
-              {languageNames[lang]}
-            </div>
-          </SelectItem>
-        ))}
-      </SelectContent>
+        ) : null;
+      }}
+    >
+      {locales.map((lang) => (
+        <SelectItem key={lang} value={lang} textValue={languageNames[lang]}>
+          <div className="flex items-center gap-2">
+            <FlagIcon locale={lang} />
+            {languageNames[lang]}
+          </div>
+        </SelectItem>
+      ))}
     </Select>
   );
 }

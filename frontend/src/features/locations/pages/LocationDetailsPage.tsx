@@ -2,9 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useGetLocationById } from '@/api/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Button, Card, CardHeader, CardBody, Chip } from '@heroui/react';
 import { ArrowLeft, Users, Clock, Calendar } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { ImageCollage } from '../components/ImageCollage';
@@ -56,7 +54,7 @@ export default function LocationDetailsPage() {
           <p className="text-muted-foreground">
             {t('locationDetails.notFoundDescription')}
           </p>
-          <Button onClick={handleGoBack} variant="outline">
+          <Button onPress={handleGoBack} variant="bordered">
             <ArrowLeft className="h-4 w-4 mr-2" />
             {t('locationDetails.goBack')}
           </Button>
@@ -69,13 +67,14 @@ export default function LocationDetailsPage() {
     <div className="container mx-auto px-4 py-8 space-y-8">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button 
-          onClick={handleGoBack} 
-          variant="outline" 
+        <Button
+          onPress={handleGoBack}
+          variant="light"
           size="sm"
-          className="shrink-0 border-none shadow-none"
+          isIconOnly
+          className="shrink-0"
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{location.name}</h1>
@@ -91,39 +90,39 @@ export default function LocationDetailsPage() {
         <div className="lg:col-span-2 space-y-6">
           <ImageCollage images={images} locationName={location.name} />
 
-          <Card className="shadow-none border-none pl-0">
+          <Card shadow="none" className="border-none pl-0">
             <CardHeader className="pl-0">
-              <CardTitle>{t('locationDetails.aboutLocation')}</CardTitle>
+              <h2 className="text-xl font-semibold">{t('locationDetails.aboutLocation')}</h2>
             </CardHeader>
-            <CardContent className="pl-0">
-              <p className="text-muted-foreground leading-relaxed">
+            <CardBody className="pl-0">
+              <p className="text-default-500 leading-relaxed">
                 {location.description || t('locationDetails.noDescription')}
               </p>
-            </CardContent>
+            </CardBody>
           </Card>
         </div>
 
         {/* Booking Information */}
         <div className="space-y-6">
-          <Card className="shadow-none border-none">
+          <Card shadow="none" className="border-none">
             <CardHeader>
-              <CardTitle>{t('locationDetails.details')}</CardTitle>
+              <h2 className="text-xl font-semibold">{t('locationDetails.details')}</h2>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardBody className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  <span className="text-sm text-muted-foreground">{t('locationDetails.capacity')}</span>
+                  <span className="text-sm text-default-500">{t('locationDetails.capacity')}</span>
                 </div>
-                <Badge variant="secondary">{location.capacity} {t('locationDetails.people')}</Badge>
+                <Chip variant="flat" color="default">{location.capacity} {t('locationDetails.people')}</Chip>
               </div>
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
-                  <span className="text-sm text-muted-foreground">{t('locationDetails.hours')}</span>
+                  <span className="text-sm text-default-500">{t('locationDetails.hours')}</span>
                 </div>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm text-default-500">
                   {location.openTime} - {location.closeTime}
                 </span>
               </div>
@@ -131,39 +130,42 @@ export default function LocationDetailsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  <span className="text-sm text-muted-foreground">{t('locationDetails.availability')}</span>
+                  <span className="text-sm text-default-500">{t('locationDetails.availability')}</span>
                 </div>
-                <Badge variant="default" className="bg-green-100 text-green-800">
+                <Chip color="success" variant="flat">
                   {t('locationDetails.available')}
-                </Badge>
+                </Chip>
               </div>
-            </CardContent>
+            </CardBody>
           </Card>
 
-          <Card className="shadow-none border-none">
+          <Card shadow="none" className="border-none">
             <CardHeader>
-              <CardTitle>{t('locationDetails.bookTitle')}</CardTitle>
-              <CardDescription>
-                {t('locationDetails.bookDescription')}
-              </CardDescription>
+              <div>
+                <h2 className="text-xl font-semibold">{t('locationDetails.bookTitle')}</h2>
+                <p className="text-sm text-default-500">
+                  {t('locationDetails.bookDescription')}
+                </p>
+              </div>
             </CardHeader>
-            <CardContent>
-              <Button 
-                onClick={handleBookNow}
+            <CardBody>
+              <Button
+                onPress={handleBookNow}
+                color="primary"
                 className="w-full"
                 size="lg"
               >
                 <Calendar className="h-4 w-4 mr-2" />
                 {t('locationDetails.bookNow')}
               </Button>
-            </CardContent>
+            </CardBody>
           </Card>
 
-          <Card className="shadow-none border-none">
+          <Card shadow="none" className="border-none">
             <CardHeader>
-              <CardTitle>{t('locationDetails.features')}</CardTitle>
+              <h2 className="text-xl font-semibold">{t('locationDetails.features')}</h2>
             </CardHeader>
-            <CardContent>
+            <CardBody>
               <div className="grid grid-cols-1 gap-2">
                 <div className="flex items-center gap-2 text-sm">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -182,7 +184,7 @@ export default function LocationDetailsPage() {
                   <span>{t('locationDetails.feature4')}</span>
                 </div>
               </div>
-            </CardContent>
+            </CardBody>
           </Card>
         </div>
       </div>
