@@ -280,24 +280,43 @@ jobs:
             echo "::warning::No backend revision found to label"
           fi
 
-      - name: Set traffic weight for labeled revisions
+      - name: Activate labeled revisions
         if: inputs.environment_type == 'preview'
         run: |
           NAME_PREFIX="pbooking"
-          REVISION_LABEL="pr-${{ inputs.pr_number }}"
+          DEPLOYMENT_HASH="${{ steps.deploy.outputs.deployment-hash }}"
 
-          echo "Setting traffic weight for labeled revisions"
+          echo "Activating labeled revisions for direct access"
 
-          # Set traffic to 100% for the labeled revision on frontend
-          az containerapp ingress traffic set \
+          # Get the revision names
+          FRONTEND_REVISION=$(az containerapp revision list \
+            --resource-group ${{ inputs.resource_group }} \
             --name ${NAME_PREFIX}-frontend \
-            --resource-group ${{ inputs.resource_group }} \
-            --label-weight ${REVISION_LABEL}=100
+            --query "[?contains(name, '${DEPLOYMENT_HASH}')].name | [0]" \
+            -o tsv)
 
-          # Set traffic to 100% for the labeled revision on backend
-          az containerapp ingress traffic set \
+          BACKEND_REVISION=$(az containerapp revision list \
+            --resource-group ${{ inputs.resource_group }} \
             --name ${NAME_PREFIX}-backend \
-            --resource-group ${{ inputs.resource_group }} \
-            --label-weight ${REVISION_LABEL}=100
+            --query "[?contains(name, '${DEPLOYMENT_HASH}')].name | [0]" \
+            -o tsv)
 
-          echo "Traffic weight set successfully"
+          # Set minimal traffic (1%) to activate the revision for label-based routing
+          # This allows the label URL to work without affecting main traffic distribution
+          if [ -n "${FRONTEND_REVISION}" ]; then
+            echo "Activating frontend revision ${FRONTEND_REVISION}"
+            az containerapp ingress traffic set \
+              --name ${NAME_PREFIX}-frontend \
+              --resource-group ${{ inputs.resource_group }} \
+              --revision-weight ${FRONTEND_REVISION}=1 latest=99
+          fi
+
+          if [ -n "${BACKEND_REVISION}" ]; then
+            echo "Activating backend revision ${BACKEND_REVISION}"
+            az containerapp ingress traffic set \
+              --name ${NAME_PREFIX}-backend \
+              --resource-group ${{ inputs.resource_group }} \
+              --revision-weight ${BACKEND_REVISION}=1 latest=99
+          fi
+
+          echo "Labeled revisions activated successfully"
