@@ -280,43 +280,36 @@ jobs:
             echo "::warning::No backend revision found to label"
           fi
 
-      - name: Activate labeled revisions
+      - name: Verify labeled revisions
         if: inputs.environment_type == 'preview'
         run: |
           NAME_PREFIX="pbooking"
-          DEPLOYMENT_HASH="${{ steps.deploy.outputs.deployment-hash }}"
+          REVISION_LABEL="pr-${{ inputs.pr_number }}"
 
-          echo "Activating labeled revisions for direct access"
+          echo "Verifying labeled revisions are accessible"
 
-          # Get the revision names
-          FRONTEND_REVISION=$(az containerapp revision list \
+          # Verify frontend label
+          FRONTEND_LABEL=$(az containerapp ingress traffic show \
             --resource-group ${{ inputs.resource_group }} \
             --name ${NAME_PREFIX}-frontend \
-            --query "[?contains(name, '${DEPLOYMENT_HASH}')].name | [0]" \
-            -o tsv)
+            --query "[?label=='${REVISION_LABEL}'].revisionName | [0]" -o tsv 2>/dev/null || echo "")
 
-          BACKEND_REVISION=$(az containerapp revision list \
+          if [ -n "${FRONTEND_LABEL}" ]; then
+            echo "✓ Frontend label '${REVISION_LABEL}' is active on revision ${FRONTEND_LABEL}"
+          else
+            echo "::warning::Frontend label '${REVISION_LABEL}' not found"
+          fi
+
+          # Verify backend label
+          BACKEND_LABEL=$(az containerapp ingress traffic show \
             --resource-group ${{ inputs.resource_group }} \
             --name ${NAME_PREFIX}-backend \
-            --query "[?contains(name, '${DEPLOYMENT_HASH}')].name | [0]" \
-            -o tsv)
+            --query "[?label=='${REVISION_LABEL}'].revisionName | [0]" -o tsv 2>/dev/null || echo "")
 
-          # Set minimal traffic (1%) to activate the revision for label-based routing
-          # This allows the label URL to work without affecting main traffic distribution
-          if [ -n "${FRONTEND_REVISION}" ]; then
-            echo "Activating frontend revision ${FRONTEND_REVISION}"
-            az containerapp ingress traffic set \
-              --name ${NAME_PREFIX}-frontend \
-              --resource-group ${{ inputs.resource_group }} \
-              --revision-weight ${FRONTEND_REVISION}=1 latest=99
+          if [ -n "${BACKEND_LABEL}" ]; then
+            echo "✓ Backend label '${REVISION_LABEL}' is active on revision ${BACKEND_LABEL}"
+          else
+            echo "::warning::Backend label '${REVISION_LABEL}' not found"
           fi
 
-          if [ -n "${BACKEND_REVISION}" ]; then
-            echo "Activating backend revision ${BACKEND_REVISION}"
-            az containerapp ingress traffic set \
-              --name ${NAME_PREFIX}-backend \
-              --resource-group ${{ inputs.resource_group }} \
-              --revision-weight ${BACKEND_REVISION}=1 latest=99
-          fi
-
-          echo "Labeled revisions activated successfully"
+          echo "Label verification complete. Labels provide direct URL access without traffic weight allocation."
