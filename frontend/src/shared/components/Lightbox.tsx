@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import * as Dialog from '@radix-ui/react-dialog';
+import { Modal, ModalContent, Button } from '@heroui/react';
 import { useKeyboardNav } from '@/shared/hooks/useKeyboardNav';
 import { useTranslations } from 'next-intl';
 
@@ -41,68 +41,101 @@ export function Lightbox({ images, initialIndex, isOpen, onClose, locationName }
   });
 
   return (
-    <Dialog.Root open={isOpen} onOpenChange={onClose}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/90 z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <Dialog.Content className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Visually hidden title for screen readers */}
-          <Dialog.Title className="sr-only">
-            {locationName} photo {currentIndex + 1} of {images.length}
-          </Dialog.Title>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="full"
+      classNames={{
+        base: "bg-black/90",
+        body: "p-0",
+        wrapper: "items-center justify-center",
+      }}
+      hideCloseButton
+      motionProps={{
+        variants: {
+          enter: {
+            opacity: 1,
+            transition: {
+              duration: 0.2,
+            },
+          },
+          exit: {
+            opacity: 0,
+            transition: {
+              duration: 0.2,
+            },
+          },
+        },
+      }}
+    >
+      <ModalContent>
+        {() => (
+          <>
+            {/* Visually hidden title for screen readers */}
+            <h2 className="sr-only">
+              {locationName} photo {currentIndex + 1} of {images.length}
+            </h2>
 
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
-            aria-label={t('closeViewer')}
-          >
-            <X className="h-6 w-6 text-white" />
-          </button>
-
-          {/* Previous button */}
-          {images.length > 1 && (
-            <button
-              onClick={handlePrevious}
-              className="absolute left-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
-              aria-label={t('previousImage')}
+            {/* Close button */}
+            <Button
+              isIconOnly
+              variant="light"
+              onPress={onClose}
+              className="absolute top-4 right-4 z-10 bg-white/10 hover:bg-white/20"
+              aria-label={t('closeViewer')}
             >
-              <ChevronLeft className="h-8 w-8 text-white" />
-            </button>
-          )}
+              <X className="h-6 w-6 text-white" />
+            </Button>
 
-          {/* Image */}
-          <div className="relative w-full h-full flex items-center justify-center">
-            <div className="relative max-w-7xl max-h-full">
-              <Image
-                src={images[currentIndex]}
-                alt={`${locationName} photo ${currentIndex + 1}`}
-                width={1200}
-                height={800}
-                className="max-w-full max-h-[90vh] w-auto h-auto object-contain"
-                priority
-              />
+            {/* Previous button */}
+            {images.length > 1 && (
+              <Button
+                isIconOnly
+                variant="light"
+                onPress={handlePrevious}
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-white/10 hover:bg-white/20"
+                aria-label={t('previousImage')}
+              >
+                <ChevronLeft className="h-8 w-8 text-white" />
+              </Button>
+            )}
+
+            {/* Image */}
+            <div className="relative w-full h-full flex items-center justify-center p-4">
+              <div className="relative max-w-7xl max-h-full">
+                <Image
+                  src={images[currentIndex]}
+                  alt={`${locationName} photo ${currentIndex + 1}`}
+                  width={1200}
+                  height={800}
+                  className="max-w-full max-h-[90vh] w-auto h-auto object-contain"
+                  priority
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Next button */}
-          {images.length > 1 && (
-            <button
-              onClick={handleNext}
-              className="absolute right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
-              aria-label={t('nextImage')}
-            >
-              <ChevronRight className="h-8 w-8 text-white" />
-            </button>
-          )}
+            {/* Next button */}
+            {images.length > 1 && (
+              <Button
+                isIconOnly
+                variant="light"
+                onPress={handleNext}
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-white/10 hover:bg-white/20"
+                aria-label={t('nextImage')}
+              >
+                <ChevronRight className="h-8 w-8 text-white" />
+              </Button>
+            )}
 
-          {/* Image counter */}
-          {images.length > 1 && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-white/10 text-white text-sm z-10">
-              {currentIndex + 1} / {images.length}
-            </div>
-          )}
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+            {/* Image counter */}
+            {images.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-white/10 text-white text-sm z-10">
+                {currentIndex + 1} / {images.length}
+              </div>
+            )}
+          </>
+        )}
+      </ModalContent>
+    </Modal>
   );
 }

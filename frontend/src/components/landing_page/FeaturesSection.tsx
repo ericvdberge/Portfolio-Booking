@@ -1,7 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardHeader, CardBody, Chip } from '@heroui/react';
 import { Shield, Clock, CreditCard, Headphones, Wifi, Coffee, Presentation } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -41,56 +40,56 @@ export function FeaturesSection() {
         <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
           {t('title')}
         </h2>
-        <p className="text-xl text-muted-foreground">
+        <p className="text-xl text-default-600">
           {t('subtitle')}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {features.map((feature) => {
           const IconComponent = feature.icon;
           return (
-            <Card key={feature.key} className="shadow-none border-none p-6 hover:bg-slate-50 transition-colors">
-              <CardHeader className="pb-6">
-                <div className="flex items-center justify-between mb-4">
+            <Card key={feature.key} shadow="none" className="p-6 border border-default-200 hover:border-default-300 transition-colors">
+              <CardHeader className="pb-4 px-0 flex-col items-start">
+                <div className="flex items-start justify-between w-full mb-3">
                   <div className="rounded-xl bg-purple-100 p-3">
-                    <IconComponent className="h-7 w-7 text-purple-600" />
+                    <IconComponent className="h-6 w-6 text-purple-600" />
                   </div>
-                  <Badge variant="secondary" className="text-xs">
+                  <Chip variant="flat" color="secondary" size="sm">
                     {t(`${feature.key}.badge`)}
-                  </Badge>
+                  </Chip>
                 </div>
-                <CardTitle className="text-xl">{t(`${feature.key}.title`)}</CardTitle>
+                <h3 className="text-lg font-semibold text-left w-full">{t(`${feature.key}.title`)}</h3>
               </CardHeader>
-              <CardContent className="pt-0">
-                <CardDescription className="text-muted-foreground leading-relaxed">
+              <CardBody className="pt-0 px-0">
+                <p className="text-default-600 text-sm leading-relaxed">
                   {t(`${feature.key}.description`)}
-                </CardDescription>
-              </CardContent>
+                </p>
+              </CardBody>
             </Card>
           );
         })}
       </div>
 
-      <div className="bg-slate-50 rounded-3xl p-12">
-        <div className="text-center mb-16 space-y-4">
-          <h3 className="text-3xl font-bold">
+      <div className="bg-default-50 rounded-3xl p-8 md:p-12">
+        <div className="text-center mb-12 space-y-3">
+          <h3 className="text-2xl md:text-3xl font-bold">
             {t('amenities.title')}
           </h3>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-default-600 max-w-2xl mx-auto">
             {t('amenities.subtitle')}
           </p>
         </div>
-        
-        <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
+
+        <div className="flex flex-wrap justify-center gap-8 md:gap-12">
           {amenities.map((amenity) => {
             const IconComponent = amenity.icon;
             return (
-              <div key={amenity.key} className="flex flex-col items-center text-center space-y-4">
-                <div className="rounded-full bg-white p-6 shadow-sm">
-                  <IconComponent className="h-8 w-8 text-slate-700" />
+              <div key={amenity.key} className="flex flex-col items-center text-center space-y-3 min-w-[100px]">
+                <div className="rounded-full bg-white p-5 border border-default-200">
+                  <IconComponent className="h-7 w-7 text-default-700" />
                 </div>
-                <span className="text-base font-medium">{t(`amenities.${amenity.key}`)}</span>
+                <span className="text-sm font-medium text-default-700">{t(`amenities.${amenity.key}`)}</span>
               </div>
             );
           })}

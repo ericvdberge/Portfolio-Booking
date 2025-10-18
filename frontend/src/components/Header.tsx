@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { Button } from '@heroui/react';
 import { useTranslations } from 'next-intl';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
@@ -31,7 +31,7 @@ export function Header() {
               {t('locations')}
             </Link>
             <LanguageSwitcher />
-            <Button variant="ghost" size="sm">
+            <Button variant="light" size="sm">
               {t('signIn')}
             </Button>
           </nav>
