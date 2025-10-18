@@ -141,12 +141,35 @@ jobs:
             echo "No backend revision found with label '${REVISION_LABEL}'"
           fi
 
-      - name: Deploy infrastructure
-        id: deploy
+      - name: Check if infrastructure exists
+        id: check-infra
+        run: |
+          NAME_PREFIX="pbooking"
+
+          # Check if Container Apps exist
+          FRONTEND_EXISTS=$(az containerapp show \
+            --name ${NAME_PREFIX}-frontend \
+            --resource-group ${{ inputs.resource_group }} \
+            --query "name" -o tsv 2>/dev/null || echo "")
+
+          BACKEND_EXISTS=$(az containerapp show \
+            --name ${NAME_PREFIX}-backend \
+            --resource-group ${{ inputs.resource_group }} \
+            --query "name" -o tsv 2>/dev/null || echo "")
+
+          if [ -n "${FRONTEND_EXISTS}" ] && [ -n "${BACKEND_EXISTS}" ]; then
+            echo "Infrastructure already exists. Will deploy new revision only."
+            echo "infra-exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Infrastructure does not exist. Will run Bicep deployment."
+            echo "infra-exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy infrastructure (first time only)
+        id: deploy-infra
+        if: steps.check-infra.outputs.infra-exists == 'false'
         run: |
           TEMPLATE_FILE="infrastructure/azure-setup.bicep"
-
-          # Generate deployment hash for all environments to ensure unique revisions
           DEPLOYMENT_HASH=$(date +%s | sha256sum | head -c 5)
 
           if [ "${{ inputs.environment_type }}" == "production" ]; then
@@ -157,15 +180,10 @@ jobs:
 
           NAME_PREFIX="pbooking"
 
-          echo "Deploying to ${{ inputs.resource_group }} as ${DEPLOYMENT_NAME}"
-          echo "Backend: ${{ inputs.backend_image }}"
-          echo "Frontend: ${{ inputs.frontend_image }}"
-          echo "Deployment hash: ${DEPLOYMENT_HASH}"
+          echo "Deploying infrastructure to ${{ inputs.resource_group }}"
           echo "deployment-name=${DEPLOYMENT_NAME}" >> $GITHUB_OUTPUT
           echo "deployment-hash=${DEPLOYMENT_HASH}" >> $GITHUB_OUTPUT
 
-          # Execute the deployment with verbose logging
-          set +e  # Don't exit on error, we want to capture it
           az deployment group create \
             --resource-group ${{ inputs.resource_group }} \
             --name ${DEPLOYMENT_NAME} \
@@ -177,49 +195,118 @@ jobs:
             --parameters backendImage="${{ inputs.backend_image }}" \
             --parameters frontendImage="${{ inputs.frontend_image }}" \
             --parameters databasePassword="${{ secrets.db_password }}" \
-            --parameters deploymentHash="${DEPLOYMENT_HASH}" \
+            --parameters deploymentHash="${DEPLOYMENT_HASH}"
 
-          DEPLOYMENT_EXIT_CODE=$?
+      - name: Deploy new revision (infrastructure exists)
+        id: deploy-revision
+        if: steps.check-infra.outputs.infra-exists == 'true'
+        run: |
+          NAME_PREFIX="pbooking"
+          DEPLOYMENT_HASH=$(date +%s | sha256sum | head -c 5)
+          REVISION_SUFFIX="${DEPLOYMENT_HASH}"
 
-          if [ $DEPLOYMENT_EXIT_CODE -ne 0 ]; then
-            echo "::error::Deployment failed with exit code $DEPLOYMENT_EXIT_CODE"
+          if [ "${{ inputs.environment_type }}" == "production" ]; then
+            DEPLOYMENT_NAME="production-${DEPLOYMENT_HASH}"
+          else
+            DEPLOYMENT_NAME="pr-${{ inputs.pr_number }}-${DEPLOYMENT_HASH}"
+          fi
 
-            echo "===== Deployment Error Details ====="
-            az deployment operation group list \
-              --resource-group ${{ inputs.resource_group }} \
-              --name ${DEPLOYMENT_NAME} \
-              --query "[?properties.provisioningState=='Failed'].{Operation: properties.targetResource.resourceName, Error: properties.statusMessage.error}" \
-              --output json || true
+          echo "Deploying new revision with suffix: ${REVISION_SUFFIX}"
+          echo "Backend: ${{ inputs.backend_image }}"
+          echo "Frontend: ${{ inputs.frontend_image }}"
+          echo "deployment-name=${DEPLOYMENT_NAME}" >> $GITHUB_OUTPUT
+          echo "deployment-hash=${DEPLOYMENT_HASH}" >> $GITHUB_OUTPUT
 
-            exit $DEPLOYMENT_EXIT_CODE
+          # Deploy backend revision and capture the revision name
+          echo "Deploying backend revision..."
+          BACKEND_UPDATE_OUTPUT=$(az containerapp update \
+            --name ${NAME_PREFIX}-backend \
+            --resource-group ${{ inputs.resource_group }} \
+            --image "${{ inputs.backend_image }}" \
+            --revision-suffix "${REVISION_SUFFIX}" \
+            --set-env-vars "ASPNETCORE_ENVIRONMENT=Production" \
+            --output json)
+
+          # Extract the latest revision name from the update output
+          BACKEND_REVISION=$(echo "$BACKEND_UPDATE_OUTPUT" | jq -r '.properties.latestRevisionName')
+          echo "Backend revision created: ${BACKEND_REVISION}"
+          echo "backend-revision=${BACKEND_REVISION}" >> $GITHUB_OUTPUT
+
+          # Deploy frontend revision
+          echo "Deploying frontend revision..."
+
+          # Get backend FQDN for frontend env var
+          BACKEND_FQDN=$(az containerapp show \
+            --name ${NAME_PREFIX}-backend \
+            --resource-group ${{ inputs.resource_group }} \
+            --query "properties.configuration.ingress.fqdn" -o tsv)
+
+          if [ "${{ inputs.environment_type }}" == "preview" ]; then
+            # For preview, use labeled URL
+            REVISION_LABEL="pr-${{ inputs.pr_number }}"
+            BACKEND_DOMAIN=$(echo "${BACKEND_FQDN}" | cut -d'.' -f2-)
+            API_URL="https://${NAME_PREFIX}-backend---${REVISION_LABEL}.${BACKEND_DOMAIN}"
+          else
+            API_URL="https://${BACKEND_FQDN}"
+          fi
+
+          FRONTEND_UPDATE_OUTPUT=$(az containerapp update \
+            --name ${NAME_PREFIX}-frontend \
+            --resource-group ${{ inputs.resource_group }} \
+            --image "${{ inputs.frontend_image }}" \
+            --revision-suffix "${REVISION_SUFFIX}" \
+            --set-env-vars "NEXT_PUBLIC_API_URL=${API_URL}" \
+            --output json)
+
+          FRONTEND_REVISION=$(echo "$FRONTEND_UPDATE_OUTPUT" | jq -r '.properties.latestRevisionName')
+          echo "Frontend revision created: ${FRONTEND_REVISION}"
+          echo "frontend-revision=${FRONTEND_REVISION}" >> $GITHUB_OUTPUT
+
+          echo "Revisions deployed successfully"
+
+      - name: Set deployment outputs
+        id: deploy
+        run: |
+          # Consolidate outputs from either deploy path
+          if [ "${{ steps.check-infra.outputs.infra-exists }}" == "true" ]; then
+            echo "deployment-name=${{ steps.deploy-revision.outputs.deployment-name }}" >> $GITHUB_OUTPUT
+            echo "deployment-hash=${{ steps.deploy-revision.outputs.deployment-hash }}" >> $GITHUB_OUTPUT
+          else
+            echo "deployment-name=${{ steps.deploy-infra.outputs.deployment-name }}" >> $GITHUB_OUTPUT
+            echo "deployment-hash=${{ steps.deploy-infra.outputs.deployment-hash }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Get deployment URLs
         id: get-urls
         run: |
-          DEPLOYMENT_NAME="${{ steps.deploy.outputs.deployment-name }}"
+          NAME_PREFIX="pbooking"
 
-          # Get base URLs
-          FRONTEND_URL=$(az deployment group show \
+          # Get base URLs from Container Apps (works for both Bicep and update paths)
+          FRONTEND_FQDN=$(az containerapp show \
+            --name ${NAME_PREFIX}-frontend \
             --resource-group ${{ inputs.resource_group }} \
-            --name ${DEPLOYMENT_NAME} \
-            --query properties.outputs.frontendUrl.value -o tsv 2>/dev/null || echo "")
+            --query "properties.configuration.ingress.fqdn" -o tsv)
 
-          BACKEND_URL=$(az deployment group show \
+          BACKEND_FQDN=$(az containerapp show \
+            --name ${NAME_PREFIX}-backend \
             --resource-group ${{ inputs.resource_group }} \
-            --name ${DEPLOYMENT_NAME} \
-            --query properties.outputs.backendUrl.value -o tsv 2>/dev/null || echo "")
+            --query "properties.configuration.ingress.fqdn" -o tsv)
 
-          # Get PR-specific labeled URLs (only for preview environments)
-          FRONTEND_PR_URL=$(az deployment group show \
-            --resource-group ${{ inputs.resource_group }} \
-            --name ${DEPLOYMENT_NAME} \
-            --query properties.outputs.frontendPrUrl.value -o tsv 2>/dev/null || echo "")
+          FRONTEND_URL="https://${FRONTEND_FQDN}"
+          BACKEND_URL="https://${BACKEND_FQDN}"
 
-          BACKEND_PR_URL=$(az deployment group show \
-            --resource-group ${{ inputs.resource_group }} \
-            --name ${DEPLOYMENT_NAME} \
-            --query properties.outputs.backendPrUrl.value -o tsv 2>/dev/null || echo "")
+          # Construct PR-specific labeled URLs (only for preview environments)
+          if [ "${{ inputs.environment_type }}" == "preview" ]; then
+            REVISION_LABEL="pr-${{ inputs.pr_number }}"
+            BACKEND_DOMAIN=$(echo "${BACKEND_FQDN}" | cut -d'.' -f2-)
+            FRONTEND_DOMAIN=$(echo "${FRONTEND_FQDN}" | cut -d'.' -f2-)
+
+            FRONTEND_PR_URL="https://${NAME_PREFIX}-frontend---${REVISION_LABEL}.${FRONTEND_DOMAIN}"
+            BACKEND_PR_URL="https://${NAME_PREFIX}-backend---${REVISION_LABEL}.${BACKEND_DOMAIN}"
+          else
+            FRONTEND_PR_URL=""
+            BACKEND_PR_URL=""
+          fi
 
           echo "Frontend URL: ${FRONTEND_URL}"
           echo "Backend URL: ${BACKEND_URL}"
@@ -231,54 +318,65 @@ jobs:
           echo "frontend-pr-url=${FRONTEND_PR_URL}" >> $GITHUB_OUTPUT
           echo "backend-pr-url=${BACKEND_PR_URL}" >> $GITHUB_OUTPUT
 
-      - name: Apply revision labels for PR environments
+      - name: Apply PR label to new revision
         if: inputs.environment_type == 'preview'
         run: |
           NAME_PREFIX="pbooking"
           REVISION_LABEL="pr-${{ inputs.pr_number }}"
           DEPLOYMENT_HASH="${{ steps.deploy.outputs.deployment-hash }}"
 
-          echo "Applying label '${REVISION_LABEL}' to new revisions"
+          echo "Applying label '${REVISION_LABEL}' to newly deployed revision"
 
-          # Get the latest revision names for frontend and backend
-          # Query for revisions containing the deployment hash
-          FRONTEND_REVISION=$(az containerapp revision list \
-            --resource-group ${{ inputs.resource_group }} \
-            --name ${NAME_PREFIX}-frontend \
-            --query "[?contains(name, '${DEPLOYMENT_HASH}')].name | [0]" \
-            -o tsv)
+          # Determine which step deployed (Bicep or update)
+          if [ "${{ steps.check-infra.outputs.infra-exists }}" == "true" ]; then
+            # Revisions were created via az containerapp update
+            FRONTEND_REVISION="${{ steps.deploy-revision.outputs.frontend-revision }}"
+            BACKEND_REVISION="${{ steps.deploy-revision.outputs.backend-revision }}"
+          else
+            # Revisions were created via Bicep, need to find them
+            FRONTEND_REVISION=$(az containerapp revision list \
+              --resource-group ${{ inputs.resource_group }} \
+              --name ${NAME_PREFIX}-frontend \
+              --query "[?properties.template.revisionSuffix=='${DEPLOYMENT_HASH}'].name | [0]" \
+              -o tsv)
 
-          BACKEND_REVISION=$(az containerapp revision list \
-            --resource-group ${{ inputs.resource_group }} \
-            --name ${NAME_PREFIX}-backend \
-            --query "[?contains(name, '${DEPLOYMENT_HASH}')].name | [0]" \
-            -o tsv)
+            BACKEND_REVISION=$(az containerapp revision list \
+              --resource-group ${{ inputs.resource_group }} \
+              --name ${NAME_PREFIX}-backend \
+              --query "[?properties.template.revisionSuffix=='${DEPLOYMENT_HASH}'].name | [0]" \
+              -o tsv)
+          fi
 
           echo "Frontend revision: ${FRONTEND_REVISION}"
           echo "Backend revision: ${BACKEND_REVISION}"
 
-          # Apply labels to the new revisions
-          if [ -n "${FRONTEND_REVISION}" ]; then
-            echo "Applying label to frontend revision ${FRONTEND_REVISION}"
+          if [ -n "${FRONTEND_REVISION}" ] && [ "${FRONTEND_REVISION}" != "null" ]; then
+            echo "Applying label to frontend revision: ${FRONTEND_REVISION}"
             az containerapp revision label add \
               --name ${NAME_PREFIX}-frontend \
               --resource-group ${{ inputs.resource_group }} \
-              --label ${REVISION_LABEL} \
-              --revision ${FRONTEND_REVISION}
+              --label "${REVISION_LABEL}" \
+              --revision "${FRONTEND_REVISION}" \
+              --yes
           else
-            echo "::warning::No frontend revision found to label"
+            echo "::error::Frontend revision not found"
+            exit 1
           fi
 
-          if [ -n "${BACKEND_REVISION}" ]; then
-            echo "Applying label to backend revision ${BACKEND_REVISION}"
+          if [ -n "${BACKEND_REVISION}" ] && [ "${BACKEND_REVISION}" != "null" ]; then
+            echo "Applying label to backend revision: ${BACKEND_REVISION}"
             az containerapp revision label add \
               --name ${NAME_PREFIX}-backend \
               --resource-group ${{ inputs.resource_group }} \
-              --label ${REVISION_LABEL} \
-              --revision ${BACKEND_REVISION}
+              --label "${REVISION_LABEL}" \
+              --revision "${BACKEND_REVISION}" \
+              --yes
           else
-            echo "::warning::No backend revision found to label"
+            echo "::error::Backend revision not found"
+            exit 1
           fi
+
+          echo "✓ Label '${REVISION_LABEL}' applied successfully"
 
       - name: Verify labeled revisions
         if: inputs.environment_type == 'preview'
