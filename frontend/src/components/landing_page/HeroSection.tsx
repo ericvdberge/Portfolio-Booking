@@ -15,7 +15,7 @@ export function HeroSection() {
         <div className="space-y-8">
           <div className="space-y-6">
             <div className="inline-block mb-4 px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
-              🚀 PR Environment Test - Revision Update Working!
+              🚀 PR Environment Test - Multi-Revision Update Working!
             </div>
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
               {t('title')}
