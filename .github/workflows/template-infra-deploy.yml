@@ -280,24 +280,36 @@ jobs:
             echo "::warning::No backend revision found to label"
           fi
 
-      - name: Set traffic weight for labeled revisions
+      - name: Verify labeled revisions
         if: inputs.environment_type == 'preview'
         run: |
           NAME_PREFIX="pbooking"
           REVISION_LABEL="pr-${{ inputs.pr_number }}"
 
-          echo "Setting traffic weight for labeled revisions"
+          echo "Verifying labeled revisions are accessible"
 
-          # Set traffic to 100% for the labeled revision on frontend
-          az containerapp ingress traffic set \
+          # Verify frontend label
+          FRONTEND_LABEL=$(az containerapp ingress traffic show \
+            --resource-group ${{ inputs.resource_group }} \
             --name ${NAME_PREFIX}-frontend \
-            --resource-group ${{ inputs.resource_group }} \
-            --label-weight ${REVISION_LABEL}=100
+            --query "[?label=='${REVISION_LABEL}'].revisionName | [0]" -o tsv 2>/dev/null || echo "")
 
-          # Set traffic to 100% for the labeled revision on backend
-          az containerapp ingress traffic set \
+          if [ -n "${FRONTEND_LABEL}" ]; then
+            echo "✓ Frontend label '${REVISION_LABEL}' is active on revision ${FRONTEND_LABEL}"
+          else
+            echo "::warning::Frontend label '${REVISION_LABEL}' not found"
+          fi
+
+          # Verify backend label
+          BACKEND_LABEL=$(az containerapp ingress traffic show \
+            --resource-group ${{ inputs.resource_group }} \
             --name ${NAME_PREFIX}-backend \
-            --resource-group ${{ inputs.resource_group }} \
-            --label-weight ${REVISION_LABEL}=100
+            --query "[?label=='${REVISION_LABEL}'].revisionName | [0]" -o tsv 2>/dev/null || echo "")
 
-          echo "Traffic weight set successfully"
+          if [ -n "${BACKEND_LABEL}" ]; then
+            echo "✓ Backend label '${REVISION_LABEL}' is active on revision ${BACKEND_LABEL}"
+          else
+            echo "::warning::Backend label '${REVISION_LABEL}' not found"
+          fi
+
+          echo "Label verification complete. Labels provide direct URL access without traffic weight allocation."
