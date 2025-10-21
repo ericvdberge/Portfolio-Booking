@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/providers/query-provider";
@@ -7,6 +7,7 @@ import { MobileFooter } from "@/components/MobileFooter";
 import { LocaleProvider } from '@/providers/locale-provider';
 import { PublicEnvScript } from "next-runtime-env";
 import { HeroUIProvider } from "@/providers/heroui-provider";
+import { PWAInstaller } from "@/components/PWAInstaller";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,6 +22,34 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Portfolio Booking System",
   description: "Discover and book amazing venues for your meetings, events, and workspace needs.",
+  applicationName: "Portfolio Booking",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Booking",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    icon: [
+      { url: "/icons/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  manifest: "/manifest.json",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0070f3",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export default async function RootLayout({
@@ -39,6 +68,7 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <PWAInstaller />
         <HeroUIProvider>
           <LocaleProvider initialMessages={initialMessages}>
             <QueryProvider>
