@@ -1,0 +1,196 @@
+name: Backend Tests & Coverage
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-tests.yml'
+
+jobs:
+  test:
+    name: Run Tests with Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        working-directory: ./backend
+        run: dotnet restore
+
+      - name: Build solution
+        working-directory: ./backend
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run tests with coverage
+        working-directory: ./backend
+        run: |
+          dotnet test \
+            --no-build \
+            --configuration Release \
+            --verbosity normal \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults \
+            --logger "trx;LogFileName=test-results.trx" \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+      - name: Generate coverage report
+        uses: danielpalme/ReportGenerator-GitHub-Action@5.3.11
+        with:
+          reports: 'backend/TestResults/**/coverage.opencover.xml'
+          targetdir: 'backend/CoverageReport'
+          reporttypes: 'HtmlInline;Cobertura;MarkdownSummaryGithub'
+          sourcedirs: 'backend'
+          title: 'Backend Code Coverage'
+
+      - name: Upload coverage report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: backend/CoverageReport/
+          retention-days: 30
+
+      - name: Upload test results as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: backend/TestResults/
+          retention-days: 30
+
+      - name: Add coverage summary to PR
+        if: github.event_name == 'pull_request'
+        run: |
+          if [ -f backend/CoverageReport/SummaryGithub.md ]; then
+            cat backend/CoverageReport/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Parse coverage percentage
+        id: coverage
+        if: github.event_name == 'pull_request'
+        run: |
+          COVERAGE_FILE="backend/TestResults/*/coverage.opencover.xml"
+          if ls $COVERAGE_FILE 1> /dev/null 2>&1; then
+            LINE_COVERAGE=$(python3 -c "
+          import xml.etree.ElementTree as ET
+          import glob
+
+          files = glob.glob('$COVERAGE_FILE')
+          if files:
+              tree = ET.parse(files[0])
+              root = tree.getroot()
+              summary = root.find('.//Summary')
+              if summary is not None:
+                  sequenceCoverage = summary.get('sequenceCoverage')
+                  branchCoverage = summary.get('branchCoverage')
+                  print(f'{sequenceCoverage}')
+              else:
+                  print('0')
+          else:
+              print('0')
+          ")
+            echo "line_coverage=$LINE_COVERAGE" >> $GITHUB_OUTPUT
+            echo "Line Coverage: $LINE_COVERAGE%"
+          else
+            echo "line_coverage=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            let coverageSummary = '';
+            const summaryPath = 'backend/CoverageReport/SummaryGithub.md';
+
+            if (fs.existsSync(summaryPath)) {
+              coverageSummary = fs.readFileSync(summaryPath, 'utf8');
+            }
+
+            const lineCoverage = '${{ steps.coverage.outputs.line_coverage }}';
+            const coveragePercent = parseFloat(lineCoverage);
+
+            let coverageEmoji = '🔴';
+            if (coveragePercent >= 80) {
+              coverageEmoji = '🟢';
+            } else if (coveragePercent >= 60) {
+              coverageEmoji = '🟡';
+            }
+
+            const body = `## ${coverageEmoji} Backend Test Coverage Report
+
+            **Line Coverage:** ${lineCoverage}%
+
+            ${coverageSummary}
+
+            <details>
+            <summary>View Full Coverage Report</summary>
+
+            The detailed HTML coverage report is available in the workflow artifacts.
+
+            </details>
+
+            ---
+            *Coverage report generated for commit ${{ github.sha }}*
+            `;
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('Backend Test Coverage Report')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+      - name: Check coverage threshold
+        if: github.event_name == 'pull_request'
+        run: |
+          COVERAGE="${{ steps.coverage.outputs.line_coverage }}"
+          THRESHOLD=60
+
+          echo "Coverage: $COVERAGE%"
+          echo "Threshold: $THRESHOLD%"
+
+          if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+            echo "::warning::Code coverage ($COVERAGE%) is below the threshold ($THRESHOLD%)"
+          else
+            echo "::notice::Code coverage ($COVERAGE%) meets the threshold ($THRESHOLD%)"
+          fi

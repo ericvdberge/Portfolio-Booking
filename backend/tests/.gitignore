@@ -1,0 +1,21 @@
+# Test Results
+TestResults/
+CoverageReport/
+
+# Coverage files
+*.opencover.xml
+coverage.*.xml
+*.coverage
+*.coveragexml
+
+# Test runner artifacts
+*.trx
+*.log
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
