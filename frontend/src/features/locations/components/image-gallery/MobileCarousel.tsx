@@ -13,7 +13,6 @@ interface MobileCarouselProps {
   showDots?: boolean;
   showCounter?: boolean;
   showSwipeHint?: boolean;
-  minHeight?: string;
 }
 
 export function MobileCarousel({
@@ -23,7 +22,6 @@ export function MobileCarousel({
   showDots = true,
   showCounter = true,
   showSwipeHint = true,
-  minHeight = 'min-h-[300px]',
 }: MobileCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
@@ -71,7 +69,7 @@ export function MobileCarousel({
     <div className="relative">
       {/* Carousel Container */}
       <div
-        className={`relative overflow-hidden rounded-lg h-[50vh] ${minHeight} bg-gray-100`}
+        className={`relative overflow-hidden rounded-lg h-[60vh] max-h-[600px] bg-gray-100`}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -84,7 +82,7 @@ export function MobileCarousel({
           {images.map((image, index) => (
             <div
               key={`mobile-${index}-${image}`}
-              className="min-w-full h-full relative cursor-pointer flex-shrink-0"
+              className="min-w-full h-full relative cursor-pointer"
               onClick={() => onImageClick(currentIndex)}
             >
               <Image
