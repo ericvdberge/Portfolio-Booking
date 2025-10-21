@@ -24,6 +24,7 @@ public class Location
 
     public Location(string name, string address, string description, int capacity, TimeSpan openTime, TimeSpan closeTime)
     {
+        Id = Guid.NewGuid();
         Name = name;
         Address = address;
         Description = description;
