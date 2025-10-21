@@ -52,23 +52,24 @@ public class AdvanceNoticePolicyTests
     }
 
     [Fact]
-    public void CanBook_WhenBookingIsExactlyAtAdvanceTime_ReturnsTrue()
+    public void CanBook_WhenBookingIsAtAdvanceTimeThreshold_ReturnsTrue()
     {
         // Arrange
         var advanceTime = TimeSpan.FromHours(24);
         var policy = new AdvanceNoticePolicy(advanceTime);
         var location = CreateTestLocation();
+        // Add a 1-second buffer to account for timing between DateTime.UtcNow calls
         var proposedBooking = new Booking.Domain.Entities.Booking(
             location.Id,
-            DateTime.UtcNow.Add(advanceTime), // Exactly 24 hours in advance
-            DateTime.UtcNow.Add(advanceTime).AddHours(1)
+            DateTime.UtcNow.Add(advanceTime).AddSeconds(1),
+            DateTime.UtcNow.Add(advanceTime).AddHours(1).AddSeconds(1)
         );
 
         // Act
         var result = policy.CanBook(location, proposedBooking);
 
         // Assert
-        result.Should().BeTrue("booking is exactly at the advance notice threshold");
+        result.Should().BeTrue("booking meets or exceeds the advance notice threshold");
     }
 
     [Fact]
