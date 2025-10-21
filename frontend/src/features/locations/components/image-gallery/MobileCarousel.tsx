@@ -67,31 +67,31 @@ export function MobileCarousel({
 
   return (
     <div className="relative">
-      {/* Carousel Container */}
+      {/* Carousel Container - Fixed viewport */}
       <div
-        className={`relative overflow-hidden rounded-lg h-[60vh] max-h-[600px] bg-gray-100`}
+        className="relative overflow-hidden rounded-lg h-[60vh] max-h-[600px] bg-gray-100"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        {/* Images */}
+        {/* Sliding Track - Expands to fit all slides */}
         <div
-          className="flex transition-transform duration-300 ease-out h-full"
+          className="flex h-full transition-transform duration-300 ease-out"
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
           {images.map((image, index) => (
             <div
               key={`mobile-${index}-${image}`}
-              className="min-w-full h-full relative cursor-pointer"
-              onClick={() => onImageClick(currentIndex)}
+              className="relative flex-shrink-0 w-full h-full cursor-pointer"
+              onClick={() => onImageClick(index)}
             >
               <Image
                 src={image}
                 alt={`${locationName} photo ${index + 1}`}
-                width={1600}
-                height={900}
+                fill
                 priority={index === 0}
-                className="w-full h-full object-cover"
+                sizes="100vw"
+                className="object-cover"
               />
             </div>
           ))}
