@@ -82,7 +82,7 @@ export function MobileCarousel({
           {images.map((image, index) => (
             <div
               key={`mobile-${index}-${image}`}
-              className="relative flex-shrink-0 w-full h-full cursor-pointer"
+              className="relative flex-shrink-0 min-w-full w-full h-full cursor-pointer"
               onClick={() => onImageClick(index)}
             >
               <Image
@@ -91,7 +91,7 @@ export function MobileCarousel({
                 fill
                 priority={index === 0}
                 sizes="100vw"
-                className="object-cover"
+                className="object-contain"
               />
             </div>
           ))}
