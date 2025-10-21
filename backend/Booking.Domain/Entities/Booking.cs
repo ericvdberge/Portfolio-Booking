@@ -16,6 +16,7 @@ public class Booking
 
     public Booking(Guid locationId, DateTime startDate, DateTime endDate)
     {
+        Id = Guid.NewGuid();
         LocationId = locationId;
         StartDate = startDate;
         EndDate = endDate;

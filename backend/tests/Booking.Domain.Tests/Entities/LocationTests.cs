@@ -58,8 +58,9 @@ public class LocationTests
     {
         // Arrange
         var location = CreateTestLocation();
-        var startDate = DateTime.UtcNow.AddDays(2);
-        var endDate = DateTime.UtcNow.AddDays(3);
+        // Hotel requires 2 days advance notice
+        var startDate = DateTime.UtcNow.AddDays(3);
+        var endDate = DateTime.UtcNow.AddDays(4);
 
         // Act
         var booking = location.Book(startDate, endDate);
@@ -79,14 +80,14 @@ public class LocationTests
         // Arrange
         var location = CreateTestLocation();
 
-        // Add an existing booking
-        var existingStart = DateTime.UtcNow.AddDays(2);
-        var existingEnd = DateTime.UtcNow.AddDays(4);
+        // Add an existing booking (2 days advance notice required)
+        var existingStart = DateTime.UtcNow.AddDays(3);
+        var existingEnd = DateTime.UtcNow.AddDays(5);
         location.Book(existingStart, existingEnd);
 
-        // Try to book overlapping dates
-        var overlappingStart = DateTime.UtcNow.AddDays(3);
-        var overlappingEnd = DateTime.UtcNow.AddDays(5);
+        // Try to book overlapping dates (would overlap with existing)
+        var overlappingStart = DateTime.UtcNow.AddDays(4);
+        var overlappingEnd = DateTime.UtcNow.AddDays(6);
 
         // Act
         Action act = () => location.Book(overlappingStart, overlappingEnd);
@@ -102,10 +103,10 @@ public class LocationTests
         // Arrange
         var location = CreateTestLocation();
 
-        // Act
-        var booking1 = location.Book(DateTime.UtcNow.AddDays(1), DateTime.UtcNow.AddDays(2));
-        var booking2 = location.Book(DateTime.UtcNow.AddDays(3), DateTime.UtcNow.AddDays(4));
-        var booking3 = location.Book(DateTime.UtcNow.AddDays(5), DateTime.UtcNow.AddDays(6));
+        // Act - Hotel requires 2 days advance notice and 1 day gap between bookings
+        var booking1 = location.Book(DateTime.UtcNow.AddDays(3), DateTime.UtcNow.AddDays(4));
+        var booking2 = location.Book(DateTime.UtcNow.AddDays(6), DateTime.UtcNow.AddDays(7)); // 1 day gap after booking1
+        var booking3 = location.Book(DateTime.UtcNow.AddDays(9), DateTime.UtcNow.AddDays(10)); // 1 day gap after booking2
 
         // Assert
         location.Bookings.Should().HaveCount(3);
@@ -113,15 +114,14 @@ public class LocationTests
     }
 
     [Fact]
-    public void Book_WhenBookingEndsExactlyWhenNextStarts_AllowsBothBookings()
+    public void Book_WithRequiredGapBetweenBookings_RespectsGapPolicy()
     {
         // Arrange
         var location = CreateTestLocation();
-        var firstEnd = DateTime.UtcNow.AddDays(2);
 
-        // Act
-        var booking1 = location.Book(DateTime.UtcNow.AddDays(1), firstEnd);
-        var booking2 = location.Book(firstEnd, DateTime.UtcNow.AddDays(3)); // Starts when first ends
+        // Act - Hotel requires 1 day gap between bookings
+        var booking1 = location.Book(DateTime.UtcNow.AddDays(3), DateTime.UtcNow.AddDays(4));
+        var booking2 = location.Book(DateTime.UtcNow.AddDays(6), DateTime.UtcNow.AddDays(7)); // 1 day gap (day 5 is free)
 
         // Assert
         location.Bookings.Should().HaveCount(2);
@@ -133,8 +133,9 @@ public class LocationTests
     {
         // Arrange
         var location = CreateTestLocation();
-        var startDate = DateTime.UtcNow.AddDays(1);
-        var endDate = DateTime.UtcNow.AddDays(2);
+        // Hotel requires 2 days advance notice
+        var startDate = DateTime.UtcNow.AddDays(3);
+        var endDate = DateTime.UtcNow.AddDays(4);
         var beforeBooking = DateTime.UtcNow;
 
         // Act

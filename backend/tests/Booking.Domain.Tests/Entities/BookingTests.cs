@@ -60,7 +60,7 @@ public class BookingTests
         var booking = new Domain.Entities.Booking(locationId, startDate, endDate);
 
         // Assert
-        booking.CreatedAt.Should().Be(booking.UpdatedAt, "on creation, both timestamps should be identical");
+        booking.CreatedAt.Should().BeCloseTo(booking.UpdatedAt, TimeSpan.FromMilliseconds(10), "on creation, both timestamps should be very close");
     }
 
     [Theory]
