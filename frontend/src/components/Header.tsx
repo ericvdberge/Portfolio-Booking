@@ -13,19 +13,21 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
         <div className="flex h-14 items-center justify-between">
+          {/* Logo - Always visible */}
           <Link href="/" className="flex items-center space-x-2">
             <span className="font-bold text-xl">{common('logo')}</span>
           </Link>
-          
-          <nav className="flex items-center space-x-6">
-            <Link 
-              href="/" 
+
+          {/* Desktop Navigation - Hidden on mobile */}
+          <nav className="hidden md:flex items-center space-x-6">
+            <Link
+              href="/"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               {t('home')}
             </Link>
-            <Link 
-              href="/locations" 
+            <Link
+              href="/locations"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               {t('locations')}
