@@ -78,7 +78,7 @@ export function MobileCarousel({
       >
         {/* Images */}
         <div
-          className="flex transition-transform duration-300 ease-out h-full w-full"
+          className="flex transition-transform duration-300 ease-out h-full"
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
           {images.map((image, index) => (
@@ -94,7 +94,6 @@ export function MobileCarousel({
                 height={900}
                 priority={index === 0}
                 className="w-full h-full object-cover"
-                style={{ objectFit: 'cover' }}
               />
             </div>
           ))}
