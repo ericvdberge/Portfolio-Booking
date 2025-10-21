@@ -69,7 +69,7 @@ public class BookLocationTests
         await _handler.HandleAsync(command);
 
         // Assert
-        _mockUnitOfWork.Verify(uow => uow.SaveChangesAsync(), Times.Once);
+        _mockUnitOfWork.Verify(uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public class BookLocationTests
         }
 
         // Assert
-        _mockUnitOfWork.Verify(uow => uow.SaveChangesAsync(), Times.Never);
+        _mockUnitOfWork.Verify(uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -218,7 +218,7 @@ public class BookLocationTests
 
         // Assert
         location.Bookings.Should().ContainSingle();
-        _mockUnitOfWork.Verify(uow => uow.SaveChangesAsync(), Times.Once);
+        _mockUnitOfWork.Verify(uow => uow.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     private static Location CreateTestLocation(Guid id)
