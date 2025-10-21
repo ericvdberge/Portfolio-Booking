@@ -1,4 +1,5 @@
 using Booking.Domain.Entities;
+using Booking.Domain.Enums;
 using Booking.Domain.Policies.Booking;
 using FluentAssertions;
 using Xunit;
@@ -149,7 +150,7 @@ public class LocationTests
 
     private static Location CreateTestLocation()
     {
-        return new Location(
+        var location = new Location(
             name: "Test Location",
             address: "123 Test Street",
             description: "A test location for unit tests",
@@ -157,5 +158,12 @@ public class LocationTests
             openTime: TimeSpan.FromHours(9),
             closeTime: TimeSpan.FromHours(18)
         );
+
+        // Set LocationType using reflection since the constructor doesn't set it
+        // This ensures the location has default policies (Hotel) for testing
+        var locationTypeProperty = typeof(Location).GetProperty(nameof(Location.LocationType));
+        locationTypeProperty?.SetValue(location, LocationType.Hotel);
+
+        return location;
     }
 }

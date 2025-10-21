@@ -1,4 +1,5 @@
 using Booking.Domain.Entities;
+using Booking.Domain.Enums;
 using Booking.Domain.Policies.Booking;
 using FluentAssertions;
 using Xunit;
@@ -250,7 +251,7 @@ public class NoOverlapPolicyTests
 
     private static Location CreateTestLocation()
     {
-        return new Location(
+        var location = new Location(
             name: "Test Hotel",
             address: "123 Test St",
             description: "A test hotel",
@@ -258,5 +259,11 @@ public class NoOverlapPolicyTests
             openTime: TimeSpan.FromHours(8),
             closeTime: TimeSpan.FromHours(20)
         );
+
+        // Set LocationType using reflection for consistency
+        var locationTypeProperty = typeof(Location).GetProperty(nameof(Location.LocationType));
+        locationTypeProperty?.SetValue(location, LocationType.Hotel);
+
+        return location;
     }
 }
