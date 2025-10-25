@@ -7,15 +7,15 @@ EXPOSE 80
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# Copy solution file and project files for dependency restore
-COPY booking.sln .
+# Copy production solution file and project files for dependency restore
+COPY booking-ci.sln .
 COPY Booking.Api/Booking.Api.csproj Booking.Api/
 COPY Booking.Application/Booking.Application.csproj Booking.Application/
 COPY Booking.Domain/Booking.Domain.csproj Booking.Domain/
 COPY Booking.Infrastructure/Booking.Infrastructure.csproj Booking.Infrastructure/
 
 # Restore dependencies
-RUN dotnet restore
+RUN dotnet restore booking-ci.sln
 
 # Copy the rest of the source code
 COPY . .

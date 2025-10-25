@@ -17,10 +17,10 @@ public class BookLocationCommandHandler(
 {
     public async Task HandleAsync(BookLocationCommand command, CancellationToken cancellationToken = default)
     {
-        var location = await _locationRepository.GetByIdAsync(command.LocationId)
+        var location = await _locationRepository.GetByIdAsync(command.LocationId, cancellationToken)
             ?? throw new KeyNotFoundException();
 
         location.Book(command.StartTime, command.EndTime);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

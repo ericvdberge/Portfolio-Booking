@@ -21,7 +21,8 @@ public class GetAllLocationsHandler(
             Description = location.Description,
             Capacity = location.Capacity,
             OpenTime = location.OpenTime,
-            CloseTime = location.CloseTime
+            CloseTime = location.CloseTime,
+            IsActive = location.IsActive
         });
     }
 }
@@ -35,4 +36,5 @@ public class LocationDto
     public int Capacity { get; set; }
     public TimeSpan OpenTime { get; set; }
     public TimeSpan CloseTime { get; set; }
+    public bool IsActive { get; set; }
 }
