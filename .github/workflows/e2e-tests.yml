@@ -1,0 +1,219 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - 'e2e/**'
+      - '.github/workflows/e2e-tests.yml'
+
+jobs:
+  e2e-tests:
+    name: Run E2E Tests on PR Deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install e2e dependencies
+        working-directory: ./e2e
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        working-directory: ./e2e
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Wait for PR deployment
+        id: wait-deployment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          echo "Waiting for PR deployment to complete..."
+
+          # Wait up to 10 minutes for deployment workflow to complete and get the run ID
+          RUN_ID=""
+          timeout 600 bash -c '
+            while true; do
+              # Get the latest deployment workflow run for this PR
+              WORKFLOW_DATA=$(gh run list \
+                --workflow="pr-deploy.yml" \
+                --json status,conclusion,headBranch,databaseId \
+                --jq "map(select(.headBranch == \"${{ github.head_ref }}\")) | .[0]")
+
+              echo "Workflow data: $WORKFLOW_DATA"
+
+              STATUS=$(echo "$WORKFLOW_DATA" | jq -r ".status")
+              CONCLUSION=$(echo "$WORKFLOW_DATA" | jq -r ".conclusion")
+              RUN_ID=$(echo "$WORKFLOW_DATA" | jq -r ".databaseId")
+
+              echo "Run ID: $RUN_ID, Status: $STATUS, Conclusion: $CONCLUSION"
+
+              if [ "$STATUS" = "completed" ]; then
+                if [ "$CONCLUSION" = "success" ]; then
+                  echo "Deployment completed successfully!"
+                  echo "$RUN_ID" > /tmp/run_id.txt
+                  break
+                else
+                  echo "Deployment failed with conclusion: $CONCLUSION"
+                  exit 1
+                fi
+              fi
+
+              echo "Waiting for deployment... (status: $STATUS)"
+              sleep 15
+            done
+          ' || {
+            echo "Timeout or error waiting for deployment"
+            exit 1
+          }
+
+          RUN_ID=$(cat /tmp/run_id.txt)
+          echo "Using deployment run ID: $RUN_ID"
+
+          # Get the PR comment with deployment URLs
+          sleep 10  # Give time for comment to be posted
+          COMMENT=$(gh pr view ${{ github.event.pull_request.number }} --json comments --jq '[.comments[] | select(.body | contains("Preview Deployment Ready"))] | last | .body')
+
+          echo "Deployment comment:"
+          echo "$COMMENT"
+          echo "---"
+
+          # Extract URLs from the comment format: - **Frontend**: https://...
+          FRONTEND_URL=$(echo "$COMMENT" | grep -oP '\*\*Frontend\*\*:\s*\K[^\s]+' || echo "")
+          BACKEND_URL=$(echo "$COMMENT" | grep -oP '\*\*Backend\*\*:\s*\K[^\s]+' || echo "")
+
+          echo "Extracted Frontend URL: $FRONTEND_URL"
+          echo "Extracted Backend URL: $BACKEND_URL"
+
+          if [ -z "$FRONTEND_URL" ]; then
+            echo "❌ Failed to extract frontend URL from PR comment"
+            echo "This likely means the PR deployment hasn't posted its comment yet."
+            exit 1
+          fi
+
+          echo "frontend_url=$FRONTEND_URL" >> $GITHUB_OUTPUT
+          echo "backend_url=$BACKEND_URL" >> $GITHUB_OUTPUT
+
+          echo "Frontend URL: $FRONTEND_URL"
+          echo "Backend URL: $BACKEND_URL"
+
+      - name: Warm up frontend and backend
+        env:
+          FRONTEND_URL: ${{ steps.wait-deployment.outputs.frontend_url }}
+          BACKEND_URL: ${{ steps.wait-deployment.outputs.backend_url }}
+        run: |
+          echo "🔥 Warming up deployed applications..."
+
+          # Poke the frontend (wake up container if cold)
+          echo "Poking frontend: $FRONTEND_URL"
+          curl -sSL -o /dev/null -w "Frontend: HTTP %{http_code} in %{time_total}s\n" "$FRONTEND_URL" || echo "Frontend request failed, continuing..."
+
+          # Poke the backend (wake up container if cold)
+          if [ -n "$BACKEND_URL" ]; then
+            echo "Poking backend: $BACKEND_URL"
+            curl -sSL -o /dev/null -w "Backend: HTTP %{http_code} in %{time_total}s\n" "$BACKEND_URL" || echo "Backend request failed, continuing..."
+          fi
+
+          # Wait 30 seconds for apps to fully warm up and stabilize
+          echo "⏳ Waiting 30 seconds for apps to fully warm up..."
+          sleep 30
+
+          # Make one more request to verify apps are responsive
+          echo "✅ Verifying apps are ready..."
+          curl -sSL -o /dev/null -w "Frontend ready: HTTP %{http_code}\n" "$FRONTEND_URL" || echo "⚠️ Frontend may not be fully ready"
+
+          echo "🚀 Apps are warmed up and ready for testing!"
+
+      - name: Run Playwright tests
+        working-directory: ./e2e
+        env:
+          BASE_URL: ${{ steps.wait-deployment.outputs.frontend_url }}
+        run: pnpm exec playwright test --project=chromium
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-pr-${{ github.event.pull_request.number }}
+          path: e2e/playwright-report/
+          retention-days: 30
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-pr-${{ github.event.pull_request.number }}
+          path: e2e/test-results/
+          retention-days: 30
+
+      - name: Comment test results on PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FRONTEND_URL: ${{ steps.wait-deployment.outputs.frontend_url }}
+        run: |
+          # Count test results from playwright report
+          if [ -f e2e/test-results/junit.xml ]; then
+            # Get totals from the root testsuites element (contains aggregated counts)
+            TESTS_TOTAL=$(grep '<testsuites' e2e/test-results/junit.xml | grep -oP 'tests="\K[0-9]+' | head -1 || echo "0")
+            TESTS_FAILED=$(grep '<testsuites' e2e/test-results/junit.xml | grep -oP 'failures="\K[0-9]+' | head -1 || echo "0")
+            TESTS_PASSED=$((TESTS_TOTAL - TESTS_FAILED))
+
+            if [ "$TESTS_FAILED" = "0" ]; then
+              STATUS="✅ E2E Tests Passed"
+              EMOJI="🎉"
+            else
+              STATUS="❌ E2E Tests Failed"
+              EMOJI="⚠️"
+            fi
+
+            gh pr comment ${{ github.event.pull_request.number }} --body "${EMOJI} **${STATUS}**
+
+            **Test Results:**
+            - ✅ Passed: ${TESTS_PASSED}
+            - ❌ Failed: ${TESTS_FAILED}
+            - 📊 Total: ${TESTS_TOTAL}
+
+            **Environment:**
+            - Frontend: ${FRONTEND_URL}
+
+            [View detailed report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          else
+            gh pr comment ${{ github.event.pull_request.number }} --body "⚠️ **E2E Tests Issue**
+
+            Could not find test results.
+
+            [View workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          fi
