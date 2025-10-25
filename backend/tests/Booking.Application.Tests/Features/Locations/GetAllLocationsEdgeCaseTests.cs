@@ -1,4 +1,4 @@
-using Booking.Application.Features.Locations.GetAllLocations;
+using Booking.Application.Features.Locations;
 using Booking.Domain.Entities;
 using Booking.Domain.Enums;
 using Booking.Infrastructure.Repositories;
@@ -14,12 +14,12 @@ namespace Booking.Application.Tests.Features.Locations;
 public class GetAllLocationsEdgeCaseTests
 {
     private readonly Mock<ILocationRepository> _mockLocationRepository;
-    private readonly GetAllLocationsQueryHandler _handler;
+    private readonly GetAllLocationsHandler _handler;
 
     public GetAllLocationsEdgeCaseTests()
     {
         _mockLocationRepository = new Mock<ILocationRepository>();
-        _handler = new GetAllLocationsQueryHandler(_mockLocationRepository.Object);
+        _handler = new GetAllLocationsHandler(_mockLocationRepository.Object);
     }
 
     [Fact]

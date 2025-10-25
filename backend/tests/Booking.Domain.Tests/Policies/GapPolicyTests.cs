@@ -1,8 +1,8 @@
 using Booking.Domain.Entities;
 using Booking.Domain.Enums;
-using Booking.Domain.Policies.Booking;
 using FluentAssertions;
 using Xunit;
+using BookingEntity = Booking.Domain.Entities.Booking;
 
 namespace Booking.Domain.Tests.Policies;
 
@@ -21,7 +21,7 @@ public class GapPolicyTests
 
         var startDate = DateTime.UtcNow.AddDays(3);
         var endDate = startDate.AddHours(2);
-        var proposedBooking = new Booking(location.Id, startDate, endDate);
+        var proposedBooking = new BookingEntity(location.Id, startDate, endDate);
 
         // Act
         var result = policy.CanBook(location, proposedBooking);
@@ -47,7 +47,7 @@ public class GapPolicyTests
         // Propose new booking with sufficient gap (2 days after existing)
         var proposedStart = existingEnd.AddDays(2);
         var proposedEnd = proposedStart.AddHours(2);
-        var proposedBooking = new Booking(location.Id, proposedStart, proposedEnd);
+        var proposedBooking = new BookingEntity(location.Id, proposedStart, proposedEnd);
 
         // Act
         var result = policy.CanBook(location, proposedBooking);
@@ -73,7 +73,7 @@ public class GapPolicyTests
         // Propose new booking with exactly 1 day gap
         var proposedStart = existingEnd.AddDays(1);
         var proposedEnd = proposedStart.AddHours(2);
-        var proposedBooking = new Booking(location.Id, proposedStart, proposedEnd);
+        var proposedBooking = new BookingEntity(location.Id, proposedStart, proposedEnd);
 
         // Act
         var result = policy.CanBook(location, proposedBooking);
@@ -99,7 +99,7 @@ public class GapPolicyTests
         // Propose new booking with insufficient gap (12 hours)
         var proposedStart = existingEnd.AddHours(12);
         var proposedEnd = proposedStart.AddHours(2);
-        var proposedBooking = new Booking(location.Id, proposedStart, proposedEnd);
+        var proposedBooking = new BookingEntity(location.Id, proposedStart, proposedEnd);
 
         // Act
         var result = policy.CanBook(location, proposedBooking);
@@ -128,7 +128,7 @@ public class GapPolicyTests
         // Propose new booking after the most recent one with insufficient gap
         var proposedStart = booking2End.AddHours(12); // Only 12 hours after most recent
         var proposedEnd = proposedStart.AddHours(2);
-        var proposedBooking = new Booking(location.Id, proposedStart, proposedEnd);
+        var proposedBooking = new BookingEntity(location.Id, proposedStart, proposedEnd);
 
         // Act
         var result = policy.CanBook(location, proposedBooking);
@@ -157,7 +157,7 @@ public class GapPolicyTests
         // Test with 12-hour gap (should now be valid)
         var proposedStart = existingEnd.AddHours(12);
         var proposedEnd = proposedStart.AddHours(2);
-        var proposedBooking = new Booking(location.Id, proposedStart, proposedEnd);
+        var proposedBooking = new BookingEntity(location.Id, proposedStart, proposedEnd);
         var result = policy.CanBook(location, proposedBooking);
 
         // Assert
@@ -193,7 +193,7 @@ public class GapPolicyTests
         // Propose new booking with specified gap
         var proposedStart = existingEnd.AddHours(gapHours);
         var proposedEnd = proposedStart.AddHours(2);
-        var proposedBooking = new Booking(location.Id, proposedStart, proposedEnd);
+        var proposedBooking = new BookingEntity(location.Id, proposedStart, proposedEnd);
 
         // Act
         var result = policy.CanBook(location, proposedBooking);

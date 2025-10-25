@@ -1,8 +1,8 @@
 using Booking.Domain.Entities;
 using Booking.Domain.Enums;
-using Booking.Domain.Policies.Booking;
 using FluentAssertions;
 using Xunit;
+using BookingEntity = Booking.Domain.Entities.Booking;
 
 namespace Booking.Domain.Tests.Policies;
 
@@ -21,7 +21,7 @@ public class OpeningHoursPolicyTests
         var location = CreateTestLocation();
 
         var bookingDate = DateTime.Today.AddDays(3).AddHours(10); // 10 AM, 3 days from now
-        var proposedBooking = new Booking(location.Id, bookingDate, bookingDate.AddHours(2));
+        var proposedBooking = new BookingEntity(location.Id, bookingDate, bookingDate.AddHours(2));
 
         // Act
         var result = policy.CanBook(location, proposedBooking);
@@ -40,7 +40,7 @@ public class OpeningHoursPolicyTests
         var location = CreateTestLocation();
 
         var bookingDate = DateTime.Today.AddDays(3).AddHours(8); // 8 AM, before opening
-        var proposedBooking = new Booking(location.Id, bookingDate, bookingDate.AddHours(2));
+        var proposedBooking = new BookingEntity(location.Id, bookingDate, bookingDate.AddHours(2));
 
         // Act
         var result = policy.CanBook(location, proposedBooking);
@@ -59,7 +59,7 @@ public class OpeningHoursPolicyTests
         var location = CreateTestLocation();
 
         var bookingDate = DateTime.Today.AddDays(3).AddHours(16); // 4 PM start
-        var proposedBooking = new Booking(location.Id, bookingDate, bookingDate.AddHours(3)); // Ends at 7 PM
+        var proposedBooking = new BookingEntity(location.Id, bookingDate, bookingDate.AddHours(3)); // Ends at 7 PM
 
         // Act
         var result = policy.CanBook(location, proposedBooking);
@@ -78,7 +78,7 @@ public class OpeningHoursPolicyTests
         var location = CreateTestLocation();
 
         var bookingDate = DateTime.Today.AddDays(3).AddHours(9); // Exactly 9 AM
-        var proposedBooking = new Booking(location.Id, bookingDate, bookingDate.AddHours(2));
+        var proposedBooking = new BookingEntity(location.Id, bookingDate, bookingDate.AddHours(2));
 
         // Act
         var result = policy.CanBook(location, proposedBooking);
@@ -97,7 +97,7 @@ public class OpeningHoursPolicyTests
         var location = CreateTestLocation();
 
         var bookingDate = DateTime.Today.AddDays(3).AddHours(15); // 3 PM start
-        var proposedBooking = new Booking(location.Id, bookingDate, bookingDate.AddHours(2)); // Ends at 5 PM
+        var proposedBooking = new BookingEntity(location.Id, bookingDate, bookingDate.AddHours(2)); // Ends at 5 PM
 
         // Act
         var result = policy.CanBook(location, proposedBooking);
@@ -119,7 +119,7 @@ public class OpeningHoursPolicyTests
 
         // Test the policy with new hours
         var bookingDate = DateTime.Today.AddDays(3).AddHours(8).AddMinutes(30); // 8:30 AM
-        var proposedBooking = new Booking(location.Id, bookingDate, bookingDate.AddHours(1));
+        var proposedBooking = new BookingEntity(location.Id, bookingDate, bookingDate.AddHours(1));
         var result = policy.CanBook(location, proposedBooking);
 
         // Assert

@@ -1,8 +1,8 @@
 using Booking.Domain.Entities;
 using Booking.Domain.Enums;
-using Booking.Domain.Policies.Booking;
 using FluentAssertions;
 using Xunit;
+using BookingEntity = Booking.Domain.Entities.Booking;
 
 namespace Booking.Domain.Tests.Policies;
 
@@ -21,7 +21,7 @@ public class MaxDurationPolicyTests
 
         var startDate = DateTime.UtcNow.AddDays(3);
         var endDate = startDate.AddHours(2); // 2 hours, less than max
-        var proposedBooking = new Booking(location.Id, startDate, endDate);
+        var proposedBooking = new BookingEntity(location.Id, startDate, endDate);
 
         // Act
         var result = policy.CanBook(location, proposedBooking);
@@ -40,7 +40,7 @@ public class MaxDurationPolicyTests
 
         var startDate = DateTime.UtcNow.AddDays(3);
         var endDate = startDate.AddHours(4); // Exactly 4 hours
-        var proposedBooking = new Booking(location.Id, startDate, endDate);
+        var proposedBooking = new BookingEntity(location.Id, startDate, endDate);
 
         // Act
         var result = policy.CanBook(location, proposedBooking);
@@ -59,7 +59,7 @@ public class MaxDurationPolicyTests
 
         var startDate = DateTime.UtcNow.AddDays(3);
         var endDate = startDate.AddHours(5); // 5 hours, exceeds max
-        var proposedBooking = new Booking(location.Id, startDate, endDate);
+        var proposedBooking = new BookingEntity(location.Id, startDate, endDate);
 
         // Act
         var result = policy.CanBook(location, proposedBooking);
@@ -78,7 +78,7 @@ public class MaxDurationPolicyTests
 
         var startDate = DateTime.UtcNow.AddDays(3);
         var endDate = startDate.AddDays(3); // 3 days, exceeds 2-day max
-        var proposedBooking = new Booking(location.Id, startDate, endDate);
+        var proposedBooking = new BookingEntity(location.Id, startDate, endDate);
 
         // Act
         var result = policy.CanBook(location, proposedBooking);
@@ -101,7 +101,7 @@ public class MaxDurationPolicyTests
         // Test with 6-hour booking (should now be valid)
         var startDate = DateTime.UtcNow.AddDays(3);
         var endDate = startDate.AddHours(6);
-        var proposedBooking = new Booking(location.Id, startDate, endDate);
+        var proposedBooking = new BookingEntity(location.Id, startDate, endDate);
         var result = policy.CanBook(location, proposedBooking);
 
         // Assert
@@ -131,7 +131,7 @@ public class MaxDurationPolicyTests
 
         var startDate = DateTime.UtcNow.AddDays(3);
         var endDate = startDate.AddHours(hours);
-        var proposedBooking = new Booking(location.Id, startDate, endDate);
+        var proposedBooking = new BookingEntity(location.Id, startDate, endDate);
 
         // Act
         var result = policy.CanBook(location, proposedBooking);
