@@ -31,16 +31,16 @@ jobs:
 
       - name: Restore dependencies
         working-directory: ./backend
-        run: dotnet restore
+        run: dotnet restore booking.sln
 
       - name: Build solution
         working-directory: ./backend
-        run: dotnet build --no-restore --configuration Release
+        run: dotnet build booking.sln --no-restore --configuration Release
 
       - name: Run tests with coverage
         working-directory: ./backend
         run: |
-          dotnet test \
+          dotnet test booking.sln \
             --no-build \
             --configuration Release \
             --verbosity normal \
