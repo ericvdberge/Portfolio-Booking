@@ -193,18 +193,25 @@ The workflow:
 
 Current test coverage:
 
-- ✅ Homepage navigation to locations
-- ✅ Locations page loading and display
-- ✅ Error state handling
-- ✅ Empty state handling
-- ✅ API mocking and testing
+### Navigation Tests
+- ✅ Homepage to locations via "Explore Venues" button
+- ✅ Homepage to locations via CTA "Start Browsing" button
+
+### Locations Page Tests
+- ✅ Page loads and displays heading
+- ✅ Content area is visible
+- ✅ Location data loads from real API
+- ✅ Interactive elements (buttons/links) are present
+- ✅ Location cards are clickable (when available)
+
+**Note:** These tests run against **real deployed environments**, not mocked APIs. They test actual user flows and verify the application works end-to-end.
 
 ## Future Tests
 
 Planned test additions:
-- Location details page
-- Booking flow
+- Location details page navigation and display
+- Booking flow (when implemented)
 - Form validation
-- Authentication flows
+- Search and filtering
 - Mobile responsiveness
-- Accessibility testing
+- Accessibility testing (WCAG compliance)
