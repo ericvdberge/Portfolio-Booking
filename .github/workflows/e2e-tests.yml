@@ -104,10 +104,11 @@ jobs:
 
           # Get the PR comment with deployment URLs
           sleep 10  # Give time for comment to be posted
-          COMMENT=$(gh pr view ${{ github.event.pull_request.number }} --json comments --jq '.comments[] | select(.body | contains("Preview Deployment Ready")) | .body' | tail -n 1)
+          COMMENT=$(gh pr view ${{ github.event.pull_request.number }} --json comments --jq '[.comments[] | select(.body | contains("Preview Deployment Ready"))] | last | .body')
 
           echo "Deployment comment:"
           echo "$COMMENT"
+          echo "---"
 
           # Extract URLs from the comment format: - **Frontend**: https://...
           FRONTEND_URL=$(echo "$COMMENT" | grep -oP '\*\*Frontend\*\*:\s*\K[^\s]+' || echo "")
