@@ -24,15 +24,15 @@ e2e/
 ### Prerequisites
 
 - Node.js 20 or higher
-- npm
+- pnpm
 - Running backend and frontend services (or use docker-compose)
 
 ### Installation
 
 ```bash
 cd e2e
-npm install
-npx playwright install
+pnpm install
+pnpm exec playwright install
 ```
 
 ## Running Tests
@@ -40,40 +40,40 @@ npx playwright install
 ### Run all tests
 
 ```bash
-npm test
+pnpm test
 ```
 
 ### Run tests in UI mode (interactive)
 
 ```bash
-npm run test:ui
+pnpm run test:ui
 ```
 
 ### Run tests in headed mode (see browser)
 
 ```bash
-npm run test:headed
+pnpm run test:headed
 ```
 
 ### Run tests in debug mode
 
 ```bash
-npm run test:debug
+pnpm run test:debug
 ```
 
 ### Run tests on specific browser
 
 ```bash
-npm run test:chromium
-npm run test:firefox
-npm run test:webkit
-npm run test:mobile
+pnpm run test:chromium
+pnpm run test:firefox
+pnpm run test:webkit
+pnpm run test:mobile
 ```
 
 ### View test report
 
 ```bash
-npm run report
+pnpm run report
 ```
 
 ## Running with Docker Compose
@@ -87,7 +87,7 @@ docker-compose up -d
 # Wait for services to be healthy
 # Then run tests
 cd e2e
-BASE_URL=http://localhost:3000 npm test
+BASE_URL=http://localhost:3000 pnpm test
 
 # Cleanup
 docker-compose down
@@ -161,13 +161,13 @@ Key configuration options in `playwright.config.ts`:
 Use Playwright's codegen to generate test code:
 
 ```bash
-npm run codegen
+pnpm run codegen
 ```
 
 ### Debug Specific Test
 
 ```bash
-npx playwright test navigation.spec.ts --debug
+pnpm exec playwright test navigation.spec.ts --debug
 ```
 
 ### View Traces
@@ -175,7 +175,7 @@ npx playwright test navigation.spec.ts --debug
 Traces are automatically collected on first retry. To view:
 
 ```bash
-npx playwright show-trace test-results/*/trace.zip
+pnpm exec playwright show-trace test-results/*/trace.zip
 ```
 
 ## CI/CD Integration
