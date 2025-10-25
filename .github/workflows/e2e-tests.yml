@@ -62,23 +62,28 @@ jobs:
         run: |
           echo "Waiting for PR deployment to complete..."
 
-          # Wait up to 10 minutes for deployment workflow to complete
+          # Wait up to 10 minutes for deployment workflow to complete and get the run ID
+          RUN_ID=""
           timeout 600 bash -c '
             while true; do
               # Get the latest deployment workflow run for this PR
-              WORKFLOW_STATUS=$(gh run list \
+              WORKFLOW_DATA=$(gh run list \
                 --workflow="pr-deploy.yml" \
-                --json status,conclusion,headBranch \
-                --jq "map(select(.headBranch == \"${{ github.head_ref }}\")) | .[0] | .status + \",\" + (.conclusion // \"\")")
+                --json status,conclusion,headBranch,databaseId \
+                --jq "map(select(.headBranch == \"${{ github.head_ref }}\")) | .[0]")
 
-              echo "Deployment status: $WORKFLOW_STATUS"
+              echo "Workflow data: $WORKFLOW_DATA"
 
-              STATUS=$(echo "$WORKFLOW_STATUS" | cut -d"," -f1)
-              CONCLUSION=$(echo "$WORKFLOW_STATUS" | cut -d"," -f2)
+              STATUS=$(echo "$WORKFLOW_DATA" | jq -r ".status")
+              CONCLUSION=$(echo "$WORKFLOW_DATA" | jq -r ".conclusion")
+              RUN_ID=$(echo "$WORKFLOW_DATA" | jq -r ".databaseId")
+
+              echo "Run ID: $RUN_ID, Status: $STATUS, Conclusion: $CONCLUSION"
 
               if [ "$STATUS" = "completed" ]; then
                 if [ "$CONCLUSION" = "success" ]; then
                   echo "Deployment completed successfully!"
+                  echo "$RUN_ID" > /tmp/run_id.txt
                   break
                 else
                   echo "Deployment failed with conclusion: $CONCLUSION"
@@ -94,22 +99,29 @@ jobs:
             exit 1
           }
 
-          # Construct PR URLs based on naming convention
-          FRONTEND_URL="https://pbooking-frontend-pr-${PR_NUMBER}.lemonwater-1ae5d7b2.swedencentral.azurecontainerapps.io"
-          BACKEND_URL="https://pbooking-backend-pr-${PR_NUMBER}.lemonwater-1ae5d7b2.swedencentral.azurecontainerapps.io"
+          RUN_ID=$(cat /tmp/run_id.txt)
+          echo "Using deployment run ID: $RUN_ID"
+
+          # Get the PR comment with deployment URLs
+          sleep 10  # Give time for comment to be posted
+          COMMENT=$(gh pr view ${{ github.event.pull_request.number }} --json comments --jq '.comments[] | select(.body | contains("Preview Deployment Ready")) | .body' | tail -n 1)
+
+          echo "Deployment comment: $COMMENT"
+
+          # Extract URLs from the comment
+          FRONTEND_URL=$(echo "$COMMENT" | grep -oP 'Frontend\*\*: \K[^\s]+' || echo "")
+          BACKEND_URL=$(echo "$COMMENT" | grep -oP 'Backend\*\*: \K[^\s]+' || echo "")
+
+          if [ -z "$FRONTEND_URL" ]; then
+            echo "Failed to extract frontend URL from PR comment"
+            exit 1
+          fi
 
           echo "frontend_url=$FRONTEND_URL" >> $GITHUB_OUTPUT
           echo "backend_url=$BACKEND_URL" >> $GITHUB_OUTPUT
 
-      - name: Verify frontend is accessible
-        env:
-          FRONTEND_URL: ${{ steps.wait-deployment.outputs.frontend_url }}
-        run: |
-          echo "Verifying frontend at ${FRONTEND_URL}"
-          # Use --insecure to skip certificate verification and -L to follow redirects
-          # Just verify we get any HTTP response (200, 404, etc.)
-          timeout 120 bash -c "until curl -ksL -o /dev/null -w '%{http_code}' ${FRONTEND_URL} | grep -q '[2345][0-9][0-9]'; do echo 'Waiting for frontend...'; sleep 5; done"
-          echo "Frontend is accessible!"
+          echo "Frontend URL: $FRONTEND_URL"
+          echo "Backend URL: $BACKEND_URL"
 
       - name: Run Playwright tests
         working-directory: ./e2e
