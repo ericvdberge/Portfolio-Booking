@@ -3,6 +3,8 @@ using Booking.Domain.Enums;
 using FluentAssertions;
 using Xunit;
 using BookingEntity = Booking.Domain.Entities.Booking;
+using GapPolicy = Booking.Domain.Policies.Booking.GapPolicy;
+using Policykey = Booking.Domain.Enums.Policykey;
 
 namespace Booking.Domain.Tests.Policies;
 

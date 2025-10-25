@@ -3,6 +3,8 @@ using Booking.Domain.Enums;
 using FluentAssertions;
 using Xunit;
 using BookingEntity = Booking.Domain.Entities.Booking;
+using MaxDurationPolicy = Booking.Domain.Policies.Booking.MaxDurationPolicy;
+using Policykey = Booking.Domain.Enums.Policykey;
 
 namespace Booking.Domain.Tests.Policies;
 
