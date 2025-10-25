@@ -19,6 +19,7 @@ public class BookingPolicyProviderTests
         var provider = new BookingPolicyProvider();
         var config = new PolicyConfig
         {
+            Id = Guid.NewGuid(),
             Key = Policykey.AdvanceNoticePolicy,
             SettingsJson = """{"AdvanceTime":"2.00:00:00"}""" // 2 days
         };
@@ -37,6 +38,7 @@ public class BookingPolicyProviderTests
         var provider = new BookingPolicyProvider();
         var config = new PolicyConfig
         {
+            Id = Guid.NewGuid(),
             Key = Policykey.NoOverlapPolicy,
             SettingsJson = """{}"""
         };
@@ -55,6 +57,7 @@ public class BookingPolicyProviderTests
         var provider = new BookingPolicyProvider();
         var config = new PolicyConfig
         {
+            Id = Guid.NewGuid(),
             Key = Policykey.GapPolicy,
             SettingsJson = """{"GapTime":"1.00:00:00"}""" // 1 day
         };
@@ -73,6 +76,7 @@ public class BookingPolicyProviderTests
         var provider = new BookingPolicyProvider();
         var config = new PolicyConfig
         {
+            Id = Guid.NewGuid(),
             Key = Policykey.OpeningHoursPolicy,
             SettingsJson = """{"Open":"09:00:00","Close":"17:00:00"}"""
         };
@@ -91,6 +95,7 @@ public class BookingPolicyProviderTests
         var provider = new BookingPolicyProvider();
         var config = new PolicyConfig
         {
+            Id = Guid.NewGuid(),
             Key = Policykey.MaxDurationPolicy,
             SettingsJson = """{"MaxDuration":"04:00:00"}""" // 4 hours
         };
@@ -109,6 +114,7 @@ public class BookingPolicyProviderTests
         var provider = new BookingPolicyProvider();
         var config = new PolicyConfig
         {
+            Id = Guid.NewGuid(),
             Key = Policykey.AdvanceNoticePolicy,
             SettingsJson = """{"AdvanceTime":"3.00:00:00"}""" // 3 days
         };

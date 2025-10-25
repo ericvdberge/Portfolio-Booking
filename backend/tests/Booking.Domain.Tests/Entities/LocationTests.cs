@@ -159,6 +159,7 @@ public class LocationTests
         var policyConfigs = typeof(Location).GetProperty(nameof(Location.PolicyConfigs))!.GetValue(location) as List<PolicyConfig>;
         policyConfigs!.Add(new PolicyConfig
         {
+            Id = Guid.NewGuid(),
             Key = Policykey.AdvanceNoticePolicy,
             SettingsJson = """{"AdvanceTime":"1.00:00:00"}""" // 1 day instead of default 2 days
         });

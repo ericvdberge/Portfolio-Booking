@@ -5,9 +5,21 @@ using System.Text.Json;
 
 namespace Booking.Domain.Policies.Booking;
 
-public class GapPolicy(TimeSpan _gapTime) : IBookingPolicy
+public class GapPolicy : IBookingPolicy
 {
+    private TimeSpan _gapTime;
+
+    public GapPolicy() : this(TimeSpan.Zero)
+    {
+    }
+
+    public GapPolicy(TimeSpan gapTime)
+    {
+        _gapTime = gapTime;
+    }
+
     public static Policykey Key => Policykey.GapPolicy;
+
     public bool CanBook(Location location, Entities.Booking proposedBooking)
     {
         var existingBookings = location.Bookings
@@ -15,7 +27,7 @@ public class GapPolicy(TimeSpan _gapTime) : IBookingPolicy
             .OrderByDescending(b => b.EndDate);
 
         var mostRecentBooking = existingBookings.FirstOrDefault();
-        
+
         if (mostRecentBooking == null)
             return true;
 

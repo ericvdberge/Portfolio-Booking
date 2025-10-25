@@ -5,8 +5,19 @@ using System.Text.Json;
 
 namespace Booking.Domain.Policies.Booking;
 
-public class MaxDurationPolicy(TimeSpan _maxDuration) : IBookingPolicy
+public class MaxDurationPolicy : IBookingPolicy
 {
+    private TimeSpan _maxDuration;
+
+    public MaxDurationPolicy() : this(TimeSpan.MaxValue)
+    {
+    }
+
+    public MaxDurationPolicy(TimeSpan maxDuration)
+    {
+        _maxDuration = maxDuration;
+    }
+
     public static Policykey Key => Policykey.MaxDurationPolicy;
 
     public bool CanBook(Location location, Entities.Booking proposedBooking)

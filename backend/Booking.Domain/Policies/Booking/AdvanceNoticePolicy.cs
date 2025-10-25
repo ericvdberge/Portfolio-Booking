@@ -5,8 +5,19 @@ using System.Text.Json;
 
 namespace Booking.Domain.Policies.Booking;
 
-public class AdvanceNoticePolicy(TimeSpan _advanceTime) : IBookingPolicy
+public class AdvanceNoticePolicy : IBookingPolicy
 {
+    private TimeSpan _advanceTime;
+
+    public AdvanceNoticePolicy() : this(TimeSpan.Zero)
+    {
+    }
+
+    public AdvanceNoticePolicy(TimeSpan advanceTime)
+    {
+        _advanceTime = advanceTime;
+    }
+
     public static Policykey Key => Policykey.AdvanceNoticePolicy;
 
     public bool CanBook(Location location, Entities.Booking proposedBooking)
