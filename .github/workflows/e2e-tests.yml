@@ -106,14 +106,19 @@ jobs:
           sleep 10  # Give time for comment to be posted
           COMMENT=$(gh pr view ${{ github.event.pull_request.number }} --json comments --jq '.comments[] | select(.body | contains("Preview Deployment Ready")) | .body' | tail -n 1)
 
-          echo "Deployment comment: $COMMENT"
+          echo "Deployment comment:"
+          echo "$COMMENT"
 
-          # Extract URLs from the comment
-          FRONTEND_URL=$(echo "$COMMENT" | grep -oP 'Frontend\*\*: \K[^\s]+' || echo "")
-          BACKEND_URL=$(echo "$COMMENT" | grep -oP 'Backend\*\*: \K[^\s]+' || echo "")
+          # Extract URLs from the comment format: - **Frontend**: https://...
+          FRONTEND_URL=$(echo "$COMMENT" | grep -oP '\*\*Frontend\*\*:\s*\K[^\s]+' || echo "")
+          BACKEND_URL=$(echo "$COMMENT" | grep -oP '\*\*Backend\*\*:\s*\K[^\s]+' || echo "")
+
+          echo "Extracted Frontend URL: $FRONTEND_URL"
+          echo "Extracted Backend URL: $BACKEND_URL"
 
           if [ -z "$FRONTEND_URL" ]; then
-            echo "Failed to extract frontend URL from PR comment"
+            echo "❌ Failed to extract frontend URL from PR comment"
+            echo "This likely means the PR deployment hasn't posted its comment yet."
             exit 1
           fi
 
