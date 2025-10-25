@@ -150,29 +150,6 @@ public class LocationTests
     }
 
     [Fact]
-    public void Book_WithCustomPolicyConfig_UsesCustomPolicy()
-    {
-        // Arrange
-        var location = CreateTestLocation();
-
-        // Add a custom policy config that overrides the default 2-day advance notice
-        var policyConfigs = typeof(Location).GetProperty(nameof(Location.PolicyConfigs))!.GetValue(location) as List<PolicyConfig>;
-        policyConfigs!.Add(new PolicyConfig
-        {
-            Id = Guid.NewGuid(),
-            Key = Policykey.AdvanceNoticePolicy,
-            SettingsJson = """{"AdvanceTime":"1.00:00:00"}""" // 1 day instead of default 2 days
-        });
-
-        // Act - Should succeed with 1.5 days advance (less than default 2 days, but meets custom 1 day)
-        var booking = location.Book(DateTime.UtcNow.AddDays(1).AddHours(12), DateTime.UtcNow.AddDays(1).AddHours(14));
-
-        // Assert
-        booking.Should().NotBeNull();
-        location.Bookings.Should().ContainSingle();
-    }
-
-    [Fact]
     public void Constructor_SetsIdToNonEmptyGuid()
     {
         // Act

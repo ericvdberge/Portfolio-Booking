@@ -204,8 +204,8 @@ public class LogicDispatcherTests
             .WithMessage("No handler registered for command type TestCommandWithResult");
     }
 
-    // Test types
-    private record TestQuery : IQuery<string>;
-    private record TestCommand : ICommand;
-    private record TestCommandWithResult : ICommand<int>;
+    // Test types - must be public for Moq to create proxies
+    public record TestQuery : IQuery<string>;
+    public record TestCommand : ICommand;
+    public record TestCommandWithResult : ICommand<int>;
 }

@@ -17,6 +17,6 @@ public class NoOverlapPolicy : IBookingPolicy
 
     public void Apply(string settingsJson)
     {
-        throw new NotImplementedException("no config for this policy");
+        // No configuration needed for this policy
     }
 }
