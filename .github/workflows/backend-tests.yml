@@ -80,102 +80,49 @@ jobs:
             cat backend/CoverageReport/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
           fi
 
-      - name: Calculate diff coverage
+      - name: Calculate branch coverage
         id: coverage
         if: github.event_name == 'pull_request'
         run: |
           python3 << 'EOF'
           import xml.etree.ElementTree as ET
           import glob
-          import subprocess
-          import re
           import os
-
-          # Get the base branch (target of PR)
-          base_ref = os.environ.get('GITHUB_BASE_REF', 'main')
-
-          # Fetch base branch
-          subprocess.run(['git', 'fetch', 'origin', f'{base_ref}:{base_ref}'], check=False)
-
-          # Get diff for changed lines in backend directory
-          diff_output = subprocess.run(
-              ['git', 'diff', f'origin/{base_ref}...HEAD', '--unified=0', '--', 'backend/'],
-              capture_output=True,
-              text=True
-          ).stdout
-
-          # Parse diff to get changed lines per file
-          changed_lines = {}  # {file_path: set of line numbers}
-          current_file = None
-
-          for line in diff_output.split('\n'):
-              if line.startswith('+++'):
-                  # New file path
-                  match = re.match(r'\+\+\+ b/(.*)', line)
-                  if match:
-                      current_file = match.group(1)
-                      changed_lines[current_file] = set()
-              elif line.startswith('@@'):
-                  # Line range: @@ -old +new @@
-                  match = re.search(r'\+(\d+)(?:,(\d+))?', line)
-                  if match and current_file:
-                      start_line = int(match.group(1))
-                      count = int(match.group(2)) if match.group(2) else 1
-                      for i in range(start_line, start_line + count):
-                          changed_lines[current_file].add(i)
 
           # Parse coverage report
           coverage_files = glob.glob('backend/TestResults/*/coverage.opencover.xml')
 
-          if not coverage_files or not changed_lines:
+          if not coverage_files:
               print("0")
               with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
                   f.write("line_coverage=0\n")
+                  f.write("covered_lines=0\n")
+                  f.write("total_lines=0\n")
               exit(0)
 
           tree = ET.parse(coverage_files[0])
           root = tree.getroot()
 
-          # Track coverage for changed lines
-          total_changed_lines = 0
-          covered_changed_lines = 0
+          # Get overall line coverage from Summary element
+          summary = root.find('.//Summary')
+          if summary is not None:
+              line_coverage = float(summary.get('sequenceCoverage', '0'))
 
-          # Iterate through files in coverage report
-          for file_elem in root.findall('.//File'):
-              file_path = file_elem.get('fullPath', '')
+              # Get total and covered lines
+              visited = int(summary.get('visitedSequencePoints', '0'))
+              total = int(summary.get('numSequencePoints', '0'))
 
-              # Normalize paths for comparison
-              rel_path = None
-              if 'backend/' in file_path:
-                  rel_path = file_path[file_path.index('backend/'):]
-
-              if not rel_path or rel_path not in changed_lines:
-                  continue
-
-              # Check coverage for each changed line in this file
-              for line_num in changed_lines[rel_path]:
-                  total_changed_lines += 1
-
-                  # Check if this line is in coverage data
-                  for seq_point in file_elem.findall('.//SequencePoint'):
-                      sl = int(seq_point.get('sl', 0))  # start line
-                      vc = int(seq_point.get('vc', 0))  # visit count
-
-                      if sl == line_num and vc > 0:
-                          covered_changed_lines += 1
-                          break
-
-          # Calculate percentage
-          if total_changed_lines > 0:
-              coverage_percent = round((covered_changed_lines / total_changed_lines) * 100, 2)
+              print(f"{line_coverage}")
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write(f"line_coverage={line_coverage}\n")
+                  f.write(f"covered_lines={visited}\n")
+                  f.write(f"total_lines={total}\n")
           else:
-              coverage_percent = 100  # No changes to production code
-
-          print(f"{coverage_percent}")
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-              f.write(f"line_coverage={coverage_percent}\n")
-              f.write(f"covered_lines={covered_changed_lines}\n")
-              f.write(f"total_lines={total_changed_lines}\n")
+              print("0")
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write("line_coverage=0\n")
+                  f.write("covered_lines=0\n")
+                  f.write("total_lines=0\n")
           EOF
 
       - name: Comment coverage on PR
@@ -193,8 +140,15 @@ jobs:
             if (fs.existsSync(summaryPath)) {
               coverageSummary = fs.readFileSync(summaryPath, 'utf8');
 
-              // Remove the "Summary" header section if present
-              coverageSummary = coverageSummary.replace(/## Summary[\s\S]*?(?=##|$)/, '');
+              // Remove the entire Summary section (title and content)
+              // Match "# Summary - Backend Code Coverage" or "## Summary" and everything until next ## or end
+              coverageSummary = coverageSummary.replace(/^#+ Summary.*$/gm, '');
+
+              // Remove "Summary" line if it appears standalone
+              coverageSummary = coverageSummary.replace(/^Summary\s*$/gm, '');
+
+              // Clean up multiple consecutive blank lines
+              coverageSummary = coverageSummary.replace(/\n{3,}/g, '\n\n');
 
               // Clean up any leading/trailing whitespace
               coverageSummary = coverageSummary.trim();
@@ -211,7 +165,7 @@ jobs:
               coverageIcon = '✅';
             }
 
-            const body = `${coverageIcon} **${lineCoverage}%** of changed lines covered (${coveredLines}/${totalLines})
+            const body = `${coverageIcon} **${lineCoverage}%** lines covered (${coveredLines}/${totalLines})
 
             ${coverageSummary}
             `;
@@ -225,7 +179,7 @@ jobs:
 
             const botComment = comments.find(comment =>
               comment.user.type === 'Bot' &&
-              comment.body.includes('changed lines covered')
+              comment.body.includes('lines covered')
             );
 
             if (botComment) {
@@ -252,11 +206,11 @@ jobs:
           COVERAGE="${{ steps.coverage.outputs.line_coverage }}"
           THRESHOLD=90
 
-          echo "Changed Lines Coverage: $COVERAGE%"
+          echo "Line Coverage: $COVERAGE%"
           echo "Threshold: $THRESHOLD%"
 
           if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
-            echo "::warning::Changed lines coverage ($COVERAGE%) is below the threshold ($THRESHOLD%)"
+            echo "::warning::Line coverage ($COVERAGE%) is below the threshold ($THRESHOLD%)"
           else
-            echo "::notice::Changed lines coverage ($COVERAGE%) meets the threshold ($THRESHOLD%)"
+            echo "::notice::Line coverage ($COVERAGE%) meets the threshold ($THRESHOLD%)"
           fi
