@@ -129,6 +129,33 @@ jobs:
           echo "Frontend URL: $FRONTEND_URL"
           echo "Backend URL: $BACKEND_URL"
 
+      - name: Warm up frontend and backend
+        env:
+          FRONTEND_URL: ${{ steps.wait-deployment.outputs.frontend_url }}
+          BACKEND_URL: ${{ steps.wait-deployment.outputs.backend_url }}
+        run: |
+          echo "🔥 Warming up deployed applications..."
+
+          # Poke the frontend (wake up container if cold)
+          echo "Poking frontend: $FRONTEND_URL"
+          curl -sSL -o /dev/null -w "Frontend: HTTP %{http_code} in %{time_total}s\n" "$FRONTEND_URL" || echo "Frontend request failed, continuing..."
+
+          # Poke the backend (wake up container if cold)
+          if [ -n "$BACKEND_URL" ]; then
+            echo "Poking backend: $BACKEND_URL"
+            curl -sSL -o /dev/null -w "Backend: HTTP %{http_code} in %{time_total}s\n" "$BACKEND_URL" || echo "Backend request failed, continuing..."
+          fi
+
+          # Wait 30 seconds for apps to fully warm up and stabilize
+          echo "⏳ Waiting 30 seconds for apps to fully warm up..."
+          sleep 30
+
+          # Make one more request to verify apps are responsive
+          echo "✅ Verifying apps are ready..."
+          curl -sSL -o /dev/null -w "Frontend ready: HTTP %{http_code}\n" "$FRONTEND_URL" || echo "⚠️ Frontend may not be fully ready"
+
+          echo "🚀 Apps are warmed up and ready for testing!"
+
       - name: Run Playwright tests
         working-directory: ./e2e
         env:
