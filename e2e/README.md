@@ -198,13 +198,13 @@ Current test coverage:
 - ✅ Homepage to locations via CTA "Start Browsing" button
 
 ### Locations Page Tests
-- ✅ Page loads and displays heading
-- ✅ Content area is visible
-- ✅ Location data loads from real API
-- ✅ Interactive elements (buttons/links) are present
-- ✅ Location cards are clickable (when available)
+- ✅ Page loads with correct heading
+- ✅ At least one location card is displayed
+- ✅ Location cards have expected content (buttons)
+- ✅ Location cards are clickable and navigate correctly
+- ✅ Grid layout displays multiple location cards
 
-**Note:** These tests run against **real deployed environments**, not mocked APIs. They test actual user flows and verify the application works end-to-end.
+**Note:** These tests run against **real deployed environments** and expect actual location data to be present. They verify that the application loads real data and users can interact with it.
 
 ## Future Tests
 
