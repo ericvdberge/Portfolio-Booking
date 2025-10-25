@@ -149,6 +149,75 @@ public class LocationTests
         booking.UpdatedAt.Should().BeOnOrBefore(afterBooking);
     }
 
+    [Fact]
+    public void Book_WithCustomPolicyConfig_UsesCustomPolicy()
+    {
+        // Arrange
+        var location = CreateTestLocation();
+
+        // Add a custom policy config that overrides the default 2-day advance notice
+        var policyConfigs = typeof(Location).GetProperty(nameof(Location.PolicyConfigs))!.GetValue(location) as List<PolicyConfig>;
+        policyConfigs!.Add(new PolicyConfig
+        {
+            Key = Policykey.AdvanceNoticePolicy,
+            SettingsJson = """{"AdvanceTime":"1.00:00:00"}""" // 1 day instead of default 2 days
+        });
+
+        // Act - Should succeed with 1.5 days advance (less than default 2 days, but meets custom 1 day)
+        var booking = location.Book(DateTime.UtcNow.AddDays(1).AddHours(12), DateTime.UtcNow.AddDays(1).AddHours(14));
+
+        // Assert
+        booking.Should().NotBeNull();
+        location.Bookings.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void Constructor_SetsIdToNonEmptyGuid()
+    {
+        // Act
+        var location = CreateTestLocation();
+
+        // Assert
+        location.Id.Should().NotBeEmpty("location should have a generated ID");
+    }
+
+    [Fact]
+    public void Constructor_SetsTimestampsToNow()
+    {
+        // Arrange
+        var before = DateTime.UtcNow;
+
+        // Act
+        var location = CreateTestLocation();
+
+        // Assert
+        var after = DateTime.UtcNow;
+        location.CreatedAt.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
+        location.UpdatedAt.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
+    }
+
+    [Fact]
+    public void Bookings_InitializedAsEmptyList()
+    {
+        // Act
+        var location = CreateTestLocation();
+
+        // Assert
+        location.Bookings.Should().NotBeNull();
+        location.Bookings.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void PolicyConfigs_InitializedAsEmptyList()
+    {
+        // Act
+        var location = CreateTestLocation();
+
+        // Assert
+        location.PolicyConfigs.Should().NotBeNull();
+        location.PolicyConfigs.Should().BeEmpty();
+    }
+
     private static Location CreateTestLocation()
     {
         var location = new Location(
