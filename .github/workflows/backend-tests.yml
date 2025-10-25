@@ -140,17 +140,20 @@ jobs:
             if (fs.existsSync(summaryPath)) {
               coverageSummary = fs.readFileSync(summaryPath, 'utf8');
 
-              // Remove the entire Summary section (title and content)
-              // Match "# Summary - Backend Code Coverage" or "## Summary" and everything until next ## or end
-              coverageSummary = coverageSummary.replace(/^#+ Summary.*$/gm, '');
+              // Remove the entire Summary section - from the Summary header through its content
+              // until we hit the next major section (## Coverage or anything that starts with ##)
+              coverageSummary = coverageSummary.replace(/^#+ Summary.*?\n[\s\S]*?(?=\n## |\n$)/m, '');
 
-              // Remove "Summary" line if it appears standalone
-              coverageSummary = coverageSummary.replace(/^Summary\s*$/gm, '');
+              // Also try to remove standalone "Summary" followed by content
+              coverageSummary = coverageSummary.replace(/^Summary\s*\n.*?(?=\n## |\n$)/m, '');
 
               // Clean up multiple consecutive blank lines
               coverageSummary = coverageSummary.replace(/\n{3,}/g, '\n\n');
 
-              // Clean up any leading/trailing whitespace
+              // Remove any leading blank lines
+              coverageSummary = coverageSummary.replace(/^\s+/, '');
+
+              // Clean up any trailing whitespace
               coverageSummary = coverageSummary.trim();
             }
 
