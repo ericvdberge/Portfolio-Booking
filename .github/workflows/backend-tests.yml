@@ -140,36 +140,9 @@ jobs:
             if (fs.existsSync(summaryPath)) {
               coverageSummary = fs.readFileSync(summaryPath, 'utf8');
 
-              // Remove the entire Summary section including header, content, and tables
-              // This matches from Summary header through all content (including tables)
-              // until we hit the next major section starting with ##
+              // Remove only the Summary section (including its table)
+              // Keep everything else including module/project coverage tables
               coverageSummary = coverageSummary.replace(/^#+ Summary.*$[\s\S]*?(?=^## )/m, '');
-
-              // Also handle case where Summary is at the end of file
-              coverageSummary = coverageSummary.replace(/^#+ Summary.*$[\s\S]*$/m, '');
-
-              // Remove standalone "Summary" text followed by tables/content
-              coverageSummary = coverageSummary.replace(/^Summary\s*$[\s\S]*?(?=^## )/m, '');
-
-              // Remove any orphaned markdown tables (lines starting with |)
-              const lines = coverageSummary.split('\n');
-              const filteredLines = [];
-              let inTable = false;
-
-              for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
-
-                // Check if this is a table row or separator
-                if (line.trim().startsWith('|') || /^\s*[-:|]+\s*$/.test(line)) {
-                  inTable = true;
-                  continue; // Skip table lines
-                } else {
-                  inTable = false;
-                  filteredLines.push(line);
-                }
-              }
-
-              coverageSummary = filteredLines.join('\n');
 
               // Clean up multiple consecutive blank lines
               coverageSummary = coverageSummary.replace(/\n{3,}/g, '\n\n');
