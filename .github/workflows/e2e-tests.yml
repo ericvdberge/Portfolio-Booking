@@ -71,6 +71,9 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
+      - name: Install EF Core tools
+        run: dotnet tool install --global dotnet-ef
+
       - name: Start application services
         run: |
           # Start PostgreSQL in background
