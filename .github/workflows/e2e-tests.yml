@@ -2,25 +2,17 @@ name: E2E Tests
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened]
     branches: [main]
     paths:
       - 'frontend/**'
       - 'backend/**'
       - 'e2e/**'
-      - 'docker-compose.yml'
-      - '.github/workflows/e2e-tests.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'frontend/**'
-      - 'backend/**'
-      - 'e2e/**'
-      - 'docker-compose.yml'
       - '.github/workflows/e2e-tests.yml'
 
 jobs:
   e2e-tests:
-    name: Run E2E Tests
+    name: Run E2E Tests on PR Deployment
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -54,10 +46,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      - name: Install frontend dependencies
-        working-directory: ./frontend
-        run: pnpm install --frozen-lockfile
-
       - name: Install e2e dependencies
         working-directory: ./e2e
         run: pnpm install --frozen-lockfile
@@ -66,69 +54,72 @@ jobs:
         working-directory: ./e2e
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
-      - name: Install EF Core tools
-        run: dotnet tool install --global dotnet-ef
-
-      - name: Start application services
+      - name: Wait for PR deployment
+        id: wait-deployment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          # Start PostgreSQL in background
-          docker compose up -d postgres
+          echo "Waiting for PR deployment to complete..."
 
-          # Wait for PostgreSQL to be healthy
-          timeout 60 bash -c 'until docker compose exec -T postgres pg_isready -U booking_user -d portfolio_booking; do sleep 2; done'
+          # Wait up to 10 minutes for deployment workflow to complete
+          timeout 600 bash -c '
+            while true; do
+              # Get the latest deployment workflow run for this PR
+              WORKFLOW_STATUS=$(gh run list \
+                --workflow="pr-deploy.yml" \
+                --json status,conclusion,headBranch \
+                --jq "map(select(.headBranch == \"${{ github.head_ref }}\")) | .[0] | .status + \",\" + (.conclusion // \"\")")
 
-      - name: Build and start backend
-        working-directory: ./backend
-        run: |
-          # Restore and build backend
-          dotnet restore booking.sln
-          dotnet build booking.sln --no-restore --configuration Release
+              echo "Deployment status: $WORKFLOW_STATUS"
 
-          # Run migrations
-          dotnet ef database update --project Booking.Infrastructure --startup-project Booking.Api
+              STATUS=$(echo "$WORKFLOW_STATUS" | cut -d"," -f1)
+              CONCLUSION=$(echo "$WORKFLOW_STATUS" | cut -d"," -f2)
 
-          # Start backend in background
-          nohup dotnet run --project Booking.Api --no-build --configuration Release > backend.log 2>&1 &
+              if [ "$STATUS" = "completed" ]; then
+                if [ "$CONCLUSION" = "success" ]; then
+                  echo "Deployment completed successfully!"
+                  break
+                else
+                  echo "Deployment failed with conclusion: $CONCLUSION"
+                  exit 1
+                fi
+              fi
 
-          # Wait for backend to be ready
-          timeout 60 bash -c 'until curl -f http://localhost:8080/health || curl -f http://localhost:8080; do sleep 2; done' || {
-            echo "Backend failed to start. Logs:"
-            cat backend.log
+              echo "Waiting for deployment... (status: $STATUS)"
+              sleep 15
+            done
+          ' || {
+            echo "Timeout or error waiting for deployment"
             exit 1
           }
 
-      - name: Build and start frontend
-        working-directory: ./frontend
+          # Construct PR URLs based on naming convention
+          FRONTEND_URL="https://pbooking-frontend-pr-${PR_NUMBER}.lemonwater-1ae5d7b2.swedencentral.azurecontainerapps.io"
+          BACKEND_URL="https://pbooking-backend-pr-${PR_NUMBER}.lemonwater-1ae5d7b2.swedencentral.azurecontainerapps.io"
+
+          echo "frontend_url=$FRONTEND_URL" >> $GITHUB_OUTPUT
+          echo "backend_url=$BACKEND_URL" >> $GITHUB_OUTPUT
+
+      - name: Verify frontend is accessible
+        env:
+          FRONTEND_URL: ${{ steps.wait-deployment.outputs.frontend_url }}
         run: |
-          # Build frontend
-          pnpm run build
-
-          # Start frontend in background
-          nohup pnpm start > frontend.log 2>&1 &
-
-          # Wait for frontend to be ready
-          timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 2; done' || {
-            echo "Frontend failed to start. Logs:"
-            cat frontend.log
-            exit 1
-          }
+          echo "Verifying frontend at ${FRONTEND_URL}"
+          timeout 120 bash -c "until curl -f -s ${FRONTEND_URL} > /dev/null; do echo 'Waiting for frontend...'; sleep 5; done"
+          echo "Frontend is accessible!"
 
       - name: Run Playwright tests
         working-directory: ./e2e
         env:
-          BASE_URL: http://localhost:3000
+          BASE_URL: ${{ steps.wait-deployment.outputs.frontend_url }}
         run: pnpm exec playwright test --project=chromium
 
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-pr-${{ github.event.pull_request.number }}
           path: e2e/playwright-report/
           retention-days: 30
 
@@ -136,25 +127,45 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: test-results-pr-${{ github.event.pull_request.number }}
           path: e2e/test-results/
           retention-days: 30
 
-      - name: Show logs on failure
-        if: failure()
-        run: |
-          echo "=== Backend Logs ==="
-          cat backend/backend.log || echo "No backend logs found"
-          echo ""
-          echo "=== Frontend Logs ==="
-          cat frontend/frontend.log || echo "No frontend logs found"
-          echo ""
-          echo "=== Docker Logs ==="
-          docker compose logs postgres
-
-      - name: Cleanup
+      - name: Comment test results on PR
         if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FRONTEND_URL: ${{ steps.wait-deployment.outputs.frontend_url }}
         run: |
-          docker compose down -v
-          pkill -f "dotnet run" || true
-          pkill -f "next start" || true
+          # Count test results from playwright report
+          if [ -f e2e/test-results/junit.xml ]; then
+            TESTS_TOTAL=$(grep -oP 'tests="\K[0-9]+' e2e/test-results/junit.xml || echo "0")
+            TESTS_FAILED=$(grep -oP 'failures="\K[0-9]+' e2e/test-results/junit.xml || echo "0")
+            TESTS_PASSED=$((TESTS_TOTAL - TESTS_FAILED))
+
+            if [ "$TESTS_FAILED" = "0" ]; then
+              STATUS="✅ E2E Tests Passed"
+              EMOJI="🎉"
+            else
+              STATUS="❌ E2E Tests Failed"
+              EMOJI="⚠️"
+            fi
+
+            gh pr comment ${{ github.event.pull_request.number }} --body "${EMOJI} **${STATUS}**
+
+            **Test Results:**
+            - ✅ Passed: ${TESTS_PASSED}
+            - ❌ Failed: ${TESTS_FAILED}
+            - 📊 Total: ${TESTS_TOTAL}
+
+            **Environment:**
+            - Frontend: ${FRONTEND_URL}
+
+            [View detailed report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          else
+            gh pr comment ${{ github.event.pull_request.number }} --body "⚠️ **E2E Tests Issue**
+
+            Could not find test results.
+
+            [View workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          fi
