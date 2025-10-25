@@ -124,21 +124,24 @@ jobs:
 
             if (fs.existsSync(summaryPath)) {
               coverageSummary = fs.readFileSync(summaryPath, 'utf8');
+
+              // Remove the "Summary" header section if present
+              coverageSummary = coverageSummary.replace(/## Summary[\s\S]*?(?=##|$)/, '');
+
+              // Clean up any leading/trailing whitespace
+              coverageSummary = coverageSummary.trim();
             }
 
             const lineCoverage = '${{ steps.coverage.outputs.line_coverage }}';
             const coveragePercent = parseFloat(lineCoverage);
 
-            let coverageEmoji = '🔴';
+            // Use checkmark for passing (>=80%), red X for failing
+            let coverageIcon = '❌';
             if (coveragePercent >= 80) {
-              coverageEmoji = '🟢';
-            } else if (coveragePercent >= 60) {
-              coverageEmoji = '🟡';
+              coverageIcon = '✅';
             }
 
-            const body = `## ${coverageEmoji} Backend Test Coverage Report
-
-            **Line Coverage:** ${lineCoverage}%
+            const body = `## ${coverageIcon} Backend Test Coverage: ${lineCoverage}%
 
             ${coverageSummary}
 
@@ -162,7 +165,7 @@ jobs:
 
             const botComment = comments.find(comment =>
               comment.user.type === 'Bot' &&
-              comment.body.includes('Backend Test Coverage Report')
+              comment.body.includes('Backend Test Coverage')
             );
 
             if (botComment) {
