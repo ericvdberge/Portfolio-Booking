@@ -210,7 +210,10 @@ jobs:
           echo "Threshold: $THRESHOLD%"
 
           if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
-            echo "::warning::Line coverage ($COVERAGE%) is below the threshold ($THRESHOLD%)"
+            echo "::error::Line coverage ($COVERAGE%) is below the threshold ($THRESHOLD%)"
+            echo "❌ Coverage check failed: $COVERAGE% < $THRESHOLD%"
+            exit 1
           else
             echo "::notice::Line coverage ($COVERAGE%) meets the threshold ($THRESHOLD%)"
+            echo "✅ Coverage check passed: $COVERAGE% >= $THRESHOLD%"
           fi
