@@ -15,67 +15,91 @@ test.describe('Locations Page', () => {
     await expect(heading).toContainText(/location/i);
   });
 
+  test('should display locations grid', async ({ page }) => {
+    // Wait for page to finish loading
+    await page.waitForLoadState('networkidle', { timeout: 20000 });
+
+    // Should display the locations grid (not loading, error, or empty state)
+    const grid = page.getByTestId('locations-grid');
+    await expect(grid).toBeVisible({ timeout: 10000 });
+  });
+
   test('should display at least one location card', async ({ page }) => {
     // Wait for page to finish loading
     await page.waitForLoadState('networkidle', { timeout: 20000 });
 
     // Should have location cards rendered
-    // Look for "View Details" or "Book Now" buttons which are on location cards
-    const viewDetailsButtons = page.getByRole('button', { name: /view details/i });
-    const bookNowButtons = page.getByRole('button', { name: /book now/i });
+    const locationCards = page.getByTestId('location-card');
 
-    // At least one type of button should exist
-    const viewDetailsCount = await viewDetailsButtons.count();
-    const bookNowCount = await bookNowButtons.count();
+    // Wait for at least one card to be visible
+    await expect(locationCards.first()).toBeVisible({ timeout: 10000 });
 
-    expect(viewDetailsCount + bookNowCount).toBeGreaterThan(0);
+    // Verify we have at least one location card
+    const cardCount = await locationCards.count();
+    expect(cardCount).toBeGreaterThan(0);
   });
 
-  test('should display location cards with expected content', async ({ page }) => {
+  test('should display location card with all elements', async ({ page }) => {
     // Wait for page to finish loading
     await page.waitForLoadState('networkidle', { timeout: 20000 });
 
-    // Look for "View Details" buttons (these are on location cards)
-    const viewDetailsButtons = page.getByRole('button', { name: /view details/i });
-    await expect(viewDetailsButtons.first()).toBeVisible({ timeout: 10000 });
+    // Get the first location card
+    const firstCard = page.getByTestId('location-card').first();
+    await expect(firstCard).toBeVisible({ timeout: 10000 });
 
-    // Verify we have at least one location card
-    const cardCount = await viewDetailsButtons.count();
-    expect(cardCount).toBeGreaterThan(0);
-
-    // Each location card should be visible
-    for (let i = 0; i < Math.min(cardCount, 3); i++) {
-      await expect(viewDetailsButtons.nth(i)).toBeVisible();
-    }
+    // Verify card has all expected elements
+    await expect(firstCard.getByTestId('location-card-name')).toBeVisible();
+    await expect(firstCard.getByTestId('location-card-address')).toBeVisible();
+    await expect(firstCard.getByTestId('location-card-capacity')).toBeVisible();
+    await expect(firstCard.getByTestId('location-card-hours')).toBeVisible();
+    await expect(firstCard.getByTestId('location-card-book-now')).toBeVisible();
   });
 
   test('should be able to click on a location card', async ({ page }) => {
     // Wait for page to finish loading
     await page.waitForLoadState('networkidle', { timeout: 20000 });
 
-    // Find and click the first "View Details" button
-    const viewDetailsButton = page.getByRole('button', { name: /view details/i }).first();
-    await expect(viewDetailsButton).toBeVisible({ timeout: 10000 });
+    // Get the first location card and click it
+    const firstCard = page.getByTestId('location-card').first();
+    await expect(firstCard).toBeVisible({ timeout: 10000 });
 
-    await viewDetailsButton.click();
+    await firstCard.click();
 
     // Should navigate to location details page
     await expect(page).toHaveURL(/\/locations\/[^/]+/, { timeout: 10000 });
   });
 
-  test('should display location grid with multiple cards', async ({ page }) => {
+  test('should be able to click book now button', async ({ page }) => {
     // Wait for page to finish loading
     await page.waitForLoadState('networkidle', { timeout: 20000 });
 
-    // Check that we have a grid layout with multiple cards
-    const grid = page.locator('[class*="grid"]').first();
-    await expect(grid).toBeVisible({ timeout: 10000 });
+    // Get the first book now button
+    const bookNowButton = page.getByTestId('location-card-book-now').first();
+    await expect(bookNowButton).toBeVisible({ timeout: 10000 });
 
-    // Should have multiple location cards (at least 1, ideally more)
-    const viewDetailsButtons = page.getByRole('button', { name: /view details/i });
-    const cardCount = await viewDetailsButtons.count();
+    // Click should work (currently shows alert, but tests button is clickable)
+    await bookNowButton.click();
 
+    // Wait a moment for any potential navigation or modal (currently alert)
+    await page.waitForTimeout(500);
+  });
+
+  test('should display multiple location cards', async ({ page }) => {
+    // Wait for page to finish loading
+    await page.waitForLoadState('networkidle', { timeout: 20000 });
+
+    // Get all location cards
+    const locationCards = page.getByTestId('location-card');
+    const cardCount = await locationCards.count();
+
+    // Should have at least 1 card, ideally more
     expect(cardCount).toBeGreaterThanOrEqual(1);
+
     console.log(`Found ${cardCount} location cards`);
+
+    // Verify first few cards are visible
+    for (let i = 0; i < Math.min(cardCount, 3); i++) {
+      await expect(locationCards.nth(i)).toBeVisible();
+    }
   });
 });

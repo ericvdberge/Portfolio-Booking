@@ -117,12 +117,19 @@ Key configuration options in `playwright.config.ts`:
 
 ### Best Practices
 
-1. **Use Accessibility-First Selectors**
+1. **Use data-testid for Language-Independent Testing**
    ```typescript
-   // Good - using role and accessible name
-   await page.getByRole('button', { name: 'Submit' }).click();
+   // Best - using data-testid (language-independent)
+   await page.getByTestId('location-card').click();
+   await page.getByTestId('location-card-book-now').click();
 
-   // Avoid - using CSS selectors
+   // Good - using role for semantic elements
+   await page.getByRole('heading', { level: 1 });
+
+   // Avoid - using text (language-dependent)
+   await page.getByText('View Details').click();
+
+   // Avoid - using CSS selectors (brittle)
    await page.locator('.submit-btn').click();
    ```
 
@@ -199,12 +206,14 @@ Current test coverage:
 
 ### Locations Page Tests
 - ✅ Page loads with correct heading
-- ✅ At least one location card is displayed
-- ✅ Location cards have expected content (buttons)
-- ✅ Location cards are clickable and navigate correctly
-- ✅ Grid layout displays multiple location cards
+- ✅ Locations grid is displayed
+- ✅ At least one location card is rendered
+- ✅ Location cards contain all elements (name, address, capacity, hours, button)
+- ✅ Location cards are clickable and navigate to details page
+- ✅ Book now button is clickable
+- ✅ Multiple location cards are displayed
 
-**Note:** These tests run against **real deployed environments** and expect actual location data to be present. They verify that the application loads real data and users can interact with it.
+**Note:** These tests run against **real deployed environments** and expect actual location data to be present. They use `data-testid` attributes for language-independent, reliable element selection.
 
 ## Future Tests
 

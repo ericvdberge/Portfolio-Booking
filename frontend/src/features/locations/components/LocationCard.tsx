@@ -61,6 +61,7 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
     <Card
       isPressable
       onPress={handleViewDetails}
+      data-testid="location-card"
       className={`w-full transition-all duration-300 ease-out ${
         isVisible
           ? 'opacity-100 translate-y-0'
@@ -85,21 +86,21 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
       </CardHeader>
       <CardBody className="space-y-3">
         <div>
-          <h3 className="text-lg font-semibold">{location.name}</h3>
-          <p className="text-sm text-default-500">{location.address}</p>
+          <h3 className="text-lg font-semibold" data-testid="location-card-name">{location.name}</h3>
+          <p className="text-sm text-default-500" data-testid="location-card-address">{location.address}</p>
         </div>
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            <span className="text-sm">{t('locationCard.capacity')}: {location.capacity}</span>
+            <span className="text-sm" data-testid="location-card-capacity">{t('locationCard.capacity')}: {location.capacity}</span>
           </div>
           <Chip color="success" variant="flat" size="sm">{t('locationCard.available')}</Chip>
         </div>
 
         <div className="flex items-center gap-2 text-sm text-default-500">
           <Clock className="h-4 w-4" />
-          <span>{location.openTime} - {location.closeTime}</span>
+          <span data-testid="location-card-hours">{location.openTime} - {location.closeTime}</span>
         </div>
       </CardBody>
       <CardFooter className="pt-0">
@@ -107,6 +108,7 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
           size="sm"
           color="primary"
           onPress={handleBookNow}
+          data-testid="location-card-book-now"
           className="w-full"
         >
           {t('locationCard.bookNow')}

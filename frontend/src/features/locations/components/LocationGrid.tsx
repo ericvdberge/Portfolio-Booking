@@ -21,7 +21,7 @@ export function LocationGrid({
 }: LocationGridProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 justify-items-center">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 justify-items-center" data-testid="locations-loading">
         {Array.from({ length: skeletonCount }).map((_, i) => (
           <LocationSkeleton key={i} />
         ))}
@@ -31,7 +31,7 @@ export function LocationGrid({
 
   if (error) {
     return (
-      <div className="text-center space-y-4">
+      <div className="text-center space-y-4" data-testid="locations-error">
         <h1 className="text-2xl font-bold text-destructive">Error Loading Locations</h1>
         <p className="text-muted-foreground">Unable to fetch locations. Please try again later.</p>
       </div>
@@ -40,7 +40,7 @@ export function LocationGrid({
 
   if (locations.length === 0) {
     return (
-      <div className="text-center space-y-4 py-12">
+      <div className="text-center space-y-4 py-12" data-testid="locations-empty">
         <h2 className="text-xl font-semibold">No Locations Available</h2>
         <p className="text-muted-foreground">There are currently no locations available for booking.</p>
       </div>
@@ -48,7 +48,7 @@ export function LocationGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 justify-items-center">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 justify-items-center" data-testid="locations-grid">
       {locations.map((location, index) => (
         <LocationCard
           key={location.id}
