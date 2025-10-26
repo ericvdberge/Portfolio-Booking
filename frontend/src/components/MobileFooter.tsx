@@ -56,7 +56,7 @@ export function MobileFooter() {
   };
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t border-border/40 md:hidden">
+    <footer className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
       <nav className="container mx-auto px-4">
         <div className="flex items-center justify-around h-16">
           {navItems.map((item) => {
