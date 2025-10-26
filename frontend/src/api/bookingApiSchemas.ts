@@ -3,6 +3,13 @@
  *
  * @version 1.0.0
  */
+
+export enum LocationType {
+  None = 0,
+  Hotel = 1,
+  BAndB = 2,
+}
+
 export type LocationDto = {
   /**
    * @format uuid
@@ -23,4 +30,6 @@ export type LocationDto = {
    * @pattern ^-?(\d+\.)?\d{2}:\d{2}:\d{2}(\.\d{1,7})?$
    */
   closeTime?: string;
+  isActive?: boolean;
+  locationType?: LocationType;
 };

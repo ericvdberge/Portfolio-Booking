@@ -1,8 +1,7 @@
 'use client';
 
 import { LocationGrid } from '@/features/locations/components/LocationGrid';
-import { useGetAllLocations } from '@/api/client';
-import { LocationType } from '@/api/api-types';
+import { useGetAllLocations, LocationType } from '@/api/client';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Select, SelectItem } from '@heroui/react';
@@ -11,7 +10,9 @@ import { useState } from 'react';
 export default function LocationsPage() {
   const [selectedLocationType, setSelectedLocationType] = useState<LocationType | undefined>(undefined);
   const { data: locations, isLoading, error } = useGetAllLocations({
-    locationType: selectedLocationType,
+    queryParams: {
+      locationType: selectedLocationType,
+    },
   });
   const t = useTranslations('locations');
   const router = useRouter();
@@ -52,13 +53,13 @@ export default function LocationsPage() {
             handleLocationTypeChange(value);
           }}
         >
-          <SelectItem key="all" value="all">
+          <SelectItem key="all">
             All Locations
           </SelectItem>
-          <SelectItem key={String(LocationType.Hotel)} value={String(LocationType.Hotel)}>
+          <SelectItem key={String(LocationType.Hotel)}>
             Hotel
           </SelectItem>
-          <SelectItem key={String(LocationType.BAndB)} value={String(LocationType.BAndB)}>
+          <SelectItem key={String(LocationType.BAndB)}>
             B&amp;B
           </SelectItem>
         </Select>
