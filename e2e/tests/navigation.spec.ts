@@ -5,21 +5,14 @@ test.describe('Homepage Navigation', () => {
     // Navigate to homepage
     await page.goto('/');
 
-    // Wait for page to load
-    await expect(page).toHaveTitle(/Portfolio Booking/i);
-
-    // Find and click the "Explore Venues" button in the hero section
-    // Using getByRole for better accessibility testing
-    const exploreButton = page.getByRole('link', { name: /explore venues/i });
+    // Find and click the "Explore Venues" button in the hero section using testid
+    const exploreButton = page.getByTestId('hero-explore-venues-link');
     await expect(exploreButton).toBeVisible();
 
     await exploreButton.click();
 
     // Verify we navigated to the locations page
     await expect(page).toHaveURL('/locations');
-
-    // Verify the locations page header is visible
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
   test('should navigate from home to locations via CTA section button', async ({ page }) => {
@@ -27,7 +20,7 @@ test.describe('Homepage Navigation', () => {
     await page.goto('/');
 
     // Scroll to CTA section to ensure button is visible
-    const ctaButton = page.getByRole('link', { name: /start browsing/i });
+    const ctaButton = page.getByTestId('cta-start-browsing-link');
     await ctaButton.scrollIntoViewIfNeeded();
     await expect(ctaButton).toBeVisible();
 

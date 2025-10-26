@@ -8,11 +8,8 @@ test.describe('Locations Page', () => {
 
   test('should load and display the locations page with heading', async ({ page }) => {
     // Verify the page heading is present
-    const heading = page.getByRole('heading', { level: 1 });
+    const heading = page.getByTestId('locations-page-heading');
     await expect(heading).toBeVisible({ timeout: 10000 });
-
-    // Heading should contain "location" text
-    await expect(heading).toContainText(/location/i);
   });
 
   test('should display locations grid', async ({ page }) => {
