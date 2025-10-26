@@ -107,7 +107,10 @@ export interface components {
             capacity?: number;
             openTime?: string;
             closeTime?: string;
+            isActive?: boolean;
+            locationType?: LocationType;
         };
+        LocationType: 0 | 1 | 2;
     };
     responses: never;
     parameters: never;
@@ -115,12 +118,19 @@ export interface components {
     headers: never;
     pathItems: never;
 }
+
+export enum LocationType {
+    None = 0,
+    Hotel = 1,
+    BAndB = 2,
+}
 export type $defs = Record<string, never>;
 export interface operations {
     GetAllLocations: {
         parameters: {
             query?: {
                 limit?: number;
+                locationType?: LocationType;
             };
             header?: never;
             path?: never;

@@ -18,11 +18,18 @@ type QueryFnOptions = {
   signal?: AbortController["signal"];
 };
 
+export type GetAllLocationsQueryParams = {
+  limit?: number;
+  locationType?: Schemas.LocationType;
+};
+
 export type GetAllLocationsError = Fetcher.ErrorWrapper<undefined>;
 
 export type GetAllLocationsResponse = Schemas.LocationDto[];
 
-export type GetAllLocationsVariables = BookingApiContext["fetcherOptions"];
+export type GetAllLocationsVariables = {
+  queryParams?: GetAllLocationsQueryParams;
+} & BookingApiContext["fetcherOptions"];
 
 export const fetchGetAllLocations = (
   variables: GetAllLocationsVariables,
@@ -33,7 +40,7 @@ export const fetchGetAllLocations = (
     GetAllLocationsError,
     undefined,
     {},
-    {},
+    GetAllLocationsQueryParams,
     {}
   >({ url: "/api/locations", method: "get", ...variables, signal });
 

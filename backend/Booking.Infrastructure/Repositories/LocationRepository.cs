@@ -23,8 +23,16 @@ public class LocationRepository : ILocationRepository
     {
         var limit = filter?.Limit ?? 50;
 
-        return await _context.Locations
-            .Where(l => l.IsActive)
+        var query = _context.Locations
+            .Where(l => l.IsActive);
+
+        // Apply location type filter if provided
+        if (filter?.LocationType.HasValue == true)
+        {
+            query = query.Where(l => l.LocationType == filter.LocationType.Value);
+        }
+
+        return await query
             .Take(limit)
             .ToListAsync(cancellationToken);
     }

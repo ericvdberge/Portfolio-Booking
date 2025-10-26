@@ -2,6 +2,7 @@ using Booking.Api.Abstractions;
 using Booking.Application.Abstractions;
 using Booking.Application.Features.Locations;
 using Booking.Application.Features.Locations.BookLocation;
+using Booking.Domain.Enums;
 using Booking.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
@@ -46,9 +47,14 @@ public class LocationEndpoints : IEndpoints
     private async Task<IResult> GetAllLocations(
         [FromServices] ILogicDispatcher _dispatcher,
         [FromQuery] int? limit,
+        [FromQuery] LocationType? locationType,
         CancellationToken cancellationToken)
     {
-        var filter = new LocationFilter { Limit = limit };
+        var filter = new LocationFilter
+        {
+            Limit = limit,
+            LocationType = locationType
+        };
         var locations = await _dispatcher.SendAsync(
             new GetAllLocationsQuery(filter),
             cancellationToken

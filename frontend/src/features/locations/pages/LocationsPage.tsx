@@ -1,12 +1,21 @@
 'use client';
 
 import { LocationGrid } from '@/features/locations/components/LocationGrid';
-import { useGetAllLocations } from '@/api/client';
+import { useGetAllLocations, LocationType } from '@/api/client';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { Chip } from '@heroui/react';
+import { useState } from 'react';
 
 export default function LocationsPage() {
-const { data: locations, isLoading, error } = useGetAllLocations({});
+  const [selectedLocationType, setSelectedLocationType] = useState<LocationType | null>(null);
+
+  // Only include locationType in queryParams if a specific type is selected
+  const queryParams = selectedLocationType !== null ? { locationType: selectedLocationType } : {};
+
+  const { data: locations, isLoading, error } = useGetAllLocations({
+    queryParams,
+  });
   const t = useTranslations('locations');
   const router = useRouter();
 
@@ -18,6 +27,10 @@ const { data: locations, isLoading, error } = useGetAllLocations({});
     router.push(`/locations/${locationId}`);
   };
 
+  const handleFilterClick = (type: LocationType | null) => {
+    setSelectedLocationType(type);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
       <div className="space-y-2">
@@ -25,6 +38,33 @@ const { data: locations, isLoading, error } = useGetAllLocations({});
         <p className="text-muted-foreground">
           {t('subtitle')}
         </p>
+      </div>
+
+      <div className="flex gap-2 flex-wrap">
+        <Chip
+          variant={selectedLocationType === null ? 'solid' : 'flat'}
+          color={selectedLocationType === null ? 'primary' : 'default'}
+          onClick={() => handleFilterClick(null)}
+          className="cursor-pointer"
+        >
+          All Locations
+        </Chip>
+        <Chip
+          variant={selectedLocationType === LocationType.Hotel ? 'solid' : 'flat'}
+          color={selectedLocationType === LocationType.Hotel ? 'primary' : 'default'}
+          onClick={() => handleFilterClick(LocationType.Hotel)}
+          className="cursor-pointer"
+        >
+          Hotel
+        </Chip>
+        <Chip
+          variant={selectedLocationType === LocationType.BAndB ? 'solid' : 'flat'}
+          color={selectedLocationType === LocationType.BAndB ? 'primary' : 'default'}
+          onClick={() => handleFilterClick(LocationType.BAndB)}
+          className="cursor-pointer"
+        >
+          B&amp;B
+        </Chip>
       </div>
 
       <LocationGrid

@@ -25,7 +25,8 @@ public class GetLocationByIdHandler(
             Capacity = location.Capacity,
             OpenTime = location.OpenTime,
             CloseTime = location.CloseTime,
-            IsActive = location.IsActive
+            IsActive = location.IsActive,
+            LocationType = location.LocationType
         };
     }
 }

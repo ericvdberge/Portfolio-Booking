@@ -1,4 +1,5 @@
 using Booking.Application.Abstractions;
+using Booking.Domain.Enums;
 using Booking.Infrastructure.Repositories;
 
 namespace Booking.Application.Features.Locations;
@@ -22,7 +23,8 @@ public class GetAllLocationsHandler(
             Capacity = location.Capacity,
             OpenTime = location.OpenTime,
             CloseTime = location.CloseTime,
-            IsActive = location.IsActive
+            IsActive = location.IsActive,
+            LocationType = location.LocationType
         });
     }
 }
@@ -37,4 +39,5 @@ public class LocationDto
     public TimeSpan OpenTime { get; set; }
     public TimeSpan CloseTime { get; set; }
     public bool IsActive { get; set; }
+    public LocationType LocationType { get; set; }
 }
