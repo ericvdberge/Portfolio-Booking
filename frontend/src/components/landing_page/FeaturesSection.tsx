@@ -52,10 +52,10 @@ export function FeaturesSection() {
             <Card key={feature.key} shadow="none" className="p-6 border border-default-200 hover:border-default-300 transition-colors">
               <CardHeader className="pb-4 px-0 flex-col items-start">
                 <div className="flex items-start justify-between w-full mb-3">
-                  <div className="rounded-xl bg-purple-100 p-3">
-                    <IconComponent className="h-6 w-6 text-purple-600" />
+                  <div className="rounded-xl bg-primary-50 p-3">
+                    <IconComponent className="h-6 w-6 text-primary" />
                   </div>
-                  <Chip variant="flat" color="secondary" size="sm">
+                  <Chip variant="flat" color="primary" size="sm">
                     {t(`${feature.key}.badge`)}
                   </Chip>
                 </div>

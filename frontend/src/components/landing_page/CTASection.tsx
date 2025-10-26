@@ -11,7 +11,7 @@ export function CTASection() {
 
   return (
     <section className="container mx-auto px-4">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600 to-purple-800 border border-purple-500">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-700 to-primary-900 border border-primary-600">
         <div className="absolute inset-0 bg-black/20" />
         <div className="absolute top-0 right-0 w-1/2 h-full opacity-20">
           <Image
@@ -26,7 +26,7 @@ export function CTASection() {
           <div className="max-w-2xl space-y-6">
             <div className="flex items-center gap-1">
               {[...Array(5)].map((_, i) => (
-                <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                <Star key={i} className="h-4 w-4 fill-warning text-warning" />
               ))}
               <span className="ml-2 text-white/90 text-sm font-medium">{t('rating')}</span>
             </div>
@@ -34,10 +34,10 @@ export function CTASection() {
             <div className="space-y-4">
               <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl">
                 {t('title')}
-                <span className="block text-purple-100 mt-2">{t('titleHighlight')}</span>
+                <span className="block text-primary-100 mt-2">{t('titleHighlight')}</span>
               </h2>
 
-              <p className="text-lg text-purple-50 leading-relaxed">
+              <p className="text-lg text-primary-50 leading-relaxed">
                 {t('subtitle')}
               </p>
             </div>
@@ -46,7 +46,7 @@ export function CTASection() {
               <Link href="/locations" data-testid="cta-start-browsing-link">
                 <Button
                   size="lg"
-                  className="group bg-white text-purple-700 hover:bg-purple-50 font-semibold"
+                  className="group bg-white text-primary-700 hover:bg-primary-50 font-semibold"
                 >
                   {t('startBrowsing')}
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -57,15 +57,15 @@ export function CTASection() {
             <div className="grid grid-cols-3 gap-4 md:gap-8 pt-6">
               <div className="text-center space-y-1">
                 <div className="text-2xl md:text-3xl font-bold text-white">500+</div>
-                <div className="text-purple-100 text-xs md:text-sm">{t('stats.venues')}</div>
+                <div className="text-primary-100 text-xs md:text-sm">{t('stats.venues')}</div>
               </div>
               <div className="text-center space-y-1">
                 <div className="text-2xl md:text-3xl font-bold text-white">50K+</div>
-                <div className="text-purple-100 text-xs md:text-sm">{t('stats.bookings')}</div>
+                <div className="text-primary-100 text-xs md:text-sm">{t('stats.bookings')}</div>
               </div>
               <div className="text-center space-y-1">
                 <div className="text-2xl md:text-3xl font-bold text-white">24/7</div>
-                <div className="text-purple-100 text-xs md:text-sm">{t('stats.support')}</div>
+                <div className="text-primary-100 text-xs md:text-sm">{t('stats.support')}</div>
               </div>
             </div>
           </div>
