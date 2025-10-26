@@ -5,31 +5,31 @@ export default heroui({
     light: {
       colors: {
         primary: {
-          DEFAULT: "#0070f3",
+          DEFAULT: "#115E59",
           foreground: "#ffffff",
         },
         secondary: {
-          DEFAULT: "#0052cc",
+          DEFAULT: "#0D4F4F",
           foreground: "#ffffff",
         },
         success: {
-          DEFAULT: "#00c853",
-          foreground: "#ffffff",
+          DEFAULT: "#5EEAD4",
+          foreground: "#000000",
         },
       },
     },
     dark: {
       colors: {
         primary: {
-          DEFAULT: "#3291ff",
+          DEFAULT: "#2DD4BF",
           foreground: "#ffffff",
         },
         secondary: {
-          DEFAULT: "#0052cc",
+          DEFAULT: "#14B8A6",
           foreground: "#ffffff",
         },
         success: {
-          DEFAULT: "#00c853",
+          DEFAULT: "#5EEAD4",
           foreground: "#000000",
         },
       },
