@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@heroui/react';
 import { useTranslations } from 'next-intl';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -15,7 +16,14 @@ export function Header() {
         <div className="flex h-14 items-center justify-between">
           {/* Logo - Always visible */}
           <Link href="/" className="flex items-center space-x-2">
-            <span className="font-bold text-xl">{common('logo')}</span>
+            <Image
+              src="/icons/IMG_4259.png"
+              alt="boop a booking"
+              width={120}
+              height={40}
+              className="h-8 w-auto"
+              priority
+            />
           </Link>
 
           {/* Desktop Navigation - Hidden on mobile */}
