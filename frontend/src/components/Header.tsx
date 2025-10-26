@@ -17,7 +17,7 @@ export function Header() {
           {/* Logo - Always visible */}
           <Link href="/" className="flex items-center space-x-2">
             <Image
-              src="/icons/IMG_4259.png"
+              src="/icons/logo-horizontal.png"
               alt="boop a booking"
               width={120}
               height={40}
