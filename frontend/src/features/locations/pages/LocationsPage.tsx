@@ -4,15 +4,17 @@ import { LocationGrid } from '@/features/locations/components/LocationGrid';
 import { useGetAllLocations, LocationType } from '@/api/client';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { Select, SelectItem } from '@heroui/react';
+import { Chip } from '@heroui/react';
 import { useState } from 'react';
 
 export default function LocationsPage() {
-  const [selectedLocationType, setSelectedLocationType] = useState<LocationType | undefined>(undefined);
+  const [selectedLocationType, setSelectedLocationType] = useState<LocationType | null>(null);
+
+  // Only include locationType in queryParams if a specific type is selected
+  const queryParams = selectedLocationType !== null ? { locationType: selectedLocationType } : {};
+
   const { data: locations, isLoading, error } = useGetAllLocations({
-    queryParams: {
-      locationType: selectedLocationType,
-    },
+    queryParams,
   });
   const t = useTranslations('locations');
   const router = useRouter();
@@ -25,12 +27,8 @@ export default function LocationsPage() {
     router.push(`/locations/${locationId}`);
   };
 
-  const handleLocationTypeChange = (value: string) => {
-    if (value === 'all') {
-      setSelectedLocationType(undefined);
-    } else {
-      setSelectedLocationType(Number(value) as LocationType);
-    }
+  const handleFilterClick = (type: LocationType | null) => {
+    setSelectedLocationType(type);
   };
 
   return (
@@ -42,27 +40,31 @@ export default function LocationsPage() {
         </p>
       </div>
 
-      <div className="flex justify-start">
-        <Select
-          label="Filter by Location Type"
-          placeholder="All Locations"
-          className="max-w-xs"
-          selectedKeys={selectedLocationType !== undefined ? [String(selectedLocationType)] : ['all']}
-          onSelectionChange={(keys) => {
-            const value = Array.from(keys)[0] as string;
-            handleLocationTypeChange(value);
-          }}
+      <div className="flex gap-2 flex-wrap">
+        <Chip
+          variant={selectedLocationType === null ? 'solid' : 'flat'}
+          color={selectedLocationType === null ? 'primary' : 'default'}
+          onClick={() => handleFilterClick(null)}
+          className="cursor-pointer"
         >
-          <SelectItem key="all">
-            All Locations
-          </SelectItem>
-          <SelectItem key={String(LocationType.Hotel)}>
-            Hotel
-          </SelectItem>
-          <SelectItem key={String(LocationType.BAndB)}>
-            B&amp;B
-          </SelectItem>
-        </Select>
+          All Locations
+        </Chip>
+        <Chip
+          variant={selectedLocationType === LocationType.Hotel ? 'solid' : 'flat'}
+          color={selectedLocationType === LocationType.Hotel ? 'primary' : 'default'}
+          onClick={() => handleFilterClick(LocationType.Hotel)}
+          className="cursor-pointer"
+        >
+          Hotel
+        </Chip>
+        <Chip
+          variant={selectedLocationType === LocationType.BAndB ? 'solid' : 'flat'}
+          color={selectedLocationType === LocationType.BAndB ? 'primary' : 'default'}
+          onClick={() => handleFilterClick(LocationType.BAndB)}
+          className="cursor-pointer"
+        >
+          B&amp;B
+        </Chip>
       </div>
 
       <LocationGrid
