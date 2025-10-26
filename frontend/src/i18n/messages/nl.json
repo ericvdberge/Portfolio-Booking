@@ -20,6 +20,22 @@
       "teamFocused": "Team Gericht",
       "teamFocusedDesc": "Gebouwd voor samenwerking"
     },
+    "categories": {
+      "title": "Blader per Categorie",
+      "subtitle": "Vind het perfecte locatietype voor jouw behoeften",
+      "hotel": {
+        "title": "Hotels",
+        "description": "Luxe hotellocaties met premium voorzieningen en service"
+      },
+      "bnb": {
+        "title": "B&Bs",
+        "description": "Gezellige bed & breakfast locaties voor intieme bijeenkomsten"
+      },
+      "all": {
+        "title": "Alle Locaties",
+        "description": "Verken onze complete collectie van geweldige locaties"
+      }
+    },
     "features": {
       "title": "Waarom Kiezen Voor Ons Platform?",
       "subtitle": "Ervaar naadloos locatie boeken met enterprise-grade functies en ongeëvenaarde gemak.",

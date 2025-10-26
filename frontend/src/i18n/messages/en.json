@@ -20,6 +20,22 @@
       "teamFocused": "Team Focused",
       "teamFocusedDesc": "Built for collaboration"
     },
+    "categories": {
+      "title": "Browse by Category",
+      "subtitle": "Find the perfect venue type for your needs",
+      "hotel": {
+        "title": "Hotels",
+        "description": "Luxury hotel venues with premium amenities and service"
+      },
+      "bnb": {
+        "title": "B&Bs",
+        "description": "Cozy bed & breakfast locations for intimate gatherings"
+      },
+      "all": {
+        "title": "All Venues",
+        "description": "Explore our complete collection of amazing locations"
+      }
+    },
     "features": {
       "title": "Why Choose Our Platform?",
       "subtitle": "Experience seamless venue booking with enterprise-grade features and unmatched convenience.",
