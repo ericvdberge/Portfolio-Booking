@@ -29,4 +29,75 @@ test.describe('Homepage Navigation', () => {
     // Verify we navigated to the locations page
     await expect(page).toHaveURL('/locations');
   });
+
+  test('should display category section with all three categories', async ({ page }) => {
+    // Navigate to homepage
+    await page.goto('/');
+
+    // Wait for page to load
+    await page.waitForLoadState('networkidle', { timeout: 10000 });
+
+    // Verify category cards are visible
+    const hotelCard = page.getByTestId('category-card-hotels');
+    const bnbCard = page.getByTestId('category-card-b&bs');
+    const allCard = page.getByTestId('category-card-all venues');
+
+    await expect(hotelCard).toBeVisible();
+    await expect(bnbCard).toBeVisible();
+    await expect(allCard).toBeVisible();
+  });
+
+  test('should navigate to filtered locations page via Hotel category', async ({ page }) => {
+    // Navigate to homepage
+    await page.goto('/');
+
+    // Wait for page to load
+    await page.waitForLoadState('networkidle', { timeout: 10000 });
+
+    // Click on Hotels category card
+    const hotelCard = page.getByTestId('category-card-hotels');
+    await hotelCard.scrollIntoViewIfNeeded();
+    await expect(hotelCard).toBeVisible();
+
+    await hotelCard.click();
+
+    // Verify we navigated to locations page with type filter
+    await expect(page).toHaveURL('/locations?type=1');
+  });
+
+  test('should navigate to filtered locations page via B&B category', async ({ page }) => {
+    // Navigate to homepage
+    await page.goto('/');
+
+    // Wait for page to load
+    await page.waitForLoadState('networkidle', { timeout: 10000 });
+
+    // Click on B&B category card
+    const bnbCard = page.getByTestId('category-card-b&bs');
+    await bnbCard.scrollIntoViewIfNeeded();
+    await expect(bnbCard).toBeVisible();
+
+    await bnbCard.click();
+
+    // Verify we navigated to locations page with type filter
+    await expect(page).toHaveURL('/locations?type=2');
+  });
+
+  test('should navigate to all locations page via All Venues category', async ({ page }) => {
+    // Navigate to homepage
+    await page.goto('/');
+
+    // Wait for page to load
+    await page.waitForLoadState('networkidle', { timeout: 10000 });
+
+    // Click on All Venues category card
+    const allCard = page.getByTestId('category-card-all venues');
+    await allCard.scrollIntoViewIfNeeded();
+    await expect(allCard).toBeVisible();
+
+    await allCard.click();
+
+    // Verify we navigated to locations page without filter
+    await expect(page).toHaveURL('/locations');
+  });
 });

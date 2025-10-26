@@ -99,4 +99,38 @@ test.describe('Locations Page', () => {
       await expect(locationCards.nth(i)).toBeVisible();
     }
   });
+
+  test('should display location type badge on cards', async ({ page }) => {
+    // Wait for page to finish loading
+    await page.waitForLoadState('networkidle', { timeout: 20000 });
+
+    // Get the first location card
+    const firstCard = page.getByTestId('location-card').first();
+    await expect(firstCard).toBeVisible({ timeout: 10000 });
+
+    // Verify the location type badge is present
+    const typeBadge = firstCard.getByTestId('location-card-type');
+    await expect(typeBadge).toBeVisible();
+
+    // Verify the badge has text content (Hotel, B&B, or Venue)
+    const badgeText = await typeBadge.textContent();
+    expect(badgeText).toMatch(/Hotel|B&B|Venue/);
+  });
+
+  test('should display mobile-optimized cards on small screens', async ({ page, isMobile }) => {
+    // Wait for page to finish loading
+    await page.waitForLoadState('networkidle', { timeout: 20000 });
+
+    // Get the first location card
+    const firstCard = page.getByTestId('location-card').first();
+    await expect(firstCard).toBeVisible({ timeout: 10000 });
+
+    // On mobile, verify that card elements are visible and properly sized
+    if (isMobile) {
+      // Check that all essential elements are still visible on mobile
+      await expect(firstCard.getByTestId('location-card-name')).toBeVisible();
+      await expect(firstCard.getByTestId('location-card-type')).toBeVisible();
+      await expect(firstCard.getByTestId('location-card-book-now')).toBeVisible();
+    }
+  });
 });

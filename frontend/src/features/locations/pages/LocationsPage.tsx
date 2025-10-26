@@ -3,12 +3,28 @@
 import { LocationGrid } from '@/features/locations/components/LocationGrid';
 import { useGetAllLocations, LocationType } from '@/api/client';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Chip } from '@heroui/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function LocationsPage() {
-  const [selectedLocationType, setSelectedLocationType] = useState<LocationType | null>(null);
+  const searchParams = useSearchParams();
+  const typeParam = searchParams.get('type');
+
+  // Initialize state from URL query param
+  const getInitialType = (): LocationType | null => {
+    if (typeParam === '1') return LocationType.Hotel;
+    if (typeParam === '2') return LocationType.BAndB;
+    return null;
+  };
+
+  const [selectedLocationType, setSelectedLocationType] = useState<LocationType | null>(getInitialType());
+
+  // Update state when URL query param changes
+  useEffect(() => {
+    const newType = getInitialType();
+    setSelectedLocationType(newType);
+  }, [typeParam]);
 
   // Only include locationType in queryParams if a specific type is selected
   const queryParams = selectedLocationType !== null ? { locationType: selectedLocationType } : {};
