@@ -12,9 +12,9 @@ BEGIN
     -- Check if we already have locations
     IF NOT EXISTS (SELECT 1 FROM "Locations") THEN
         -- Insert sample locations
-        INSERT INTO "Locations" 
+        INSERT INTO "Locations"
         ("Id", "Name", "Address", "Description", "Capacity", "IsActive", "OpenTime", "CloseTime", "LocationType", "CreatedAt", "UpdatedAt")
-        VALUES 
+        VALUES
         (
             gen_random_uuid(),
             'Downtown Conference Room A',
@@ -30,53 +30,66 @@ BEGIN
         ),
         (
             gen_random_uuid(),
-            'Creative Studio Space',
-            '456 Arts Quarter, Creative Avenue, Arts District',
-            'Open creative studio with natural lighting, flexible seating arrangements, and presentation equipment. Ideal for workshops and creative sessions.',
-            20,
-            true,
-            '09:00:00',
-            '21:00:00',
-            1,
-            NOW(),
-            NOW()
-        ),
-        (
-            gen_random_uuid(),
-            'Executive Boardroom',
-            '789 Corporate Plaza, Executive Lane, Business Park',
-            'Premium boardroom with leather chairs, 4K display, and high-end audio system. Designed for executive meetings and important presentations.',
+            'Cozy Countryside B&B',
+            '456 Rural Lane, Countryside Village',
+            'Charming bed and breakfast with comfortable rooms, homemade breakfast, and peaceful garden views. Perfect for a relaxing getaway.',
             8,
             true,
             '07:00:00',
-            '19:00:00',
-            1,
+            '22:00:00',
+            2,
             NOW(),
             NOW()
         ),
         (
             gen_random_uuid(),
-            'Training Room B',
-            '321 Learning Center, Education Street, Training Complex',
-            'Spacious training room with modular furniture, multiple screens, and breakout areas. Perfect for workshops, seminars, and team training.',
-            25,
+            'Grand Plaza Hotel',
+            '789 Corporate Plaza, Executive Lane, Business Park',
+            'Luxury hotel with premium amenities, 24/7 concierge service, and state-of-the-art facilities. Designed for business travelers and special occasions.',
+            50,
             true,
-            '08:30:00',
-            '17:30:00',
+            '00:00:00',
+            '23:59:59',
             1,
             NOW(),
             NOW()
         ),
         (
             gen_random_uuid(),
-            'Small Meeting Pod',
+            'Seaside B&B Retreat',
+            '321 Coastal Road, Beachfront Area',
+            'Intimate bed and breakfast with ocean views, personalized service, and fresh seafood breakfast. Ideal for romantic getaways and beach lovers.',
+            6,
+            true,
+            '07:00:00',
+            '22:00:00',
+            2,
+            NOW(),
+            NOW()
+        ),
+        (
+            gen_random_uuid(),
+            'City Center Business Hotel',
             '654 Innovation Hub, Startup Avenue, Tech District',
-            'Intimate meeting space with comfortable seating and basic AV equipment. Great for small team meetings and one-on-ones.',
-            4,
+            'Modern hotel with business center, meeting rooms, and high-speed internet. Great for business travelers and conference attendees.',
+            100,
             true,
-            '08:00:00',
-            '20:00:00',
+            '00:00:00',
+            '23:59:59',
             1,
+            NOW(),
+            NOW()
+        ),
+        (
+            gen_random_uuid(),
+            'Mountain View B&B',
+            '987 Highland Drive, Mountain Village',
+            'Rustic bed and breakfast with stunning mountain views, cozy fireplace, and hearty breakfast. Perfect for hikers and nature enthusiasts.',
+            10,
+            true,
+            '06:00:00',
+            '23:00:00',
+            2,
             NOW(),
             NOW()
         );
