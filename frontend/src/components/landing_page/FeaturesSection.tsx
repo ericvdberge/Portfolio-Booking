@@ -55,7 +55,7 @@ export function FeaturesSection() {
                   <div className="rounded-xl bg-accent p-3">
                     <IconComponent className="h-6 w-6 text-primary" />
                   </div>
-                  <Chip variant="flat" color="secondary" size="sm">
+                  <Chip variant="flat" color="primary" size="sm">
                     {t(`${feature.key}.badge`)}
                   </Chip>
                 </div>
