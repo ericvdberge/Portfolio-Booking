@@ -16,8 +16,8 @@ export function DotIndicators({ total, currentIndex, onDotClick, className = '' 
           onClick={() => onDotClick(index)}
           className={`transition-all rounded-full ${
             index === currentIndex
-              ? 'w-8 h-2 bg-blue-600'
-              : 'w-2 h-2 bg-gray-300 hover:bg-gray-400'
+              ? 'w-8 h-2 bg-primary'
+              : 'w-2 h-2 bg-default-300 hover:bg-default-400'
           }`}
           aria-label={`Go to image ${index + 1}`}
           aria-current={index === currentIndex ? 'true' : 'false'}

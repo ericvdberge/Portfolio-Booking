@@ -1,9 +1,11 @@
+import { Button } from '@heroui/react';
+
 export default function OfflinePage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <div className="text-center">
         <svg
-          className="w-24 h-24 mx-auto mb-6 text-gray-400"
+          className="w-24 h-24 mx-auto mb-6 text-default-400"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -16,16 +18,17 @@ export default function OfflinePage() {
           />
         </svg>
         <h1 className="text-3xl font-bold mb-4">You're Offline</h1>
-        <p className="text-gray-600 mb-6 max-w-md">
+        <p className="text-default-600 mb-6 max-w-md">
           It looks like you've lost your internet connection. Please check your
           connection and try again.
         </p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        <Button
+          color="primary"
+          size="lg"
+          onPress={() => window.location.reload()}
         >
           Try Again
-        </button>
+        </Button>
       </div>
     </div>
   );

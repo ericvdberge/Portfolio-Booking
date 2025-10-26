@@ -69,7 +69,7 @@ export function MobileCarousel({
     <div className="relative">
       {/* Carousel Container - Fixed viewport */}
       <div
-        className="relative overflow-hidden rounded-lg h-[60vh] max-h-[600px] bg-gray-100"
+        className="relative overflow-hidden rounded-lg h-[60vh] max-h-[600px] bg-default-100"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}

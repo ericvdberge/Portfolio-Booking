@@ -20,7 +20,7 @@ export function ImageNavigation({ currentPage, totalPages, onNext, onPrevious }:
       <button
         onClick={onPrevious}
         disabled={currentPage === 0}
-        className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="p-2 rounded-full bg-default-100 hover:bg-default-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         aria-label={t('previousImage')}
       >
         <ChevronLeft className="h-5 w-5" />
@@ -33,7 +33,7 @@ export function ImageNavigation({ currentPage, totalPages, onNext, onPrevious }:
       <button
         onClick={onNext}
         disabled={currentPage === totalPages - 1}
-        className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="p-2 rounded-full bg-default-100 hover:bg-default-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         aria-label={t('nextImage')}
       >
         <ChevronRight className="h-5 w-5" />

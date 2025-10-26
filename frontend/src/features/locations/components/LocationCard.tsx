@@ -69,9 +69,9 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
       }`}
     >
       <CardHeader className="p-0">
-        <div className="relative w-full h-48 bg-slate-200 overflow-hidden">
+        <div className="relative w-full h-48 bg-default-100 overflow-hidden">
           {imageLoading && (
-            <div className="absolute inset-0 bg-slate-200 animate-pulse" />
+            <div className="absolute inset-0 bg-default-100 animate-pulse" />
           )}
           <Image
             src={imageError ? '/greece1.jpg' : getImage()}
