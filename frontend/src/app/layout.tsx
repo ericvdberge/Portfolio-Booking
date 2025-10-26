@@ -7,7 +7,6 @@ import { MobileFooter } from "@/components/MobileFooter";
 import { LocaleProvider } from '@/providers/locale-provider';
 import { PublicEnvScript } from "next-runtime-env";
 import { HeroUIProvider } from "@/providers/heroui-provider";
-import { PWAInstaller } from "@/components/PWAInstaller";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -68,7 +67,6 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <PWAInstaller />
         <HeroUIProvider>
           <LocaleProvider initialMessages={initialMessages}>
             <QueryProvider>
