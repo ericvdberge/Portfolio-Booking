@@ -43,7 +43,7 @@ export function CTASection() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row pt-2">
-              <Link href="/locations">
+              <Link href="/locations" data-testid="cta-start-browsing-link">
                 <Button
                   size="lg"
                   className="group bg-white text-purple-700 hover:bg-purple-50 font-semibold"

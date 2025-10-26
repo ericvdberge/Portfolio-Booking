@@ -30,7 +30,7 @@ export function HeroSection() {
           </div>
           
           <div className="flex flex-col gap-4 sm:flex-row">
-            <Link href="/locations">
+            <Link href="/locations" data-testid="hero-explore-venues-link">
               <Button size="lg" color="primary" className="group px-8 py-3">
                 {t('exploreVenues')}
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />

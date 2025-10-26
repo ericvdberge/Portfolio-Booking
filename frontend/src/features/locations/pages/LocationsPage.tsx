@@ -21,7 +21,7 @@ const { data: locations, isLoading, error } = useGetAllLocations({});
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+        <h1 className="text-3xl font-bold tracking-tight" data-testid="locations-page-heading">{t('title')}</h1>
         <p className="text-muted-foreground">
           {t('subtitle')}
         </p>
