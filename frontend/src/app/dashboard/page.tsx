@@ -1,6 +1,16 @@
 'use client';
 
 import { Calendar, MapPin, TrendingUp, Users } from 'lucide-react';
+import {
+  Card,
+  CardHeader,
+  CardBody,
+  CardFooter,
+  Button,
+  Chip,
+  Avatar,
+  Divider,
+} from '@heroui/react';
 
 const stats = [
   {
@@ -56,94 +66,113 @@ export default function DashboardPage() {
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div
-              key={stat.name}
-              className="rounded-lg border border-divider bg-background p-6 shadow-sm"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center justify-center rounded-lg bg-primary/10 p-2">
-                  <Icon className="h-5 w-5 text-primary" />
+            <Card key={stat.name} shadow="sm">
+              <CardBody className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <Avatar
+                    icon={<Icon className="h-5 w-5" />}
+                    classNames={{
+                      base: 'bg-primary/10',
+                      icon: 'text-primary',
+                    }}
+                  />
+                  <Chip color="success" variant="flat" size="sm">
+                    {stat.change}
+                  </Chip>
                 </div>
-                <span className="text-sm font-medium text-success">{stat.change}</span>
-              </div>
-              <div className="mt-4">
-                <p className="text-2xl font-bold">{stat.value}</p>
-                <p className="text-sm text-muted-foreground mt-1">{stat.name}</p>
-              </div>
-            </div>
+                <div>
+                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <p className="text-sm text-default-500 mt-1">{stat.name}</p>
+                </div>
+              </CardBody>
+            </Card>
           );
         })}
       </div>
 
       {/* Recent Bookings */}
-      <div className="rounded-lg border border-divider bg-background shadow-sm">
-        <div className="border-b border-divider p-6">
+      <Card shadow="sm">
+        <CardHeader className="flex flex-col items-start px-6 py-4">
           <h2 className="text-xl font-semibold">Recent Bookings</h2>
-        </div>
-        <div className="p-6">
-          <div className="space-y-4">
-            {recentBookings.map((booking) => (
-              <div
-                key={booking.id}
-                className="flex items-center justify-between rounded-lg border border-divider p-4 hover:bg-default-50 transition-colors"
-              >
+        </CardHeader>
+        <Divider />
+        <CardBody className="gap-4">
+          {recentBookings.map((booking, index) => (
+            <div key={booking.id}>
+              <div className="flex items-center justify-between p-3 rounded-lg hover:bg-default-100 transition-colors">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                    <Calendar className="h-5 w-5 text-primary" />
-                  </div>
+                  <Avatar
+                    icon={<Calendar className="h-5 w-5" />}
+                    classNames={{
+                      base: 'bg-primary/10',
+                      icon: 'text-primary',
+                    }}
+                  />
                   <div>
                     <p className="font-medium">{booking.location}</p>
-                    <p className="text-sm text-muted-foreground">{booking.user}</p>
+                    <p className="text-sm text-default-500">{booking.user}</p>
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-right flex flex-col items-end gap-1">
                   <p className="text-sm font-medium">{booking.date}</p>
-                  <span
-                    className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${
-                      booking.status === 'confirmed'
-                        ? 'bg-success/10 text-success'
-                        : 'bg-warning/10 text-warning'
-                    }`}
+                  <Chip
+                    color={booking.status === 'confirmed' ? 'success' : 'warning'}
+                    variant="flat"
+                    size="sm"
                   >
                     {booking.status}
-                  </span>
+                  </Chip>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
+              {index < recentBookings.length - 1 && <Divider className="my-2" />}
+            </div>
+          ))}
+        </CardBody>
+      </Card>
 
-      {/* Quick Actions */}
+      {/* Quick Actions and System Status */}
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-lg border border-divider bg-background p-6 shadow-sm">
-          <h3 className="font-semibold mb-2">Quick Actions</h3>
-          <div className="space-y-2">
-            <button className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+        <Card shadow="sm">
+          <CardHeader className="flex flex-col items-start">
+            <h3 className="font-semibold">Quick Actions</h3>
+          </CardHeader>
+          <Divider />
+          <CardBody className="gap-2">
+            <Button color="primary" fullWidth>
               Add New Location
-            </button>
-            <button className="w-full rounded-lg border border-divider px-4 py-2 text-sm font-medium hover:bg-default-100 transition-colors">
+            </Button>
+            <Button variant="bordered" fullWidth>
               View All Bookings
-            </button>
-          </div>
-        </div>
-        <div className="rounded-lg border border-divider bg-background p-6 shadow-sm">
-          <h3 className="font-semibold mb-2">System Status</h3>
-          <div className="space-y-3">
+            </Button>
+          </CardBody>
+        </Card>
+
+        <Card shadow="sm">
+          <CardHeader className="flex flex-col items-start">
+            <h3 className="font-semibold">System Status</h3>
+          </CardHeader>
+          <Divider />
+          <CardBody className="gap-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">API Status</span>
-              <span className="text-sm font-medium text-success">Operational</span>
+              <span className="text-sm text-default-500">API Status</span>
+              <Chip color="success" variant="flat" size="sm">
+                Operational
+              </Chip>
             </div>
+            <Divider />
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Database</span>
-              <span className="text-sm font-medium text-success">Connected</span>
+              <span className="text-sm text-default-500">Database</span>
+              <Chip color="success" variant="flat" size="sm">
+                Connected
+              </Chip>
             </div>
+            <Divider />
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Last Backup</span>
+              <span className="text-sm text-default-500">Last Backup</span>
               <span className="text-sm font-medium">2 hours ago</span>
             </div>
-          </div>
-        </div>
+          </CardBody>
+        </Card>
       </div>
     </div>
   );

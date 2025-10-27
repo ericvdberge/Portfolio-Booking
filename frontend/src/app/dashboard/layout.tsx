@@ -12,6 +12,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useState } from 'react';
+import { Button, Tooltip, Divider } from '@heroui/react';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -42,17 +43,21 @@ export default function DashboardLayout({
           {!collapsed && (
             <h1 className="text-lg font-semibold">Admin Panel</h1>
           )}
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="rounded-md p-1.5 hover:bg-default-100 transition-colors"
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {collapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
-          </button>
+          <Tooltip content={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+            <Button
+              isIconOnly
+              variant="light"
+              size="sm"
+              onPress={() => setCollapsed(!collapsed)}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {collapsed ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
+            </Button>
+          </Tooltip>
         </div>
 
         {/* Navigation */}
@@ -61,35 +66,47 @@ export default function DashboardLayout({
             const isActive = pathname === item.href;
             const Icon = item.icon;
 
-            return (
+            const linkContent = (
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-default-100 hover:text-foreground'
-                } ${collapsed ? 'justify-center' : ''}`}
-                title={collapsed ? item.name : undefined}
+                className="w-full"
               >
-                <Icon className="h-5 w-5 flex-shrink-0" />
-                {!collapsed && <span>{item.name}</span>}
+                <Button
+                  fullWidth
+                  variant={isActive ? 'solid' : 'light'}
+                  color={isActive ? 'primary' : 'default'}
+                  className={`justify-start ${collapsed ? 'px-0' : ''}`}
+                  startContent={!collapsed ? <Icon className="h-5 w-5 flex-shrink-0" /> : undefined}
+                >
+                  {collapsed ? <Icon className="h-5 w-5" /> : item.name}
+                </Button>
               </Link>
+            );
+
+            return collapsed ? (
+              <Tooltip key={item.name} content={item.name} placement="right">
+                {linkContent}
+              </Tooltip>
+            ) : (
+              linkContent
             );
           })}
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="border-t border-divider p-4">
-          <Link
-            href="/"
-            className={`flex items-center gap-3 text-sm text-muted-foreground hover:text-foreground transition-colors ${
-              collapsed ? 'justify-center' : ''
-            }`}
-            title={collapsed ? 'Back to site' : undefined}
-          >
-            <ChevronLeft className="h-4 w-4" />
-            {!collapsed && <span>Back to site</span>}
+        <div className="p-2">
+          <Divider className="mb-2" />
+          <Link href="/" className="w-full block">
+            <Button
+              fullWidth
+              variant="light"
+              color="default"
+              className={`justify-start ${collapsed ? 'px-0' : ''}`}
+              startContent={!collapsed ? <ChevronLeft className="h-4 w-4" /> : undefined}
+            >
+              {collapsed ? <ChevronLeft className="h-4 w-4" /> : 'Back to site'}
+            </Button>
           </Link>
         </div>
       </aside>
