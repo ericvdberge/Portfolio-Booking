@@ -81,10 +81,11 @@ export default function DashboardLayout({
                   className="w-full"
                 >
                   <Button
-                    fullWidth
+                    fullWidth={!collapsed}
+                    isIconOnly={collapsed}
                     variant={isActive ? 'solid' : 'light'}
                     color={isActive ? 'primary' : 'default'}
-                    className={collapsed ? 'justify-center' : 'justify-start'}
+                    className={collapsed ? '' : 'justify-start'}
                     startContent={!collapsed ? <Icon className="h-5 w-5 flex-shrink-0" /> : undefined}
                   >
                     {collapsed ? <Icon className="h-5 w-5" /> : item.name}
@@ -107,10 +108,11 @@ export default function DashboardLayout({
             <Divider className="mb-2" />
             <Link href="/" className="w-full block">
               <Button
-                fullWidth
+                fullWidth={!collapsed}
+                isIconOnly={collapsed}
                 variant="light"
                 color="default"
-                className={collapsed ? 'justify-center' : 'justify-start'}
+                className={collapsed ? '' : 'justify-start'}
                 startContent={!collapsed ? <ChevronLeft className="h-4 w-4" /> : undefined}
               >
                 {collapsed ? <ChevronLeft className="h-4 w-4" /> : t('backToSite')}
