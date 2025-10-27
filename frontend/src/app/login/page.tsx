@@ -30,9 +30,9 @@ export default function LoginPage() {
               <Image
                 src="/icons/logo-horizontal.png"
                 alt="Portfolio Booking"
-                width={200}
-                height={67}
-                className="h-16 w-auto"
+                width={150}
+                height={50}
+                className="h-10 w-auto"
                 priority
               />
             </Link>
