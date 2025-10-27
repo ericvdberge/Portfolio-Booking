@@ -1,7 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Search, Bell, User as UserIcon } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Search, Bell, User as UserIcon, LogOut } from 'lucide-react';
 import {
   Input,
   Button,
@@ -13,15 +14,27 @@ import {
   Avatar,
 } from '@heroui/react';
 import { Header } from './Header';
+import { BrandLogo } from './BrandLogo';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 export function DashboardHeader() {
   const t = useTranslations('dashboard.header');
   const nav = useTranslations('navigation');
+  const router = useRouter();
+
+  const handleLogout = () => {
+    // Navigate to login page
+    router.push('/login');
+  };
 
   return (
     <Header variant="dashboard">
       <Header.Container alignContent>
+        {/* Logo */}
+        <Header.Logo className="mr-4">
+          <BrandLogo />
+        </Header.Logo>
+
         {/* Search Bar */}
         <Header.Search className="hidden md:block">
           <Input
@@ -99,7 +112,8 @@ export function DashboardHeader() {
                   key="logout"
                   color="danger"
                   className="text-danger"
-                  startContent={<UserIcon className="h-4 w-4" />}
+                  startContent={<LogOut className="h-4 w-4" />}
+                  onPress={handleLogout}
                 >
                   {t('logout')}
                 </DropdownItem>
