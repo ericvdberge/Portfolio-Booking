@@ -84,7 +84,7 @@ export default function DashboardLayout({
                     fullWidth
                     variant={isActive ? 'solid' : 'light'}
                     color={isActive ? 'primary' : 'default'}
-                    className={`justify-start ${collapsed ? 'px-0' : ''}`}
+                    className={collapsed ? 'justify-center' : 'justify-start'}
                     startContent={!collapsed ? <Icon className="h-5 w-5 flex-shrink-0" /> : undefined}
                   >
                     {collapsed ? <Icon className="h-5 w-5" /> : item.name}
@@ -110,7 +110,7 @@ export default function DashboardLayout({
                 fullWidth
                 variant="light"
                 color="default"
-                className={`justify-start ${collapsed ? 'px-0' : ''}`}
+                className={collapsed ? 'justify-center' : 'justify-start'}
                 startContent={!collapsed ? <ChevronLeft className="h-4 w-4" /> : undefined}
               >
                 {collapsed ? <ChevronLeft className="h-4 w-4" /> : t('backToSite')}
