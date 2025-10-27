@@ -137,5 +137,49 @@
     "closeViewer": "Sluiten",
     "imageCountLabel": "Afbeelding {current} van {total}",
     "noImagesAvailable": "Geen afbeeldingen beschikbaar"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "adminPanel": "Beheerpaneel",
+    "welcome": "Welkom terug! Dit is wat er gebeurt met je boekingen.",
+    "backToSite": "Terug naar site",
+    "navigation": {
+      "dashboard": "Dashboard",
+      "locations": "Locaties",
+      "bookings": "Boekingen",
+      "users": "Gebruikers",
+      "settings": "Instellingen"
+    },
+    "stats": {
+      "totalBookings": "Totaal Boekingen",
+      "activeLocations": "Actieve Locaties",
+      "totalUsers": "Totaal Gebruikers",
+      "revenue": "Omzet"
+    },
+    "recentBookings": {
+      "title": "Recente Boekingen",
+      "confirmed": "bevestigd",
+      "pending": "in afwachting",
+      "cancelled": "geannuleerd"
+    },
+    "quickActions": {
+      "title": "Snelle Acties",
+      "addLocation": "Nieuwe Locatie Toevoegen",
+      "viewBookings": "Alle Boekingen Bekijken"
+    },
+    "systemStatus": {
+      "title": "Systeemstatus",
+      "apiStatus": "API Status",
+      "database": "Database",
+      "lastBackup": "Laatste Back-up",
+      "operational": "Operationeel",
+      "connected": "Verbonden"
+    },
+    "header": {
+      "search": "Zoeken...",
+      "notifications": "Meldingen",
+      "profile": "Profiel",
+      "logout": "Uitloggen"
+    }
   }
 }

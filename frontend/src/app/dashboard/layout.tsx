@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   LayoutDashboard,
   MapPin,
@@ -13,14 +14,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button, Tooltip, Divider } from '@heroui/react';
-
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Locations', href: '/dashboard/locations', icon: MapPin },
-  { name: 'Bookings', href: '/dashboard/bookings', icon: Calendar },
-  { name: 'Users', href: '/dashboard/users', icon: Users },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
-];
+import { DashboardHeader } from '@/components/header/DashboardHeader';
 
 export default function DashboardLayout({
   children,
@@ -29,94 +23,109 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const t = useTranslations('dashboard');
+  const tNav = useTranslations('dashboard.navigation');
+
+  const navigation = [
+    { name: tNav('dashboard'), href: '/dashboard', icon: LayoutDashboard },
+    { name: tNav('locations'), href: '/dashboard/locations', icon: MapPin },
+    { name: tNav('bookings'), href: '/dashboard/bookings', icon: Calendar },
+    { name: tNav('users'), href: '/dashboard/users', icon: Users },
+    { name: tNav('settings'), href: '/dashboard/settings', icon: Settings },
+  ];
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* Sidebar */}
-      <aside
-        className={`${
-          collapsed ? 'w-16' : 'w-64'
-        } flex flex-col border-r border-divider bg-background/95 backdrop-blur transition-all duration-300`}
-      >
-        {/* Sidebar Header */}
-        <div className="flex h-14 items-center justify-between px-4 border-b border-divider">
-          {!collapsed && (
-            <h1 className="text-lg font-semibold">Admin Panel</h1>
-          )}
-          <Tooltip content={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-            <Button
-              isIconOnly
-              variant="light"
-              size="sm"
-              onPress={() => setCollapsed(!collapsed)}
-              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {collapsed ? (
-                <ChevronRight className="h-4 w-4" />
-              ) : (
-                <ChevronLeft className="h-4 w-4" />
-              )}
-            </Button>
-          </Tooltip>
-        </div>
+    <div className="flex flex-col h-screen bg-background">
+      {/* Dashboard Header */}
+      <DashboardHeader />
 
-        {/* Navigation */}
-        <nav className="flex-1 space-y-1 p-2 overflow-y-auto">
-          {navigation.map((item) => {
-            const isActive = pathname === item.href;
-            const Icon = item.icon;
-
-            const linkContent = (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="w-full"
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <aside
+          className={`${
+            collapsed ? 'w-16' : 'w-64'
+          } flex flex-col border-r border-divider bg-background/95 backdrop-blur transition-all duration-300`}
+        >
+          {/* Sidebar Header */}
+          <div className="flex h-14 items-center justify-between px-4 border-b border-divider">
+            {!collapsed && (
+              <h1 className="text-lg font-semibold">{t('adminPanel')}</h1>
+            )}
+            <Tooltip content={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+              <Button
+                isIconOnly
+                variant="light"
+                size="sm"
+                onPress={() => setCollapsed(!collapsed)}
+                aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               >
-                <Button
-                  fullWidth
-                  variant={isActive ? 'solid' : 'light'}
-                  color={isActive ? 'primary' : 'default'}
-                  className={`justify-start ${collapsed ? 'px-0' : ''}`}
-                  startContent={!collapsed ? <Icon className="h-5 w-5 flex-shrink-0" /> : undefined}
+                {collapsed ? (
+                  <ChevronRight className="h-4 w-4" />
+                ) : (
+                  <ChevronLeft className="h-4 w-4" />
+                )}
+              </Button>
+            </Tooltip>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 space-y-1 p-2 overflow-y-auto">
+            {navigation.map((item) => {
+              const isActive = pathname === item.href;
+              const Icon = item.icon;
+
+              const linkContent = (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="w-full"
                 >
-                  {collapsed ? <Icon className="h-5 w-5" /> : item.name}
-                </Button>
-              </Link>
-            );
+                  <Button
+                    fullWidth
+                    variant={isActive ? 'solid' : 'light'}
+                    color={isActive ? 'primary' : 'default'}
+                    className={`justify-start ${collapsed ? 'px-0' : ''}`}
+                    startContent={!collapsed ? <Icon className="h-5 w-5 flex-shrink-0" /> : undefined}
+                  >
+                    {collapsed ? <Icon className="h-5 w-5" /> : item.name}
+                  </Button>
+                </Link>
+              );
 
-            return collapsed ? (
-              <Tooltip key={item.name} content={item.name} placement="right">
-                {linkContent}
-              </Tooltip>
-            ) : (
-              linkContent
-            );
-          })}
-        </nav>
+              return collapsed ? (
+                <Tooltip key={item.name} content={item.name} placement="right">
+                  {linkContent}
+                </Tooltip>
+              ) : (
+                linkContent
+              );
+            })}
+          </nav>
 
-        {/* Sidebar Footer */}
-        <div className="p-2">
-          <Divider className="mb-2" />
-          <Link href="/" className="w-full block">
-            <Button
-              fullWidth
-              variant="light"
-              color="default"
-              className={`justify-start ${collapsed ? 'px-0' : ''}`}
-              startContent={!collapsed ? <ChevronLeft className="h-4 w-4" /> : undefined}
-            >
-              {collapsed ? <ChevronLeft className="h-4 w-4" /> : 'Back to site'}
-            </Button>
-          </Link>
-        </div>
-      </aside>
+          {/* Sidebar Footer */}
+          <div className="p-2">
+            <Divider className="mb-2" />
+            <Link href="/" className="w-full block">
+              <Button
+                fullWidth
+                variant="light"
+                color="default"
+                className={`justify-start ${collapsed ? 'px-0' : ''}`}
+                startContent={!collapsed ? <ChevronLeft className="h-4 w-4" /> : undefined}
+              >
+                {collapsed ? <ChevronLeft className="h-4 w-4" /> : t('backToSite')}
+              </Button>
+            </Link>
+          </div>
+        </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="container mx-auto p-6">
-          {children}
-        </div>
-      </main>
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="mx-auto p-6">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

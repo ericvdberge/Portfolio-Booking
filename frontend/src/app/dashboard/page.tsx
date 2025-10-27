@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Calendar, MapPin, TrendingUp, Users } from 'lucide-react';
 import {
   Card,
@@ -12,36 +13,6 @@ import {
   Divider,
 } from '@heroui/react';
 
-const stats = [
-  {
-    name: 'Total Bookings',
-    value: '127',
-    change: '+12.5%',
-    icon: Calendar,
-    trend: 'up',
-  },
-  {
-    name: 'Active Locations',
-    value: '18',
-    change: '+2',
-    icon: MapPin,
-    trend: 'up',
-  },
-  {
-    name: 'Total Users',
-    value: '1,432',
-    change: '+8.2%',
-    icon: Users,
-    trend: 'up',
-  },
-  {
-    name: 'Revenue',
-    value: '$45.2K',
-    change: '+15.3%',
-    icon: TrendingUp,
-    trend: 'up',
-  },
-];
 
 const recentBookings = [
   { id: 1, location: 'Coastal Villa', user: 'John Doe', date: '2025-11-05', status: 'confirmed' },
@@ -51,13 +22,50 @@ const recentBookings = [
 ];
 
 export default function DashboardPage() {
+  const t = useTranslations('dashboard');
+  const tStats = useTranslations('dashboard.stats');
+  const tBookings = useTranslations('dashboard.recentBookings');
+  const tActions = useTranslations('dashboard.quickActions');
+  const tStatus = useTranslations('dashboard.systemStatus');
+
+  const stats = [
+    {
+      name: tStats('totalBookings'),
+      value: '127',
+      change: '+12.5%',
+      icon: Calendar,
+      trend: 'up',
+    },
+    {
+      name: tStats('activeLocations'),
+      value: '18',
+      change: '+2',
+      icon: MapPin,
+      trend: 'up',
+    },
+    {
+      name: tStats('totalUsers'),
+      value: '1,432',
+      change: '+8.2%',
+      icon: Users,
+      trend: 'up',
+    },
+    {
+      name: tStats('revenue'),
+      value: '$45.2K',
+      change: '+15.3%',
+      icon: TrendingUp,
+      trend: 'up',
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
         <p className="text-muted-foreground mt-1">
-          Welcome back! Here's what's happening with your bookings.
+          {t('welcome')}
         </p>
       </div>
 
@@ -93,7 +101,7 @@ export default function DashboardPage() {
       {/* Recent Bookings */}
       <Card shadow="sm">
         <CardHeader className="flex flex-col items-start px-6 py-4">
-          <h2 className="text-xl font-semibold">Recent Bookings</h2>
+          <h2 className="text-xl font-semibold">{tBookings('title')}</h2>
         </CardHeader>
         <Divider />
         <CardBody className="gap-4">
@@ -120,7 +128,7 @@ export default function DashboardPage() {
                     variant="flat"
                     size="sm"
                   >
-                    {booking.status}
+                    {tBookings(booking.status as 'confirmed' | 'pending')}
                   </Chip>
                 </div>
               </div>
@@ -134,41 +142,41 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card shadow="sm">
           <CardHeader className="flex flex-col items-start">
-            <h3 className="font-semibold">Quick Actions</h3>
+            <h3 className="font-semibold">{tActions('title')}</h3>
           </CardHeader>
           <Divider />
           <CardBody className="gap-2">
             <Button color="primary" fullWidth>
-              Add New Location
+              {tActions('addLocation')}
             </Button>
             <Button variant="bordered" fullWidth>
-              View All Bookings
+              {tActions('viewBookings')}
             </Button>
           </CardBody>
         </Card>
 
         <Card shadow="sm">
           <CardHeader className="flex flex-col items-start">
-            <h3 className="font-semibold">System Status</h3>
+            <h3 className="font-semibold">{tStatus('title')}</h3>
           </CardHeader>
           <Divider />
           <CardBody className="gap-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-default-500">API Status</span>
+              <span className="text-sm text-default-500">{tStatus('apiStatus')}</span>
               <Chip color="success" variant="flat" size="sm">
-                Operational
+                {tStatus('operational')}
               </Chip>
             </div>
             <Divider />
             <div className="flex items-center justify-between">
-              <span className="text-sm text-default-500">Database</span>
+              <span className="text-sm text-default-500">{tStatus('database')}</span>
               <Chip color="success" variant="flat" size="sm">
-                Connected
+                {tStatus('connected')}
               </Chip>
             </div>
             <Divider />
             <div className="flex items-center justify-between">
-              <span className="text-sm text-default-500">Last Backup</span>
+              <span className="text-sm text-default-500">{tStatus('lastBackup')}</span>
               <span className="text-sm font-medium">2 hours ago</span>
             </div>
           </CardBody>
