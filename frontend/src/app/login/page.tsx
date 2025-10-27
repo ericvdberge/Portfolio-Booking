@@ -2,21 +2,69 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button, Input } from '@heroui/react';
 import { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { z } from 'zod';
+
+// Zod validation schema
+const loginSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
+type ValidationErrors = Partial<Record<keyof LoginFormData, string>>;
 
 export default function LoginPage() {
+  const router = useRouter();
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const togglePasswordVisibility = () => setIsPasswordVisible(!isPasswordVisible);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement login logic
-    console.log('Login attempt:', { email, password });
+
+    // Clear previous errors
+    setErrors({});
+
+    // Validate form data
+    const result = loginSchema.safeParse({ email, password });
+
+    if (!result.success) {
+      // Extract and set validation errors
+      const validationErrors: ValidationErrors = {};
+      result.error.errors.forEach((error) => {
+        const field = error.path[0] as keyof LoginFormData;
+        validationErrors[field] = error.message;
+      });
+      setErrors(validationErrors);
+      return;
+    }
+
+    // Form is valid, proceed with login
+    setIsLoading(true);
+
+    try {
+      // TODO: Implement actual API login logic here
+      console.log('Login attempt:', result.data);
+
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Navigate to dashboard on successful login
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Login failed:', error);
+      setErrors({ email: 'Invalid credentials. Please try again.' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -61,6 +109,8 @@ export default function LoginPage() {
               }
               variant="bordered"
               isRequired
+              isInvalid={!!errors.email}
+              errorMessage={errors.email}
               classNames={{
                 input: "text-sm",
                 inputWrapper: "border-default-200",
@@ -91,6 +141,8 @@ export default function LoginPage() {
               }
               variant="bordered"
               isRequired
+              isInvalid={!!errors.password}
+              errorMessage={errors.password}
               classNames={{
                 input: "text-sm",
                 inputWrapper: "border-default-200",
@@ -119,8 +171,10 @@ export default function LoginPage() {
               color="primary"
               size="lg"
               className="w-full font-semibold"
+              isLoading={isLoading}
+              isDisabled={isLoading}
             >
-              Sign in
+              {isLoading ? 'Signing in...' : 'Sign in'}
             </Button>
           </form>
 
