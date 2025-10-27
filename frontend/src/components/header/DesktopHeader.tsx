@@ -6,9 +6,15 @@ import { BrandLogo } from './BrandLogo';
 import { NavLink } from './NavLink';
 import { SignInButton } from './SignInButton';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { useRouter } from 'next/navigation';
 
 export function DesktopHeader() {
   const t = useTranslations('navigation');
+  const router = useRouter();
+
+  const handleSignIn = () => {
+    router.push('/sign-in');
+  }
 
   return (
     <Header>
@@ -25,7 +31,7 @@ export function DesktopHeader() {
             {t('locations')}
           </NavLink>
           <LanguageSwitcher />
-          <SignInButton />
+          <SignInButton onClick={handleSignIn} />
         </Header.Nav>
       </Header.Container>
     </Header>

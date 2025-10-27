@@ -10,7 +10,7 @@ import { z } from 'zod';
 
 // Zod validation schema
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
+  email: z.email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
@@ -27,8 +27,9 @@ export default function LoginPage() {
 
   const togglePasswordVisibility = () => setIsPasswordVisible(!isPasswordVisible);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    console.log('test')
+    // e.preventDefault();
 
     // Clear previous errors
     setErrors({});
@@ -37,9 +38,10 @@ export default function LoginPage() {
     const result = loginSchema.safeParse({ email, password });
 
     if (!result.success) {
+      console.log('Validation result:', result);
       // Extract and set validation errors
       const validationErrors: ValidationErrors = {};
-      result.error.errors.forEach((error) => {
+      result.error.issues.forEach((error) => {
         const field = error.path[0] as keyof LoginFormData;
         validationErrors[field] = error.message;
       });
@@ -173,6 +175,7 @@ export default function LoginPage() {
               className="w-full font-semibold"
               isLoading={isLoading}
               isDisabled={isLoading}
+              onPress={handleSubmit}
             >
               {isLoading ? 'Signing in...' : 'Sign in'}
             </Button>
