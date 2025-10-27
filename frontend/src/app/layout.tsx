@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { QueryProvider } from "@/providers/query-provider";
-import { ConditionalLayout } from "@/components/ConditionalLayout";
 import { LocaleProvider } from '@/providers/locale-provider';
 import { PublicEnvScript } from "next-runtime-env";
 import { HeroUIProvider } from "@/providers/heroui-provider";
@@ -58,9 +57,7 @@ export default async function RootLayout({
         <HeroUIProvider>
           <LocaleProvider initialMessages={initialMessages}>
             <QueryProvider>
-              <ConditionalLayout>
-                {children}
-              </ConditionalLayout>
+              {children}
             </QueryProvider>
           </LocaleProvider>
         </HeroUIProvider>

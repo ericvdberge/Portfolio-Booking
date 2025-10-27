@@ -1,66 +1,95 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Card, CardBody, CardHeader } from '@heroui/react';
-import { BarChart3, Calendar, MapPin, Users } from 'lucide-react';
+import { Calendar, MapPin, TrendingUp, Users } from 'lucide-react';
+import {
+  Card,
+  CardHeader,
+  CardBody,
+  Button,
+  Chip,
+  Avatar,
+  Divider,
+} from '@heroui/react';
+
+
+const recentBookings = [
+  { id: 1, location: 'Coastal Villa', user: 'John Doe', date: '2025-11-05', status: 'confirmed' },
+  { id: 2, location: 'Mountain Retreat', user: 'Jane Smith', date: '2025-11-08', status: 'pending' },
+  { id: 3, location: 'City Apartment', user: 'Mike Johnson', date: '2025-11-12', status: 'confirmed' },
+  { id: 4, location: 'Lake House', user: 'Sarah Williams', date: '2025-11-15', status: 'confirmed' },
+];
 
 export default function DashboardPage() {
-  const t = useTranslations('common');
+  const t = useTranslations('dashboard');
+  const tStats = useTranslations('dashboard.stats');
+  const tBookings = useTranslations('dashboard.recentBookings');
+  const tActions = useTranslations('dashboard.quickActions');
+  const tStatus = useTranslations('dashboard.systemStatus');
 
   const stats = [
     {
-      title: 'Total Bookings',
-      value: '24',
+      name: tStats('totalBookings'),
+      value: '127',
+      change: '+12.5%',
       icon: Calendar,
-      color: 'text-primary',
-      bgColor: 'bg-primary/10',
+      trend: 'up',
     },
     {
-      title: 'Active Locations',
-      value: '12',
+      name: tStats('activeLocations'),
+      value: '18',
+      change: '+2',
       icon: MapPin,
-      color: 'text-success',
-      bgColor: 'bg-success/10',
+      trend: 'up',
     },
     {
-      title: 'Total Users',
-      value: '156',
+      name: tStats('totalUsers'),
+      value: '1,432',
+      change: '+8.2%',
       icon: Users,
-      color: 'text-warning',
-      bgColor: 'bg-warning/10',
+      trend: 'up',
     },
     {
-      title: 'Revenue',
-      value: '$12,345',
-      icon: BarChart3,
-      color: 'text-secondary',
-      bgColor: 'bg-secondary/10',
+      name: tStats('revenue'),
+      value: '$45.2K',
+      change: '+15.3%',
+      icon: TrendingUp,
+      trend: 'up',
     },
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Welcome Section */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Welcome back!</h1>
-        <p className="text-default-500">Here&apos;s what&apos;s happening with your bookings today.</p>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+        <p className="text-muted-foreground mt-1">
+          {t('welcome')}
+        </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.title} className="border-none shadow-sm">
+            <Card key={stat.name} shadow="sm">
               <CardBody className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-default-500 mb-1">{stat.title}</p>
-                    <p className="text-2xl font-bold">{stat.value}</p>
-                  </div>
-                  <div className={`p-3 rounded-lg ${stat.bgColor}`}>
-                    <Icon className={`${stat.color}`} size={24} />
-                  </div>
+                <div className="flex items-center justify-between mb-4">
+                  <Avatar
+                    icon={<Icon className="h-5 w-5" />}
+                    classNames={{
+                      base: 'bg-primary/10',
+                      icon: 'text-primary',
+                    }}
+                  />
+                  <Chip color="success" variant="flat" size="sm">
+                    {stat.change}
+                  </Chip>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <p className="text-sm text-default-500 mt-1">{stat.name}</p>
                 </div>
               </CardBody>
             </Card>
@@ -68,52 +97,86 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Bookings */}
-        <Card className="border-none shadow-sm">
-          <CardHeader className="pb-3">
-            <h2 className="text-xl font-semibold">Recent Bookings</h2>
-          </CardHeader>
-          <CardBody>
-            <div className="space-y-4">
-              {[1, 2, 3].map((item) => (
-                <div
-                  key={item}
-                  className="flex items-center justify-between p-3 rounded-lg bg-default-50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                      <Calendar className="text-primary" size={20} />
-                    </div>
-                    <div>
-                      <p className="font-medium">Conference Room {item}</p>
-                      <p className="text-sm text-default-500">Today, 2:00 PM</p>
-                    </div>
+      {/* Recent Bookings */}
+      <Card shadow="sm">
+        <CardHeader className="flex flex-col items-start px-6 py-4">
+          <h2 className="text-xl font-semibold">{tBookings('title')}</h2>
+        </CardHeader>
+        <Divider />
+        <CardBody className="gap-4">
+          {recentBookings.map((booking, index) => (
+            <div key={booking.id}>
+              <div className="flex items-center justify-between p-3 rounded-lg hover:bg-default-100 transition-colors">
+                <div className="flex items-center gap-4">
+                  <Avatar
+                    icon={<Calendar className="h-5 w-5" />}
+                    classNames={{
+                      base: 'bg-primary/10',
+                      icon: 'text-primary',
+                    }}
+                  />
+                  <div>
+                    <p className="font-medium">{booking.location}</p>
+                    <p className="text-sm text-default-500">{booking.user}</p>
                   </div>
-                  <span className="text-sm font-medium text-success">Confirmed</span>
                 </div>
-              ))}
+                <div className="text-right flex flex-col items-end gap-1">
+                  <p className="text-sm font-medium">{booking.date}</p>
+                  <Chip
+                    color={booking.status === 'confirmed' ? 'success' : 'warning'}
+                    variant="flat"
+                    size="sm"
+                  >
+                    {tBookings(booking.status as 'confirmed' | 'pending')}
+                  </Chip>
+                </div>
+              </div>
+              {index < recentBookings.length - 1 && <Divider className="my-2" />}
             </div>
+          ))}
+        </CardBody>
+      </Card>
+
+      {/* Quick Actions and System Status */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card shadow="sm">
+          <CardHeader className="flex flex-col items-start">
+            <h3 className="font-semibold">{tActions('title')}</h3>
+          </CardHeader>
+          <Divider />
+          <CardBody className="gap-2">
+            <Button color="primary" fullWidth>
+              {tActions('addLocation')}
+            </Button>
+            <Button variant="bordered" fullWidth>
+              {tActions('viewBookings')}
+            </Button>
           </CardBody>
         </Card>
 
-        {/* Quick Actions */}
-        <Card className="border-none shadow-sm">
-          <CardHeader className="pb-3">
-            <h2 className="text-xl font-semibold">Quick Actions</h2>
+        <Card shadow="sm">
+          <CardHeader className="flex flex-col items-start">
+            <h3 className="font-semibold">{tStatus('title')}</h3>
           </CardHeader>
-          <CardBody>
-            <div className="space-y-3">
-              <button className="w-full p-4 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 transition-colors">
-                Create New Booking
-              </button>
-              <button className="w-full p-4 rounded-lg border border-default-200 font-medium hover:bg-default-50 transition-colors">
-                View All Locations
-              </button>
-              <button className="w-full p-4 rounded-lg border border-default-200 font-medium hover:bg-default-50 transition-colors">
-                Manage Calendar
-              </button>
+          <Divider />
+          <CardBody className="gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-default-500">{tStatus('apiStatus')}</span>
+              <Chip color="success" variant="flat" size="sm">
+                {tStatus('operational')}
+              </Chip>
+            </div>
+            <Divider />
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-default-500">{tStatus('database')}</span>
+              <Chip color="success" variant="flat" size="sm">
+                {tStatus('connected')}
+              </Chip>
+            </div>
+            <Divider />
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-default-500">{tStatus('lastBackup')}</span>
+              <span className="text-sm font-medium">2 hours ago</span>
             </div>
           </CardBody>
         </Card>

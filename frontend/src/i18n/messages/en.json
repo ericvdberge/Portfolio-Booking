@@ -137,5 +137,49 @@
     "delete": "Delete",
     "edit": "Edit",
     "close": "Close"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "adminPanel": "Admin Panel",
+    "welcome": "Welcome back! Here's what's happening with your bookings.",
+    "backToSite": "Back to site",
+    "navigation": {
+      "dashboard": "Dashboard",
+      "locations": "Locations",
+      "bookings": "Bookings",
+      "users": "Users",
+      "settings": "Settings"
+    },
+    "stats": {
+      "totalBookings": "Total Bookings",
+      "activeLocations": "Active Locations",
+      "totalUsers": "Total Users",
+      "revenue": "Revenue"
+    },
+    "recentBookings": {
+      "title": "Recent Bookings",
+      "confirmed": "confirmed",
+      "pending": "pending",
+      "cancelled": "cancelled"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "addLocation": "Add New Location",
+      "viewBookings": "View All Bookings"
+    },
+    "systemStatus": {
+      "title": "System Status",
+      "apiStatus": "API Status",
+      "database": "Database",
+      "lastBackup": "Last Backup",
+      "operational": "Operational",
+      "connected": "Connected"
+    },
+    "header": {
+      "search": "Search...",
+      "notifications": "Notifications",
+      "profile": "Profile",
+      "logout": "Logout"
+    }
   }
 }
