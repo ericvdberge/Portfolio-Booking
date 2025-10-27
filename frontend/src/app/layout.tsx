@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { QueryProvider } from "@/providers/query-provider";
-import { Header } from "@/components/Header";
-import { MobileFooter } from "@/components/MobileFooter";
 import { LocaleProvider } from '@/providers/locale-provider';
 import { PublicEnvScript } from "next-runtime-env";
 import { HeroUIProvider } from "@/providers/heroui-provider";
@@ -59,11 +57,7 @@ export default async function RootLayout({
         <HeroUIProvider>
           <LocaleProvider initialMessages={initialMessages}>
             <QueryProvider>
-              <Header />
-              <main className="pb-16 md:pb-0">
-                {children}
-              </main>
-              <MobileFooter />
+              {children}
             </QueryProvider>
           </LocaleProvider>
         </HeroUIProvider>
