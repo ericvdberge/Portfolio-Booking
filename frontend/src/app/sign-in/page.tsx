@@ -12,8 +12,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 // Zod validation schema
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address'),
+  password: z
+    .string()
+    .min(1, 'Password is required')
+    .min(6, 'Password must be at least 6 characters'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -29,6 +35,8 @@ export default function LoginPage() {
     setError,
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    mode: 'onBlur', // Validate on blur
+    reValidateMode: 'onChange', // Re-validate on change after first submit
     defaultValues: {
       email: '',
       password: '',
@@ -76,7 +84,7 @@ export default function LoginPage() {
           </div>
 
           {/* Login Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
             <Controller
               name="email"
               control={control}
@@ -90,12 +98,13 @@ export default function LoginPage() {
                     <Mail className="text-default-400 pointer-events-none flex-shrink-0" size={18} />
                   }
                   variant="bordered"
-                  isRequired
                   isInvalid={!!fieldState.error}
                   errorMessage={fieldState.error?.message}
+                  validationBehavior="aria"
                   classNames={{
                     input: "text-sm",
                     inputWrapper: "border-default-200",
+                    errorMessage: "text-xs mt-1",
                   }}
                 />
               )}
@@ -127,12 +136,13 @@ export default function LoginPage() {
                     </button>
                   }
                   variant="bordered"
-                  isRequired
                   isInvalid={!!fieldState.error}
                   errorMessage={fieldState.error?.message}
+                  validationBehavior="aria"
                   classNames={{
                     input: "text-sm",
                     inputWrapper: "border-default-200",
+                    errorMessage: "text-xs mt-1",
                   }}
                 />
               )}
