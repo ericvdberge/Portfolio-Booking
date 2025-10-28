@@ -74,7 +74,7 @@ export default function LoginPage() {
       <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:px-20 xl:px-24">
         <div className="mx-auto w-full max-w-sm lg:w-96">
           {/* Logo */}
-          <div className="flex justify-center mb-8">
+          <div className="flex justify-center mb-12">
             <Link href="/">
               <Image
                 src="/icons/logo-horizontal.png"
@@ -85,16 +85,6 @@ export default function LoginPage() {
                 priority
               />
             </Link>
-          </div>
-
-          {/* Title and Description */}
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold tracking-tight">
-              Welcome back
-            </h2>
-            <p className="mt-2 text-sm text-default-500">
-              Sign in to your account to continue
-            </p>
           </div>
 
           {/* Login Form */}
