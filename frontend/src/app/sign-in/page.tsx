@@ -7,6 +7,8 @@ import { Button, Input } from '@heroui/react';
 import { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { z } from 'zod';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 // Zod validation schema
 const loginSchema = z.object({
@@ -15,45 +17,30 @@ const loginSchema = z.object({
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
-type ValidationErrors = Partial<Record<keyof LoginFormData, string>>;
 
 export default function LoginPage() {
   const router = useRouter();
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState<ValidationErrors>({});
-  const [isLoading, setIsLoading] = useState(false);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setError,
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
   const togglePasswordVisibility = () => setIsPasswordVisible(!isPasswordVisible);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Clear previous errors
-    setErrors({});
-
-    // Validate form data
-    const result = loginSchema.safeParse({ email, password });
-
-    if (!result.success) {
-      console.log('Validation result:', result);
-      // Extract and set validation errors
-      const validationErrors: ValidationErrors = {};
-      result.error.issues.forEach((issue) => {
-        const field = issue.path[0] as keyof LoginFormData;
-        validationErrors[field] = issue.message;
-      });
-      setErrors(validationErrors);
-      return;
-    }
-
-    // Form is valid, proceed with login
-    setIsLoading(true);
-
+  const onSubmit = async (data: LoginFormData) => {
     try {
       // TODO: Implement actual API login logic here
-      console.log('Login attempt:', result.data);
+      console.log('Login attempt:', data);
 
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -62,9 +49,10 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (error) {
       console.error('Login failed:', error);
-      setErrors({ email: 'Invalid credentials. Please try again.' });
-    } finally {
-      setIsLoading(false);
+      setError('email', {
+        type: 'manual',
+        message: 'Invalid credentials. Please try again.',
+      });
     }
   };
 
@@ -88,56 +76,66 @@ export default function LoginPage() {
           </div>
 
           {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <Input
-              type="email"
-              label="Email"
-              placeholder="Enter your email"
-              value={email}
-              onValueChange={setEmail}
-              startContent={
-                <Mail className="text-default-400 pointer-events-none flex-shrink-0" size={18} />
-              }
-              variant="bordered"
-              isRequired
-              isInvalid={!!errors.email}
-              errorMessage={errors.email}
-              classNames={{
-                input: "text-sm",
-                inputWrapper: "border-default-200",
-              }}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <Controller
+              name="email"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Input
+                  {...field}
+                  type="email"
+                  label="Email"
+                  placeholder="Enter your email"
+                  startContent={
+                    <Mail className="text-default-400 pointer-events-none flex-shrink-0" size={18} />
+                  }
+                  variant="bordered"
+                  isRequired
+                  isInvalid={!!fieldState.error}
+                  errorMessage={fieldState.error?.message}
+                  classNames={{
+                    input: "text-sm",
+                    inputWrapper: "border-default-200",
+                  }}
+                />
+              )}
             />
 
-            <Input
-              type={isPasswordVisible ? "text" : "password"}
-              label="Password"
-              placeholder="Enter your password"
-              value={password}
-              onValueChange={setPassword}
-              startContent={
-                <Lock className="text-default-400 pointer-events-none flex-shrink-0" size={18} />
-              }
-              endContent={
-                <button
-                  className="focus:outline-none"
-                  type="button"
-                  onClick={togglePasswordVisibility}
-                >
-                  {isPasswordVisible ? (
-                    <EyeOff className="text-default-400 pointer-events-none" size={18} />
-                  ) : (
-                    <Eye className="text-default-400 pointer-events-none" size={18} />
-                  )}
-                </button>
-              }
-              variant="bordered"
-              isRequired
-              isInvalid={!!errors.password}
-              errorMessage={errors.password}
-              classNames={{
-                input: "text-sm",
-                inputWrapper: "border-default-200",
-              }}
+            <Controller
+              name="password"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Input
+                  {...field}
+                  type={isPasswordVisible ? "text" : "password"}
+                  label="Password"
+                  placeholder="Enter your password"
+                  startContent={
+                    <Lock className="text-default-400 pointer-events-none flex-shrink-0" size={18} />
+                  }
+                  endContent={
+                    <button
+                      className="focus:outline-none"
+                      type="button"
+                      onClick={togglePasswordVisibility}
+                    >
+                      {isPasswordVisible ? (
+                        <EyeOff className="text-default-400 pointer-events-none" size={18} />
+                      ) : (
+                        <Eye className="text-default-400 pointer-events-none" size={18} />
+                      )}
+                    </button>
+                  }
+                  variant="bordered"
+                  isRequired
+                  isInvalid={!!fieldState.error}
+                  errorMessage={fieldState.error?.message}
+                  classNames={{
+                    input: "text-sm",
+                    inputWrapper: "border-default-200",
+                  }}
+                />
+              )}
             />
 
             <div className="flex items-center justify-between">
@@ -162,10 +160,10 @@ export default function LoginPage() {
               color="primary"
               size="lg"
               className="w-full font-semibold"
-              isLoading={isLoading}
-              isDisabled={isLoading}
+              isLoading={isSubmitting}
+              isDisabled={isSubmitting}
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isSubmitting ? 'Signing in...' : 'Sign in'}
             </Button>
           </form>
 
