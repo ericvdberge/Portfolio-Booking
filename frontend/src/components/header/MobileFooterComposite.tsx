@@ -24,8 +24,8 @@ export function MobileFooter() {
       icon: <Calendar className="w-6 h-6" />,
     },
     {
-      href: '/profile',
-      label: t('profile'),
+      href: '/sign-in',
+      label: t('signIn'),
       icon: <User className="w-6 h-6" />,
     },
   ];

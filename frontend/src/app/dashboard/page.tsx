@@ -6,7 +6,6 @@ import {
   Card,
   CardHeader,
   CardBody,
-  CardFooter,
   Button,
   Chip,
   Avatar,

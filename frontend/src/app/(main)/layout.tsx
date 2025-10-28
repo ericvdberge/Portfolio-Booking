@@ -1,4 +1,4 @@
-import { Header } from '@/components/Header';
+import { DesktopHeader } from '@/components/header/DesktopHeader';
 import { MobileFooter } from '@/components/MobileFooter';
 
 export default function MainLayout({
@@ -8,7 +8,7 @@ export default function MainLayout({
 }) {
   return (
     <>
-      <Header />
+      <DesktopHeader />
       <main className="pb-16 md:pb-0">
         {children}
       </main>
