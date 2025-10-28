@@ -18,7 +18,7 @@ function HeaderRoot({ children, variant = 'default', className = '' }: HeaderPro
   return (
     <HeaderContext.Provider value={{ variant }}>
       <header
-        className={`sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-divider ${className}`}
+        className={`sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 ${className}`}
       >
         {children}
       </header>
