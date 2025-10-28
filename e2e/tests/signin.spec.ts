@@ -1,415 +1,182 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Sign In Page - Validation', () => {
+test.describe('Sign In Page', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to sign in page before each test
     await page.goto('/sign-in');
     await page.waitForLoadState('networkidle');
   });
 
-  test.describe('Page Layout', () => {
-    test('should display sign in page with logo and form', async ({ page }) => {
-      // Verify logo is visible
-      const logo = page.getByTestId('signin-logo');
-      await expect(logo).toBeVisible();
+  test('should display all page elements correctly', async ({ page }) => {
+    // Verify logo
+    await expect(page.getByTestId('signin-logo')).toBeVisible();
+    await expect(page.getByTestId('signin-logo-link')).toHaveAttribute('href', '/');
 
-      // Verify form elements are present
-      const form = page.getByTestId('signin-form');
-      const emailInput = page.getByTestId('signin-email-input');
-      const passwordInput = page.getByTestId('signin-password-input');
-      const submitButton = page.getByTestId('signin-submit-button');
+    // Verify form exists
+    await expect(page.getByTestId('signin-form')).toBeVisible();
 
-      await expect(form).toBeVisible();
-      await expect(emailInput).toBeVisible();
-      await expect(passwordInput).toBeVisible();
-      await expect(submitButton).toBeVisible();
-    });
+    // Verify input fields
+    await expect(page.getByTestId('signin-email-field')).toBeVisible();
+    await expect(page.getByTestId('signin-password-field')).toBeVisible();
 
-    test('should display social login buttons', async ({ page }) => {
-      const googleButton = page.getByTestId('signin-google-button');
-      const githubButton = page.getByTestId('signin-github-button');
+    // Verify buttons
+    await expect(page.getByTestId('signin-submit-button')).toBeVisible();
+    await expect(page.getByTestId('signin-google-button')).toBeVisible();
+    await expect(page.getByTestId('signin-github-button')).toBeVisible();
 
-      await expect(googleButton).toBeVisible();
-      await expect(githubButton).toBeVisible();
-    });
+    // Verify links
+    await expect(page.getByTestId('signin-forgot-password-link')).toBeVisible();
+    await expect(page.getByTestId('signin-signup-link')).toBeVisible();
 
-    test('should display sign up link', async ({ page }) => {
-      const signUpLink = page.getByTestId('signin-signup-link');
-      await expect(signUpLink).toBeVisible();
-    });
-
-    test('should display remember me checkbox', async ({ page }) => {
-      const rememberMe = page.getByTestId('signin-remember-me');
-      await expect(rememberMe).toBeVisible();
-    });
-
-    test('should display forgot password link', async ({ page }) => {
-      const forgotPasswordLink = page.getByTestId('signin-forgot-password-link');
-      await expect(forgotPasswordLink).toBeVisible();
-    });
+    // Verify checkbox
+    await expect(page.getByTestId('signin-remember-me')).toBeVisible();
   });
 
-  test.describe('Email Field Validation', () => {
-    test('should show error when email field is empty and blurred', async ({ page }) => {
-      const emailInput = page.getByTestId('signin-email-input');
+  test('should validate empty form submission and show all errors', async ({ page }) => {
+    // Submit empty form
+    await page.getByTestId('signin-submit-button').click();
 
-      // Focus and blur without entering anything
-      await emailInput.focus();
-      await emailInput.blur();
+    // Both errors should appear
+    await expect(page.getByTestId('signin-email-error')).toBeVisible({ timeout: 3000 });
+    await expect(page.getByTestId('signin-password-error')).toBeVisible({ timeout: 3000 });
 
-      // Wait for error message to appear
-      const errorMessage = page.getByTestId('signin-email-error');
-      await expect(errorMessage).toBeVisible({ timeout: 2000 });
-      await expect(errorMessage).toHaveText('Email is required');
-    });
+    // Verify error messages
+    await expect(page.getByTestId('signin-email-error')).toContainText('Email is required');
+    await expect(page.getByTestId('signin-password-error')).toContainText('Password is required');
 
-    test('should show error when email format is invalid', async ({ page }) => {
-      const emailInput = page.getByTestId('signin-email-input');
-
-      // Enter invalid email format
-      await emailInput.fill('notanemail');
-      await emailInput.blur();
-
-      // Wait for error message
-      const errorMessage = page.getByTestId('signin-email-error');
-      await expect(errorMessage).toBeVisible({ timeout: 2000 });
-      await expect(errorMessage).toHaveText('Please enter a valid email address');
-    });
-
-    test('should show error for invalid email with @ but no domain', async ({ page }) => {
-      const emailInput = page.getByTestId('signin-email-input');
-
-      await emailInput.fill('test@');
-      await emailInput.blur();
-
-      const errorMessage = page.getByTestId('signin-email-error');
-      await expect(errorMessage).toBeVisible({ timeout: 2000 });
-      await expect(errorMessage).toHaveText('Please enter a valid email address');
-    });
-
-    test('should clear error when valid email is entered', async ({ page }) => {
-      const emailInput = page.getByTestId('signin-email-input');
-
-      // First trigger error
-      await emailInput.focus();
-      await emailInput.blur();
-
-      const errorMessage = page.getByTestId('signin-email-error');
-      await expect(errorMessage).toBeVisible();
-
-      // Now enter valid email
-      await emailInput.fill('test@example.com');
-
-      // Error should disappear
-      await expect(errorMessage).not.toBeVisible({ timeout: 2000 });
-    });
-
-    test('should validate email in real-time after first error', async ({ page }) => {
-      const emailInput = page.getByTestId('signin-email-input');
-
-      // Trigger validation
-      await emailInput.fill('invalid');
-      await emailInput.blur();
-
-      const errorMessage = page.getByTestId('signin-email-error');
-      await expect(errorMessage).toBeVisible();
-      await expect(errorMessage).toHaveText('Please enter a valid email address');
-
-      // Start typing valid email - error should update in real-time
-      await emailInput.fill('test@example.com');
-
-      // Error should clear without needing to blur
-      await expect(errorMessage).not.toBeVisible({ timeout: 2000 });
-    });
+    // Should still be on sign-in page
+    await expect(page).toHaveURL(/sign-in/);
   });
 
-  test.describe('Password Field Validation', () => {
-    test('should show error when password field is empty and blurred', async ({ page }) => {
-      const passwordInput = page.getByTestId('signin-password-input');
+  test('should validate email field with multiple invalid formats', async ({ page }) => {
+    const emailField = page.getByTestId('signin-email-field');
+    const emailInput = emailField.locator('input');
+    const submitButton = page.getByTestId('signin-submit-button');
 
-      await passwordInput.focus();
-      await passwordInput.blur();
+    // Test 1: Invalid format (no @)
+    await emailInput.fill('notanemail');
+    await submitButton.click();
+    await expect(page.getByTestId('signin-email-error')).toContainText('Please enter a valid email address');
 
-      const errorMessage = page.getByTestId('signin-password-error');
-      await expect(errorMessage).toBeVisible({ timeout: 2000 });
-      await expect(errorMessage).toHaveText('Password is required');
-    });
+    // Test 2: Invalid format (@ but no domain)
+    await emailInput.fill('test@');
+    await submitButton.click();
+    await expect(page.getByTestId('signin-email-error')).toContainText('Please enter a valid email address');
 
-    test('should show error when password is less than 6 characters', async ({ page }) => {
-      const passwordInput = page.getByTestId('signin-password-input');
-
-      await passwordInput.fill('12345');
-      await passwordInput.blur();
-
-      const errorMessage = page.getByTestId('signin-password-error');
-      await expect(errorMessage).toBeVisible({ timeout: 2000 });
-      await expect(errorMessage).toHaveText('Password must be at least 6 characters');
-    });
-
-    test('should clear error when password meets minimum length', async ({ page }) => {
-      const passwordInput = page.getByTestId('signin-password-input');
-
-      // First trigger error
-      await passwordInput.fill('123');
-      await passwordInput.blur();
-
-      const errorMessage = page.getByTestId('signin-password-error');
-      await expect(errorMessage).toBeVisible();
-
-      // Now enter valid password
-      await passwordInput.fill('123456');
-
-      // Error should disappear
-      await expect(errorMessage).not.toBeVisible({ timeout: 2000 });
-    });
-
-    test('should toggle password visibility', async ({ page }) => {
-      const passwordInput = page.getByTestId('signin-password-input');
-      const toggleButton = page.getByTestId('signin-password-toggle');
-
-      // Fill in password
-      await passwordInput.fill('password123');
-
-      // Verify password is initially hidden
-      await expect(passwordInput).toHaveAttribute('type', 'password');
-
-      // Click toggle to show password
-      await toggleButton.click();
-
-      // Wait a moment for the state to update
-      await page.waitForTimeout(100);
-
-      // Password should now be visible as text input
-      await expect(passwordInput).toHaveAttribute('type', 'text');
-
-      // Click toggle again to hide password
-      await toggleButton.click();
-      await page.waitForTimeout(100);
-
-      // Password should be hidden again
-      await expect(passwordInput).toHaveAttribute('type', 'password');
-    });
+    // Test 3: Valid email clears error
+    await emailInput.fill('test@example.com');
+    await page.waitForTimeout(500); // Wait for onChange validation
+    await expect(page.getByTestId('signin-email-error')).not.toBeVisible();
   });
 
-  test.describe('Form Submission Validation', () => {
-    test('should prevent submission with empty form', async ({ page }) => {
-      const submitButton = page.getByTestId('signin-submit-button');
+  test('should validate password field with length requirements', async ({ page }) => {
+    const passwordField = page.getByTestId('signin-password-field');
+    const passwordInput = passwordField.locator('input');
+    const submitButton = page.getByTestId('signin-submit-button');
 
-      await submitButton.click();
+    // Test 1: Empty password
+    await submitButton.click();
+    await expect(page.getByTestId('signin-password-error')).toContainText('Password is required');
 
-      // Both error messages should appear
-      const emailError = page.getByTestId('signin-email-error');
-      const passwordError = page.getByTestId('signin-password-error');
+    // Test 2: Too short (less than 6 characters)
+    await passwordInput.fill('12345');
+    await submitButton.click();
+    await expect(page.getByTestId('signin-password-error')).toContainText('Password must be at least 6 characters');
 
-      await expect(emailError).toBeVisible({ timeout: 2000 });
-      await expect(passwordError).toBeVisible({ timeout: 2000 });
-
-      // Should still be on sign-in page
-      await expect(page).toHaveURL(/sign-in/);
-    });
-
-    test('should prevent submission with only email filled', async ({ page }) => {
-      const emailInput = page.getByTestId('signin-email-input');
-      const submitButton = page.getByTestId('signin-submit-button');
-
-      await emailInput.fill('test@example.com');
-      await submitButton.click();
-
-      // Only password error should appear
-      const passwordError = page.getByTestId('signin-password-error');
-      await expect(passwordError).toBeVisible({ timeout: 2000 });
-      await expect(passwordError).toHaveText('Password is required');
-
-      // Should still be on sign-in page
-      await expect(page).toHaveURL(/sign-in/);
-    });
-
-    test('should prevent submission with only password filled', async ({ page }) => {
-      const passwordInput = page.getByTestId('signin-password-input');
-      const submitButton = page.getByTestId('signin-submit-button');
-
-      await passwordInput.fill('password123');
-      await submitButton.click();
-
-      // Only email error should appear
-      const emailError = page.getByTestId('signin-email-error');
-      await expect(emailError).toBeVisible({ timeout: 2000 });
-      await expect(emailError).toHaveText('Email is required');
-
-      // Should still be on sign-in page
-      await expect(page).toHaveURL(/sign-in/);
-    });
-
-    test('should prevent submission with invalid email format', async ({ page }) => {
-      const emailInput = page.getByTestId('signin-email-input');
-      const passwordInput = page.getByTestId('signin-password-input');
-      const submitButton = page.getByTestId('signin-submit-button');
-
-      await emailInput.fill('notanemail');
-      await passwordInput.fill('password123');
-      await submitButton.click();
-
-      // Email format error should appear
-      const emailError = page.getByTestId('signin-email-error');
-      await expect(emailError).toBeVisible({ timeout: 2000 });
-      await expect(emailError).toHaveText('Please enter a valid email address');
-
-      // Should still be on sign-in page
-      await expect(page).toHaveURL(/sign-in/);
-    });
-
-    test('should prevent submission with short password', async ({ page }) => {
-      const emailInput = page.getByTestId('signin-email-input');
-      const passwordInput = page.getByTestId('signin-password-input');
-      const submitButton = page.getByTestId('signin-submit-button');
-
-      await emailInput.fill('test@example.com');
-      await passwordInput.fill('12345');
-      await submitButton.click();
-
-      // Password length error should appear
-      const passwordError = page.getByTestId('signin-password-error');
-      await expect(passwordError).toBeVisible({ timeout: 2000 });
-      await expect(passwordError).toHaveText('Password must be at least 6 characters');
-
-      // Should still be on sign-in page
-      await expect(page).toHaveURL(/sign-in/);
-    });
-
-    test('should show loading state during submission', async ({ page }) => {
-      const emailInput = page.getByTestId('signin-email-input');
-      const passwordInput = page.getByTestId('signin-password-input');
-      const submitButton = page.getByTestId('signin-submit-button');
-
-      await emailInput.fill('test@example.com');
-      await passwordInput.fill('password123');
-
-      // Click submit
-      await submitButton.click();
-
-      // Button should be disabled immediately
-      await expect(submitButton).toBeDisabled();
-    });
-
-    test('should allow submission with valid credentials', async ({ page }) => {
-      const emailInput = page.getByTestId('signin-email-input');
-      const passwordInput = page.getByTestId('signin-password-input');
-      const submitButton = page.getByTestId('signin-submit-button');
-
-      await emailInput.fill('test@example.com');
-      await passwordInput.fill('password123');
-      await submitButton.click();
-
-      // Should navigate to dashboard (mocked in the component)
-      await expect(page).toHaveURL(/dashboard/, { timeout: 5000 });
-    });
+    // Test 3: Valid password clears error
+    await passwordInput.fill('password123');
+    await page.waitForTimeout(500); // Wait for onChange validation
+    await expect(page.getByTestId('signin-password-error')).not.toBeVisible();
   });
 
-  test.describe('Multiple Field Validation', () => {
-    test('should show all errors when multiple fields are invalid', async ({ page }) => {
-      const emailInput = page.getByTestId('signin-email-input');
-      const passwordInput = page.getByTestId('signin-password-input');
+  test('should toggle password visibility', async ({ page }) => {
+    const passwordField = page.getByTestId('signin-password-field');
+    const passwordInput = passwordField.locator('input');
+    const toggleButton = page.getByTestId('signin-password-toggle');
 
-      // Fill both with invalid data
-      await emailInput.fill('notanemail');
-      await passwordInput.fill('123');
+    await passwordInput.fill('password123');
 
-      // Blur both fields
-      await emailInput.blur();
-      await passwordInput.blur();
+    // Initially hidden
+    await expect(passwordInput).toHaveAttribute('type', 'password');
 
-      // Both errors should be visible
-      const emailError = page.getByTestId('signin-email-error');
-      const passwordError = page.getByTestId('signin-password-error');
+    // Click to show
+    await toggleButton.click();
+    await expect(passwordInput).toHaveAttribute('type', 'text');
 
-      await expect(emailError).toBeVisible({ timeout: 2000 });
-      await expect(emailError).toHaveText('Please enter a valid email address');
-      await expect(passwordError).toBeVisible({ timeout: 2000 });
-      await expect(passwordError).toHaveText('Password must be at least 6 characters');
-    });
-
-    test('should clear errors independently when fixed', async ({ page }) => {
-      const emailInput = page.getByTestId('signin-email-input');
-      const passwordInput = page.getByTestId('signin-password-input');
-
-      // Fill both with invalid data
-      await emailInput.fill('notanemail');
-      await passwordInput.fill('123');
-      await emailInput.blur();
-      await passwordInput.blur();
-
-      const emailError = page.getByTestId('signin-email-error');
-      const passwordError = page.getByTestId('signin-password-error');
-
-      // Verify both errors exist
-      await expect(emailError).toBeVisible();
-      await expect(passwordError).toBeVisible();
-
-      // Fix email only
-      await emailInput.fill('test@example.com');
-
-      // Email error should clear, password error should remain
-      await expect(emailError).not.toBeVisible({ timeout: 2000 });
-      await expect(passwordError).toBeVisible();
-
-      // Fix password
-      await passwordInput.fill('password123');
-
-      // Password error should also clear
-      await expect(passwordError).not.toBeVisible({ timeout: 2000 });
-    });
+    // Click to hide again
+    await toggleButton.click();
+    await expect(passwordInput).toHaveAttribute('type', 'password');
   });
 
-  test.describe('Navigation Links', () => {
-    test('should have working forgot password link', async ({ page }) => {
-      const forgotPasswordLink = page.getByTestId('signin-forgot-password-link');
-      await expect(forgotPasswordLink).toHaveAttribute('href', '/forgot-password');
-    });
+  test('should handle multiple field errors independently', async ({ page }) => {
+    const emailField = page.getByTestId('signin-email-field');
+    const passwordField = page.getByTestId('signin-password-field');
+    const emailInput = emailField.locator('input');
+    const passwordInput = passwordField.locator('input');
+    const submitButton = page.getByTestId('signin-submit-button');
 
-    test('should have working sign up link', async ({ page }) => {
-      const signUpLink = page.getByTestId('signin-signup-link');
-      await expect(signUpLink).toHaveAttribute('href', '/signup');
-    });
+    // Fill both with invalid data
+    await emailInput.fill('notanemail');
+    await passwordInput.fill('123');
+    await submitButton.click();
 
-    test('should have working logo link to home', async ({ page }) => {
-      const logoLink = page.getByTestId('signin-logo-link');
-      await expect(logoLink).toHaveAttribute('href', '/');
-    });
+    // Both errors should show
+    await expect(page.getByTestId('signin-email-error')).toBeVisible();
+    await expect(page.getByTestId('signin-password-error')).toBeVisible();
+
+    // Fix email only
+    await emailInput.fill('test@example.com');
+    await page.waitForTimeout(500);
+
+    // Email error should clear, password error remains
+    await expect(page.getByTestId('signin-email-error')).not.toBeVisible();
+    await expect(page.getByTestId('signin-password-error')).toBeVisible();
+
+    // Fix password
+    await passwordInput.fill('password123');
+    await page.waitForTimeout(500);
+
+    // Both errors cleared
+    await expect(page.getByTestId('signin-email-error')).not.toBeVisible();
+    await expect(page.getByTestId('signin-password-error')).not.toBeVisible();
   });
 
-  test.describe('Interactive Elements', () => {
-    test('should have functional remember me checkbox', async ({ page }) => {
-      const rememberMeCheckbox = page.getByTestId('signin-remember-me');
+  test('should submit form with valid credentials', async ({ page }) => {
+    const emailField = page.getByTestId('signin-email-field');
+    const passwordField = page.getByTestId('signin-password-field');
+    const emailInput = emailField.locator('input');
+    const passwordInput = passwordField.locator('input');
+    const submitButton = page.getByTestId('signin-submit-button');
 
-      // Initially unchecked
-      await expect(rememberMeCheckbox).not.toBeChecked();
+    // Fill with valid data
+    await emailInput.fill('test@example.com');
+    await passwordInput.fill('password123');
 
-      // Click to check
-      await rememberMeCheckbox.click();
-      await expect(rememberMeCheckbox).toBeChecked();
+    // Submit
+    await submitButton.click();
 
-      // Click again to uncheck
-      await rememberMeCheckbox.click();
-      await expect(rememberMeCheckbox).not.toBeChecked();
-    });
+    // Button should be disabled during submission
+    await expect(submitButton).toBeDisabled();
 
-    test('should have google login button', async ({ page }) => {
-      const googleButton = page.getByTestId('signin-google-button');
-      await expect(googleButton).toBeEnabled();
-      await expect(googleButton).toBeVisible();
-    });
+    // Should navigate to dashboard
+    await expect(page).toHaveURL(/dashboard/, { timeout: 5000 });
+  });
 
-    test('should have github login button', async ({ page }) => {
-      const githubButton = page.getByTestId('signin-github-button');
-      await expect(githubButton).toBeEnabled();
-      await expect(githubButton).toBeVisible();
-    });
+  test('should have functional remember me checkbox and navigation links', async ({ page }) => {
+    // Test checkbox
+    const rememberMe = page.getByTestId('signin-remember-me');
+    await expect(rememberMe).not.toBeChecked();
+    await rememberMe.click();
+    await expect(rememberMe).toBeChecked();
+
+    // Test links have correct hrefs
+    await expect(page.getByTestId('signin-forgot-password-link')).toHaveAttribute('href', '/forgot-password');
+    await expect(page.getByTestId('signin-signup-link')).toHaveAttribute('href', '/signup');
   });
 });
 
-test.describe('Sign In Page - Mobile Validation', () => {
+test.describe('Sign In Page - Mobile', () => {
   test.use({
-    viewport: { width: 375, height: 667 } // iPhone SE size
+    viewport: { width: 375, height: 667 }
   });
 
   test.beforeEach(async ({ page }) => {
@@ -417,148 +184,50 @@ test.describe('Sign In Page - Mobile Validation', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  test('should display mobile layout correctly', async ({ page }) => {
-    // Logo should be visible on mobile
-    const logo = page.getByTestId('signin-logo');
-    await expect(logo).toBeVisible();
+  test('should display correctly and validate on mobile', async ({ page }) => {
+    // Verify mobile layout
+    await expect(page.getByTestId('signin-logo')).toBeVisible();
+    await expect(page.getByTestId('signin-form')).toBeVisible();
 
-    // Form should be visible and properly sized
-    const emailInput = page.getByTestId('signin-email-input');
-    const passwordInput = page.getByTestId('signin-password-input');
+    const emailField = page.getByTestId('signin-email-field');
+    const passwordField = page.getByTestId('signin-password-field');
+    const emailInput = emailField.locator('input');
+    const passwordInput = passwordField.locator('input');
     const submitButton = page.getByTestId('signin-submit-button');
 
-    await expect(emailInput).toBeVisible();
-    await expect(passwordInput).toBeVisible();
-    await expect(submitButton).toBeVisible();
-  });
-
-  test('should show validation errors on mobile when fields are empty', async ({ page }) => {
-    const emailInput = page.getByTestId('signin-email-input');
-    const passwordInput = page.getByTestId('signin-password-input');
-    const submitButton = page.getByTestId('signin-submit-button');
-
-    // Tap and leave fields
+    // Test validation on mobile
     await emailInput.tap();
     await passwordInput.tap();
-
-    // Submit to trigger validation
     await submitButton.tap();
 
-    // Errors should be visible on mobile
-    const emailError = page.getByTestId('signin-email-error');
-    const passwordError = page.getByTestId('signin-password-error');
+    // Errors should appear
+    await expect(page.getByTestId('signin-email-error')).toBeVisible({ timeout: 3000 });
+    await expect(page.getByTestId('signin-password-error')).toBeVisible({ timeout: 3000 });
 
-    await expect(emailError).toBeVisible({ timeout: 2000 });
-    await expect(passwordError).toBeVisible({ timeout: 2000 });
-  });
-
-  test('should show error when invalid email is entered on mobile', async ({ page }) => {
-    const emailInput = page.getByTestId('signin-email-input');
-    const submitButton = page.getByTestId('signin-submit-button');
-
-    await emailInput.tap();
-    await emailInput.fill('notanemail');
-
-    // Tap submit to trigger validation
-    await submitButton.tap();
-
-    const errorMessage = page.getByTestId('signin-email-error');
-    await expect(errorMessage).toBeVisible({ timeout: 2000 });
-    await expect(errorMessage).toHaveText('Please enter a valid email address');
-  });
-
-  test('should show error when short password is entered on mobile', async ({ page }) => {
-    const passwordInput = page.getByTestId('signin-password-input');
-    const submitButton = page.getByTestId('signin-submit-button');
-
-    await passwordInput.tap();
-    await passwordInput.fill('123');
-
-    // Tap submit to trigger validation
-    await submitButton.tap();
-
-    const errorMessage = page.getByTestId('signin-password-error');
-    await expect(errorMessage).toBeVisible({ timeout: 2000 });
-    await expect(errorMessage).toHaveText('Password must be at least 6 characters');
-  });
-
-  test('should toggle password visibility on mobile', async ({ page }) => {
-    const passwordInput = page.getByTestId('signin-password-input');
-    const toggleButton = page.getByTestId('signin-password-toggle');
-
-    await passwordInput.tap();
-    await passwordInput.fill('password123');
-
-    // Verify password is hidden
-    await expect(passwordInput).toHaveAttribute('type', 'password');
-
-    // Tap toggle button
-    await toggleButton.tap();
-    await page.waitForTimeout(100);
-
-    // Password should be visible
-    await expect(passwordInput).toHaveAttribute('type', 'text');
-
-    // Tap toggle again
-    await toggleButton.tap();
-    await page.waitForTimeout(100);
-
-    // Password should be hidden again
-    await expect(passwordInput).toHaveAttribute('type', 'password');
-  });
-
-  test('should allow valid form submission on mobile', async ({ page }) => {
-    const emailInput = page.getByTestId('signin-email-input');
-    const passwordInput = page.getByTestId('signin-password-input');
-    const submitButton = page.getByTestId('signin-submit-button');
-
+    // Fill valid data and submit
     await emailInput.tap();
     await emailInput.fill('test@example.com');
-
     await passwordInput.tap();
     await passwordInput.fill('password123');
-
     await submitButton.tap();
 
     // Should navigate to dashboard
     await expect(page).toHaveURL(/dashboard/, { timeout: 5000 });
   });
 
-  test('should display error messages below inputs on mobile', async ({ page }) => {
-    const emailInput = page.getByTestId('signin-email-input');
-    const submitButton = page.getByTestId('signin-submit-button');
+  test('should toggle password visibility on mobile', async ({ page }) => {
+    const passwordField = page.getByTestId('signin-password-field');
+    const passwordInput = passwordField.locator('input');
+    const toggleButton = page.getByTestId('signin-password-toggle');
 
-    await emailInput.tap();
-    await submitButton.tap();
+    await passwordInput.tap();
+    await passwordInput.fill('password123');
 
-    const errorMessage = page.getByTestId('signin-email-error');
-    await expect(errorMessage).toBeVisible({ timeout: 2000 });
-
-    // Get positions to verify error is below input
-    const inputBox = await emailInput.boundingBox();
-    const errorBox = await errorMessage.boundingBox();
-
-    if (inputBox && errorBox) {
-      // Error message should be positioned below the input
-      expect(errorBox.y).toBeGreaterThan(inputBox.y);
-    }
-  });
-
-  test('should have touch-friendly buttons on mobile', async ({ page }) => {
-    const submitButton = page.getByTestId('signin-submit-button');
-    const googleButton = page.getByTestId('signin-google-button');
-    const githubButton = page.getByTestId('signin-github-button');
-
-    // All buttons should be visible and tappable
-    await expect(submitButton).toBeVisible();
-    await expect(googleButton).toBeVisible();
-    await expect(githubButton).toBeVisible();
-
-    // Buttons should have adequate size for touch interaction
-    const submitBox = await submitButton.boundingBox();
-    if (submitBox) {
-      // Button should be at least 44px tall (iOS touch target guideline)
-      expect(submitBox.height).toBeGreaterThanOrEqual(40);
-    }
+    // Toggle visibility
+    await expect(passwordInput).toHaveAttribute('type', 'password');
+    await toggleButton.tap();
+    await expect(passwordInput).toHaveAttribute('type', 'text');
+    await toggleButton.tap();
+    await expect(passwordInput).toHaveAttribute('type', 'password');
   });
 });

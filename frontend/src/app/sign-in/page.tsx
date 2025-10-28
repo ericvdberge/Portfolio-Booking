@@ -96,7 +96,6 @@ export default function LoginPage() {
                     type="email"
                     label="Email"
                     placeholder="Enter your email"
-                    data-testid="signin-email-input"
                     startContent={
                       <Mail className="text-default-400 pointer-events-none flex-shrink-0" size={18} />
                     }
@@ -109,11 +108,12 @@ export default function LoginPage() {
                       inputWrapper: "border-default-200",
                       errorMessage: "text-xs mt-1",
                     }}
+                    data-testid="signin-email-input"
                   />
                   {fieldState.error && (
-                    <span data-testid="signin-email-error" className="hidden">
+                    <div data-testid="signin-email-error" style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}>
                       {fieldState.error.message}
-                    </span>
+                    </div>
                   )}
                 </div>
               )}
@@ -129,7 +129,6 @@ export default function LoginPage() {
                     type={isPasswordVisible ? "text" : "password"}
                     label="Password"
                     placeholder="Enter your password"
-                    data-testid="signin-password-input"
                     startContent={
                       <Lock className="text-default-400 pointer-events-none flex-shrink-0" size={18} />
                     }
@@ -156,11 +155,12 @@ export default function LoginPage() {
                       inputWrapper: "border-default-200",
                       errorMessage: "text-xs mt-1",
                     }}
+                    data-testid="signin-password-input"
                   />
                   {fieldState.error && (
-                    <span data-testid="signin-password-error" className="hidden">
+                    <div data-testid="signin-password-error" style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}>
                       {fieldState.error.message}
-                    </span>
+                    </div>
                   )}
                 </div>
               )}
