@@ -7,53 +7,48 @@ import { Button, Input } from '@heroui/react';
 import { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { z } from 'zod';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 // Zod validation schema
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address'),
+  password: z
+    .string()
+    .min(1, 'Password is required')
+    .min(6, 'Password must be at least 6 characters'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
-type ValidationErrors = Partial<Record<keyof LoginFormData, string>>;
 
 export default function LoginPage() {
   const router = useRouter();
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState<ValidationErrors>({});
-  const [isLoading, setIsLoading] = useState(false);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setError,
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    mode: 'onBlur', // Validate on blur
+    reValidateMode: 'onChange', // Re-validate on change after first submit
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
   const togglePasswordVisibility = () => setIsPasswordVisible(!isPasswordVisible);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Clear previous errors
-    setErrors({});
-
-    // Validate form data
-    const result = loginSchema.safeParse({ email, password });
-
-    if (!result.success) {
-      console.log('Validation result:', result);
-      // Extract and set validation errors
-      const validationErrors: ValidationErrors = {};
-      result.error.issues.forEach((issue) => {
-        const field = issue.path[0] as keyof LoginFormData;
-        validationErrors[field] = issue.message;
-      });
-      setErrors(validationErrors);
-      return;
-    }
-
-    // Form is valid, proceed with login
-    setIsLoading(true);
-
+  const onSubmit = async (data: LoginFormData) => {
     try {
       // TODO: Implement actual API login logic here
-      console.log('Login attempt:', result.data);
+      console.log('Login attempt:', data);
 
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -62,9 +57,10 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (error) {
       console.error('Login failed:', error);
-      setErrors({ email: 'Invalid credentials. Please try again.' });
-    } finally {
-      setIsLoading(false);
+      setError('email', {
+        type: 'manual',
+        message: 'Invalid credentials. Please try again.',
+      });
     }
   };
 
@@ -74,8 +70,8 @@ export default function LoginPage() {
       <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:px-20 xl:px-24">
         <div className="mx-auto w-full max-w-sm lg:w-96">
           {/* Logo */}
-          <div className="flex justify-center mb-8">
-            <Link href="/">
+          <div className="flex justify-center mb-12">
+            <Link href="/" data-testid="signin-logo-link">
               <Image
                 src="/icons/logo-horizontal.png"
                 alt="Portfolio Booking"
@@ -83,71 +79,81 @@ export default function LoginPage() {
                 height={50}
                 className="h-10 w-auto"
                 priority
+                data-testid="signin-logo"
               />
             </Link>
           </div>
 
-          {/* Title and Description */}
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold tracking-tight">
-              Welcome back
-            </h2>
-            <p className="mt-2 text-sm text-default-500">
-              Sign in to your account to continue
-            </p>
-          </div>
-
           {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <Input
-              type="email"
-              label="Email"
-              placeholder="Enter your email"
-              value={email}
-              onValueChange={setEmail}
-              startContent={
-                <Mail className="text-default-400 pointer-events-none flex-shrink-0" size={18} />
-              }
-              variant="bordered"
-              isRequired
-              isInvalid={!!errors.email}
-              errorMessage={errors.email}
-              classNames={{
-                input: "text-sm",
-                inputWrapper: "border-default-200",
-              }}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate data-testid="signin-form">
+            <Controller
+              name="email"
+              control={control}
+              render={({ field, fieldState }) => (
+                <div data-testid="signin-email-field">
+                  <Input
+                    {...field}
+                    type="email"
+                    label="Email"
+                    placeholder="Enter your email"
+                    startContent={
+                      <Mail className="text-default-400 pointer-events-none flex-shrink-0" size={18} />
+                    }
+                    variant="bordered"
+                    isInvalid={!!fieldState.error}
+                    errorMessage={fieldState.error?.message}
+                    validationBehavior="aria"
+                    classNames={{
+                      input: "text-sm",
+                      inputWrapper: "border-default-200",
+                      errorMessage: "text-xs mt-1",
+                    }}
+                    data-testid="signin-email-input"
+                  />
+                </div>
+              )}
             />
 
-            <Input
-              type={isPasswordVisible ? "text" : "password"}
-              label="Password"
-              placeholder="Enter your password"
-              value={password}
-              onValueChange={setPassword}
-              startContent={
-                <Lock className="text-default-400 pointer-events-none flex-shrink-0" size={18} />
-              }
-              endContent={
-                <button
-                  className="focus:outline-none"
-                  type="button"
-                  onClick={togglePasswordVisibility}
-                >
-                  {isPasswordVisible ? (
-                    <EyeOff className="text-default-400 pointer-events-none" size={18} />
-                  ) : (
-                    <Eye className="text-default-400 pointer-events-none" size={18} />
-                  )}
-                </button>
-              }
-              variant="bordered"
-              isRequired
-              isInvalid={!!errors.password}
-              errorMessage={errors.password}
-              classNames={{
-                input: "text-sm",
-                inputWrapper: "border-default-200",
-              }}
+            <Controller
+              name="password"
+              control={control}
+              render={({ field, fieldState }) => (
+                <div data-testid="signin-password-field">
+                  <Input
+                    {...field}
+                    type={isPasswordVisible ? "text" : "password"}
+                    label="Password"
+                    placeholder="Enter your password"
+                    startContent={
+                      <Lock className="text-default-400 pointer-events-none flex-shrink-0" size={18} />
+                    }
+                    endContent={
+                      <button
+                        className="focus:outline-none"
+                        type="button"
+                        onClick={togglePasswordVisibility}
+                        data-testid="signin-password-toggle"
+                      >
+                        {isPasswordVisible ? (
+                          <EyeOff className="text-default-400 pointer-events-none" size={18} />
+                        ) : (
+                          <Eye className="text-default-400 pointer-events-none" size={18} />
+                        )}
+                      </button>
+                    }
+                    variant="bordered"
+                    isInvalid={!!fieldState.error}
+                    errorMessage={fieldState.error?.message}
+                    validationBehavior="aria"
+                    classNames={{
+                      input: "text-sm",
+                      inputWrapper: "border-default-200",
+                      errorMessage: "text-xs mt-1",
+                    }}
+                    data-testid="signin-password-input"
+                  />
+                </div>
+              )}
             />
 
             <div className="flex items-center justify-between">
@@ -155,6 +161,7 @@ export default function LoginPage() {
                 <input
                   type="checkbox"
                   className="rounded border-default-300 text-primary focus:ring-primary"
+                  data-testid="signin-remember-me"
                 />
                 <span className="text-sm text-default-600">Remember me</span>
               </label>
@@ -162,6 +169,7 @@ export default function LoginPage() {
               <Link
                 href="/forgot-password"
                 className="text-sm font-medium text-primary hover:text-primary-600"
+                data-testid="signin-forgot-password-link"
               >
                 Forgot password?
               </Link>
@@ -172,10 +180,11 @@ export default function LoginPage() {
               color="primary"
               size="lg"
               className="w-full font-semibold"
-              isLoading={isLoading}
-              isDisabled={isLoading}
+              isLoading={isSubmitting}
+              isDisabled={isSubmitting}
+              data-testid="signin-submit-button"
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isSubmitting ? 'Signing in...' : 'Sign in'}
             </Button>
           </form>
 
@@ -198,6 +207,7 @@ export default function LoginPage() {
             <Button
               variant="bordered"
               className="w-full"
+              data-testid="signin-google-button"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24">
                 <path
@@ -223,6 +233,7 @@ export default function LoginPage() {
             <Button
               variant="bordered"
               className="w-full"
+              data-testid="signin-github-button"
             >
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
@@ -237,6 +248,7 @@ export default function LoginPage() {
             <Link
               href="/signup"
               className="font-medium text-primary hover:text-primary-600"
+              data-testid="signin-signup-link"
             >
               Sign up
             </Link>
