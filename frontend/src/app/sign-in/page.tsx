@@ -111,12 +111,8 @@ export default function LoginPage() {
                     inputProps={{
                       'data-testid': 'signin-email-input',
                     }}
+                    data-testid="signin-email-input-wrapper"
                   />
-                  {fieldState.error && (
-                    <div data-testid="signin-email-error" className="sr-only" aria-live="polite">
-                      {fieldState.error.message}
-                    </div>
-                  )}
                 </div>
               )}
             />
@@ -160,12 +156,8 @@ export default function LoginPage() {
                     inputProps={{
                       'data-testid': 'signin-password-input',
                     }}
+                    data-testid="signin-password-input-wrapper"
                   />
-                  {fieldState.error && (
-                    <div data-testid="signin-password-error" className="sr-only" aria-live="polite">
-                      {fieldState.error.message}
-                    </div>
-                  )}
                 </div>
               )}
             />
