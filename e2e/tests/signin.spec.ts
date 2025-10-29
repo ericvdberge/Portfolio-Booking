@@ -41,8 +41,8 @@ test.describe('Sign In Page', () => {
     const emailField = page.getByTestId('signin-email-field');
     const passwordField = page.getByTestId('signin-password-field');
 
-    await expect(emailField.locator('text=Email is required')).toBeVisible({ timeout: 10000 });
-    await expect(passwordField.locator('text=Password is required')).toBeVisible({ timeout: 10000 });
+    await expect(emailField.getByText('Email is required')).toBeVisible({ timeout: 10000 });
+    await expect(passwordField.getByText('Password is required')).toBeVisible({ timeout: 10000 });
 
     // Should still be on sign-in page
     await expect(page).toHaveURL(/sign-in/);
@@ -50,48 +50,47 @@ test.describe('Sign In Page', () => {
 
   test('should validate email formats and show appropriate errors', async ({ page }) => {
     const emailField = page.getByTestId('signin-email-field');
-    const emailInput = emailField.locator('input');
+    const emailInput = page.getByRole('textbox', { name: /email/i });
     const submitButton = page.getByTestId('signin-submit-button');
 
     // Test invalid format (no @)
     await emailInput.fill('notanemail');
     await submitButton.click();
-    await expect(emailField.locator('text=Please enter a valid email address')).toBeVisible({ timeout: 10000 });
+    await expect(emailField.getByText('Please enter a valid email address')).toBeVisible({ timeout: 10000 });
 
     // Test invalid format (@ but no domain)
     await emailInput.fill('test@');
     await submitButton.click();
-    await expect(emailField.locator('text=Please enter a valid email address')).toBeVisible({ timeout: 10000 });
+    await expect(emailField.getByText('Please enter a valid email address')).toBeVisible({ timeout: 10000 });
 
     // Valid email should clear error
     await emailInput.fill('test@example.com');
     await page.waitForTimeout(1000); // Wait for onChange validation
-    await expect(emailField.locator('text=Please enter a valid email address')).not.toBeVisible();
+    await expect(emailField.getByText('Please enter a valid email address')).not.toBeVisible();
   });
 
   test('should validate password length requirements', async ({ page }) => {
     const passwordField = page.getByTestId('signin-password-field');
-    const passwordInput = passwordField.locator('input');
+    const passwordInput = page.getByLabel(/password/i);
     const submitButton = page.getByTestId('signin-submit-button');
 
     // Empty password
     await submitButton.click();
-    await expect(passwordField.locator('text=Password is required')).toBeVisible({ timeout: 10000 });
+    await expect(passwordField.getByText('Password is required')).toBeVisible({ timeout: 10000 });
 
     // Too short password
     await passwordInput.fill('12345');
     await submitButton.click();
-    await expect(passwordField.locator('text=Password must be at least 6 characters')).toBeVisible({ timeout: 10000 });
+    await expect(passwordField.getByText('Password must be at least 6 characters')).toBeVisible({ timeout: 10000 });
 
     // Valid password clears error
     await passwordInput.fill('password123');
     await page.waitForTimeout(1000);
-    await expect(passwordField.locator('text=Password must be at least 6 characters')).not.toBeVisible();
+    await expect(passwordField.getByText('Password must be at least 6 characters')).not.toBeVisible();
   });
 
   test('should toggle password visibility', async ({ page }) => {
-    const passwordField = page.getByTestId('signin-password-field');
-    const passwordInput = passwordField.locator('input');
+    const passwordInput = page.getByLabel(/password/i);
     const toggleButton = page.getByTestId('signin-password-toggle');
 
     await passwordInput.fill('password123');
@@ -111,8 +110,8 @@ test.describe('Sign In Page', () => {
   test('should handle multiple field errors independently', async ({ page }) => {
     const emailField = page.getByTestId('signin-email-field');
     const passwordField = page.getByTestId('signin-password-field');
-    const emailInput = emailField.locator('input');
-    const passwordInput = passwordField.locator('input');
+    const emailInput = page.getByRole('textbox', { name: /email/i });
+    const passwordInput = page.getByLabel(/password/i);
     const submitButton = page.getByTestId('signin-submit-button');
 
     // Fill both with invalid data
@@ -121,31 +120,29 @@ test.describe('Sign In Page', () => {
     await submitButton.click();
 
     // Both errors should show
-    await expect(emailField.locator('text=Please enter a valid email address')).toBeVisible({ timeout: 10000 });
-    await expect(passwordField.locator('text=Password must be at least 6 characters')).toBeVisible({ timeout: 10000 });
+    await expect(emailField.getByText('Please enter a valid email address')).toBeVisible({ timeout: 10000 });
+    await expect(passwordField.getByText('Password must be at least 6 characters')).toBeVisible({ timeout: 10000 });
 
     // Fix email only
     await emailInput.fill('test@example.com');
     await page.waitForTimeout(1000);
 
     // Email error clears, password error remains
-    await expect(emailField.locator('text=Please enter a valid email address')).not.toBeVisible();
-    await expect(passwordField.locator('text=Password must be at least 6 characters')).toBeVisible({ timeout: 10000 });
+    await expect(emailField.getByText('Please enter a valid email address')).not.toBeVisible();
+    await expect(passwordField.getByText('Password must be at least 6 characters')).toBeVisible({ timeout: 10000 });
 
     // Fix password
     await passwordInput.fill('password123');
     await page.waitForTimeout(1000);
 
     // Both errors cleared
-    await expect(emailField.locator('text=Please enter a valid email address')).not.toBeVisible();
-    await expect(passwordField.locator('text=Password must be at least 6 characters')).not.toBeVisible();
+    await expect(emailField.getByText('Please enter a valid email address')).not.toBeVisible();
+    await expect(passwordField.getByText('Password must be at least 6 characters')).not.toBeVisible();
   });
 
   test('should submit form with valid credentials', async ({ page }) => {
-    const emailField = page.getByTestId('signin-email-field');
-    const passwordField = page.getByTestId('signin-password-field');
-    const emailInput = emailField.locator('input');
-    const passwordInput = passwordField.locator('input');
+    const emailInput = page.getByRole('textbox', { name: /email/i });
+    const passwordInput = page.getByLabel(/password/i);
     const submitButton = page.getByTestId('signin-submit-button');
 
     // Fill with valid data
@@ -185,14 +182,14 @@ test.describe('Sign In Page - Mobile', () => {
   test('should work correctly on mobile', async ({ page }) => {
     const emailField = page.getByTestId('signin-email-field');
     const passwordField = page.getByTestId('signin-password-field');
-    const emailInput = emailField.locator('input');
-    const passwordInput = passwordField.locator('input');
+    const emailInput = page.getByRole('textbox', { name: /email/i });
+    const passwordInput = page.getByLabel(/password/i);
     const submitButton = page.getByTestId('signin-submit-button');
 
     // Test validation
     await submitButton.tap();
-    await expect(emailField.locator('text=Email is required')).toBeVisible({ timeout: 10000 });
-    await expect(passwordField.locator('text=Password is required')).toBeVisible({ timeout: 10000 });
+    await expect(emailField.getByText('Email is required')).toBeVisible({ timeout: 10000 });
+    await expect(passwordField.getByText('Password is required')).toBeVisible({ timeout: 10000 });
 
     // Fill and submit
     await emailInput.tap();
@@ -206,8 +203,7 @@ test.describe('Sign In Page - Mobile', () => {
   });
 
   test('should toggle password on mobile', async ({ page }) => {
-    const passwordField = page.getByTestId('signin-password-field');
-    const passwordInput = passwordField.locator('input');
+    const passwordInput = page.getByLabel(/password/i);
     const toggleButton = page.getByTestId('signin-password-toggle');
 
     await passwordInput.tap();
