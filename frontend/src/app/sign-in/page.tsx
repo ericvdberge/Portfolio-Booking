@@ -108,10 +108,12 @@ export default function LoginPage() {
                       inputWrapper: "border-default-200",
                       errorMessage: "text-xs mt-1",
                     }}
-                    data-testid="signin-email-input"
+                    inputProps={{
+                      'data-testid': 'signin-email-input',
+                    }}
                   />
                   {fieldState.error && (
-                    <div data-testid="signin-email-error" style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}>
+                    <div data-testid="signin-email-error" className="sr-only" aria-live="polite">
                       {fieldState.error.message}
                     </div>
                   )}
@@ -155,10 +157,12 @@ export default function LoginPage() {
                       inputWrapper: "border-default-200",
                       errorMessage: "text-xs mt-1",
                     }}
-                    data-testid="signin-password-input"
+                    inputProps={{
+                      'data-testid': 'signin-password-input',
+                    }}
                   />
                   {fieldState.error && (
-                    <div data-testid="signin-password-error" style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}>
+                    <div data-testid="signin-password-error" className="sr-only" aria-live="polite">
                       {fieldState.error.message}
                     </div>
                   )}
