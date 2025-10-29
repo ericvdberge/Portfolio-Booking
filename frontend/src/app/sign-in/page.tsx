@@ -108,10 +108,7 @@ export default function LoginPage() {
                       inputWrapper: "border-default-200",
                       errorMessage: "text-xs mt-1",
                     }}
-                    inputProps={{
-                      'data-testid': 'signin-email-input',
-                    }}
-                    data-testid="signin-email-input-wrapper"
+                    data-testid="signin-email-input"
                   />
                 </div>
               )}
@@ -153,10 +150,7 @@ export default function LoginPage() {
                       inputWrapper: "border-default-200",
                       errorMessage: "text-xs mt-1",
                     }}
-                    inputProps={{
-                      'data-testid': 'signin-password-input',
-                    }}
-                    data-testid="signin-password-input-wrapper"
+                    data-testid="signin-password-input"
                   />
                 </div>
               )}

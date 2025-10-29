@@ -49,9 +49,9 @@ test.describe('Sign In Page', () => {
   });
 
   test('should validate email formats and show appropriate errors', async ({ page }) => {
-    const emailInput = page.getByTestId('signin-email-input');
-    const submitButton = page.getByTestId('signin-submit-button');
     const emailField = page.getByTestId('signin-email-field');
+    const emailInput = emailField.locator('input');
+    const submitButton = page.getByTestId('signin-submit-button');
 
     // Test invalid format (no @)
     await emailInput.fill('notanemail');
@@ -70,9 +70,9 @@ test.describe('Sign In Page', () => {
   });
 
   test('should validate password length requirements', async ({ page }) => {
-    const passwordInput = page.getByTestId('signin-password-input');
-    const submitButton = page.getByTestId('signin-submit-button');
     const passwordField = page.getByTestId('signin-password-field');
+    const passwordInput = passwordField.locator('input');
+    const submitButton = page.getByTestId('signin-submit-button');
 
     // Empty password
     await submitButton.click();
@@ -90,7 +90,8 @@ test.describe('Sign In Page', () => {
   });
 
   test('should toggle password visibility', async ({ page }) => {
-    const passwordInput = page.getByTestId('signin-password-input');
+    const passwordField = page.getByTestId('signin-password-field');
+    const passwordInput = passwordField.locator('input');
     const toggleButton = page.getByTestId('signin-password-toggle');
 
     await passwordInput.fill('password123');
@@ -108,11 +109,11 @@ test.describe('Sign In Page', () => {
   });
 
   test('should handle multiple field errors independently', async ({ page }) => {
-    const emailInput = page.getByTestId('signin-email-input');
-    const passwordInput = page.getByTestId('signin-password-input');
-    const submitButton = page.getByTestId('signin-submit-button');
     const emailField = page.getByTestId('signin-email-field');
     const passwordField = page.getByTestId('signin-password-field');
+    const emailInput = emailField.locator('input');
+    const passwordInput = passwordField.locator('input');
+    const submitButton = page.getByTestId('signin-submit-button');
 
     // Fill both with invalid data
     await emailInput.fill('notanemail');
@@ -141,8 +142,10 @@ test.describe('Sign In Page', () => {
   });
 
   test('should submit form with valid credentials', async ({ page }) => {
-    const emailInput = page.getByTestId('signin-email-input');
-    const passwordInput = page.getByTestId('signin-password-input');
+    const emailField = page.getByTestId('signin-email-field');
+    const passwordField = page.getByTestId('signin-password-field');
+    const emailInput = emailField.locator('input');
+    const passwordInput = passwordField.locator('input');
     const submitButton = page.getByTestId('signin-submit-button');
 
     // Fill with valid data
@@ -180,11 +183,11 @@ test.describe('Sign In Page - Mobile', () => {
   });
 
   test('should work correctly on mobile', async ({ page }) => {
-    const emailInput = page.getByTestId('signin-email-input');
-    const passwordInput = page.getByTestId('signin-password-input');
-    const submitButton = page.getByTestId('signin-submit-button');
     const emailField = page.getByTestId('signin-email-field');
     const passwordField = page.getByTestId('signin-password-field');
+    const emailInput = emailField.locator('input');
+    const passwordInput = passwordField.locator('input');
+    const submitButton = page.getByTestId('signin-submit-button');
 
     // Test validation
     await submitButton.tap();
@@ -203,7 +206,8 @@ test.describe('Sign In Page - Mobile', () => {
   });
 
   test('should toggle password on mobile', async ({ page }) => {
-    const passwordInput = page.getByTestId('signin-password-input');
+    const passwordField = page.getByTestId('signin-password-field');
+    const passwordInput = passwordField.locator('input');
     const toggleButton = page.getByTestId('signin-password-toggle');
 
     await passwordInput.tap();
