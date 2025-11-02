@@ -24,7 +24,7 @@ export function DashboardHeader() {
 
   const handleLogout = () => {
     // Navigate to login page
-    router.push('/login');
+    router.push('/sign-in');
   };
 
   return (
