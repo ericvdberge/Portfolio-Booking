@@ -3,7 +3,9 @@ import { test, expect } from '@playwright/test';
 test.describe('Sign In Page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/sign-in');
-    await page.waitForLoadState('networkidle', { timeout: 10000 });
+    await page.waitForLoadState('domcontentloaded');
+    // Wait for the signin form to be visible instead of networkidle
+    await page.getByTestId('signin-form').waitFor({ timeout: 15000 });
   });
 
   test('should display all page elements correctly', async ({ page }) => {
@@ -177,7 +179,9 @@ test.describe('Sign In Page - Mobile', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/sign-in');
-    await page.waitForLoadState('networkidle', { timeout: 10000 });
+    await page.waitForLoadState('domcontentloaded');
+    // Wait for the signin form to be visible instead of networkidle
+    await page.getByTestId('signin-form').waitFor({ timeout: 15000 });
   });
 
   test('should work correctly on mobile', async ({ page }) => {
