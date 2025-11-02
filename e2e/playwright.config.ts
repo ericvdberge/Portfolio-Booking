@@ -58,7 +58,10 @@ export default defineConfig({
     /* Test against mobile viewports. */
     {
       name: 'mobile',
-      use: { ...devices['iPhone 13'] },
+      use: { 
+        ...devices['iPhone 13'],
+        hasTouch: true,
+      },
     },
   ],
 

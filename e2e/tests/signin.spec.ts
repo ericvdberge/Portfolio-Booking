@@ -171,7 +171,8 @@ test.describe('Sign In Page', () => {
 
 test.describe('Sign In Page - Mobile', () => {
   test.use({
-    viewport: { width: 375, height: 667 }
+    viewport: { width: 375, height: 667 },
+    hasTouch: true
   });
 
   test.beforeEach(async ({ page }) => {
