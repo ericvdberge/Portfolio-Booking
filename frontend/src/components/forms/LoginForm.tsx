@@ -8,17 +8,18 @@ import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { z } from 'zod';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { LoginFormErrors } from '../../types/form-errors';
 
 // Zod validation schema
 const loginSchema = z.object({
   email: z
     .string()
-    .min(1, 'Email is required')
-    .email('Please enter a valid email address'),
+    .min(1, LoginFormErrors.EMAIL_REQUIRED)
+    .email(LoginFormErrors.EMAIL_INVALID),
   password: z
     .string()
-    .min(1, 'Password is required')
-    .min(6, 'Password must be at least 6 characters'),
+    .min(1, LoginFormErrors.PASSWORD_REQUIRED)
+    .min(6, LoginFormErrors.PASSWORD_TOO_SHORT),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;

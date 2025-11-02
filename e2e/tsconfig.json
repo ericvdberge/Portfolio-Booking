@@ -9,7 +9,11 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "types": ["node", "@playwright/test"]
+    "types": ["node", "@playwright/test"],
+    "baseUrl": ".",
+    "paths": {
+      "@frontend/*": ["../frontend/src/*"]
+    }
   },
   "include": ["tests/**/*", "playwright.config.ts"],
   "exclude": ["node_modules", "test-results", "playwright-report"]
