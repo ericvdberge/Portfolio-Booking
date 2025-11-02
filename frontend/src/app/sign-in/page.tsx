@@ -13,7 +13,7 @@ export default function LoginPage() {
       <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:px-20 xl:px-24">
         <div className="mx-auto w-full max-w-sm lg:w-96">
           {/* Logo */}
-          <div className="flex justify-center mb-12">
+          <div className="flex justify-center mb-16">
             <Link href="/" data-testid="signin-logo-link">
               <Image
                 src="/icons/logo-horizontal.png"
@@ -25,6 +25,13 @@ export default function LoginPage() {
                 data-testid="signin-logo"
               />
             </Link>
+          </div>
+
+          {/* Sign In Header */}
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Sign in
+            </h1>
           </div>
 
           {/* Login Form */}
