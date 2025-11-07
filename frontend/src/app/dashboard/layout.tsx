@@ -10,7 +10,8 @@ import {
   Users,
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  X
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button, Tooltip, Divider } from '@heroui/react';
@@ -23,6 +24,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const t = useTranslations('dashboard');
   const tNav = useTranslations('dashboard.navigation');
 
@@ -37,35 +39,60 @@ export default function DashboardLayout({
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* Dashboard Header */}
-      <DashboardHeader />
+      <DashboardHeader onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} />
 
       <div className="flex flex-1 overflow-hidden">
+        {/* Mobile Overlay */}
+        {mobileMenuOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
+
         {/* Sidebar */}
         <aside
           className={`${
             collapsed ? 'w-16' : 'w-64'
-          } flex flex-col border-r border-divider bg-background/95 backdrop-blur transition-all duration-300`}
+          } ${
+            mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+          } md:translate-x-0 fixed md:static inset-y-0 left-0 z-50 flex flex-col border-r border-divider bg-background backdrop-blur transition-transform duration-300`}
         >
           {/* Sidebar Header */}
           <div className="flex h-14 items-center justify-between px-4 border-b border-divider">
             {!collapsed && (
               <h1 className="text-lg font-semibold">{t('adminPanel')}</h1>
             )}
-            <Tooltip content={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+            <div className="flex items-center gap-1">
+              {/* Close button for mobile */}
               <Button
                 isIconOnly
                 variant="light"
                 size="sm"
-                onPress={() => setCollapsed(!collapsed)}
-                aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                className="md:hidden"
+                onPress={() => setMobileMenuOpen(false)}
+                aria-label="Close menu"
               >
-                {collapsed ? (
-                  <ChevronRight className="h-4 w-4" />
-                ) : (
-                  <ChevronLeft className="h-4 w-4" />
-                )}
+                <X className="h-4 w-4" />
               </Button>
-            </Tooltip>
+              {/* Collapse/Expand button for desktop */}
+              <Tooltip content={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+                <Button
+                  isIconOnly
+                  variant="light"
+                  size="sm"
+                  className="hidden md:flex"
+                  onPress={() => setCollapsed(!collapsed)}
+                  aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                >
+                  {collapsed ? (
+                    <ChevronRight className="h-4 w-4" />
+                  ) : (
+                    <ChevronLeft className="h-4 w-4" />
+                  )}
+                </Button>
+              </Tooltip>
+            </div>
           </div>
 
           {/* Navigation */}
@@ -79,6 +106,7 @@ export default function DashboardLayout({
                   key={item.name}
                   href={item.href}
                   className="w-full"
+                  onClick={() => setMobileMenuOpen(false)}
                 >
                   <Button
                     fullWidth={!collapsed}
@@ -106,7 +134,7 @@ export default function DashboardLayout({
           {/* Sidebar Footer */}
           <div className="p-2">
             <Divider className="mb-2" />
-            <Link href="/" className="w-full block">
+            <Link href="/" className="w-full block" onClick={() => setMobileMenuOpen(false)}>
               <Button
                 fullWidth={!collapsed}
                 isIconOnly={collapsed}
@@ -123,7 +151,7 @@ export default function DashboardLayout({
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto p-6 max-w-[1000px]">
+          <div className="mx-auto p-4 sm:p-6 max-w-[1000px]">
             {children}
           </div>
         </main>

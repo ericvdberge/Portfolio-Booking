@@ -1,2 +1,5 @@
 **/.claude/settings.local.json
 .vscode/**
+
+# NPM lock file (using pnpm instead)
+**/package-lock.json

@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { Search, Bell, User as UserIcon, LogOut } from 'lucide-react';
+import { Search, Bell, User as UserIcon, LogOut, Menu } from 'lucide-react';
 import {
   Input,
   Button,
@@ -17,7 +17,11 @@ import { Header } from './Header';
 import { BrandLogo } from './BrandLogo';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
-export function DashboardHeader() {
+interface DashboardHeaderProps {
+  onMenuClick?: () => void;
+}
+
+export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const t = useTranslations('dashboard.header');
   const nav = useTranslations('navigation');
   const router = useRouter();
@@ -30,6 +34,18 @@ export function DashboardHeader() {
   return (
     <Header variant="dashboard">
       <Header.Container alignContent>
+        {/* Mobile Menu Button */}
+        <Button
+          isIconOnly
+          variant="light"
+          size="sm"
+          className="md:hidden mr-2"
+          onPress={onMenuClick}
+          aria-label="Toggle menu"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+
         {/* Logo */}
         <Header.Logo className="mr-4">
           <BrandLogo />
