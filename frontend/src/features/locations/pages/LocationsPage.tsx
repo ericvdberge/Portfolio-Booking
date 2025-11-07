@@ -44,6 +44,13 @@ export default function LocationsPage() {
 
   const handleFilterClick = (type: LocationType | null) => {
     setSelectedLocationType(type);
+
+    // Update URL query parameter
+    if (type === null) {
+      router.push('/locations');
+    } else {
+      router.push(`/locations?type=${type}`);
+    }
   };
 
   return (
