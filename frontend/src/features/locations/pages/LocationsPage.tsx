@@ -6,16 +6,15 @@ import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Chip } from '@heroui/react';
 import { useState, useEffect } from 'react';
+import { parseLocationTypeFromQuery } from '@/utils/locationTypeUtils';
 
 export default function LocationsPage() {
   const searchParams = useSearchParams();
   const typeParam = searchParams.get('type');
 
-  // Initialize state from URL query param
+  // Initialize state from URL query param using automatic enum conversion
   const getInitialType = (): LocationType | null => {
-    if (typeParam === '1') return LocationType.Hotel;
-    if (typeParam === '2') return LocationType.BAndB;
-    return null;
+    return parseLocationTypeFromQuery(typeParam);
   };
 
   const [selectedLocationType, setSelectedLocationType] = useState<LocationType | null>(getInitialType());
