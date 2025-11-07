@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Chip } from '@heroui/react';
 import { useState, useEffect } from 'react';
-import { parseLocationTypeFromQuery, buildLocationUrl } from '@/utils/locationTypeUtils';
+import { parseLocationTypeFromQuery, buildLocationUrl } from '@/features/locations/utils/locationTypeUtils';
 
 export default function LocationsPage() {
   const searchParams = useSearchParams();

@@ -5,7 +5,7 @@ import { Card, CardBody, Chip } from '@heroui/react';
 import { Hotel, Home, MapPin, ArrowRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { LocationType } from '@/api/client';
-import { buildLocationUrl } from '@/utils/locationTypeUtils';
+import { buildLocationUrl } from '@/features/locations/utils/locationTypeUtils';
 
 interface CategoryCardProps {
   icon: React.ReactNode;
