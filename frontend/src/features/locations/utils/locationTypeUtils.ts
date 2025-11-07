@@ -23,7 +23,7 @@ export function parseLocationTypeFromQuery(value: string | null): LocationType |
  * @param type - The LocationType to filter by, or null for all locations
  * @returns The URL path with query parameter if type is specified
  */
-export function buildLocationUrl(type: LocationType | null): string {
+export function buildLocationTypeUrl(type: LocationType | null): string {
   return type === null ? '/locations' : `/locations?type=${type}`;
 }
 
