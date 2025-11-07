@@ -84,7 +84,7 @@ export default function LoginForm() {
               errorMessage={fieldState.error?.message}
               validationBehavior="aria"
               classNames={{
-                input: "text-sm",
+                input: "text-base",
                 inputWrapper: "border-default-200",
                 errorMessage: "text-xs mt-1",
               }}
@@ -126,7 +126,7 @@ export default function LoginForm() {
               errorMessage={fieldState.error?.message}
               validationBehavior="aria"
               classNames={{
-                input: "text-sm",
+                input: "text-base",
                 inputWrapper: "border-default-200",
                 errorMessage: "text-xs mt-1",
               }}
