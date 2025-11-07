@@ -5,6 +5,7 @@ import { Card, CardBody, Chip } from '@heroui/react';
 import { Hotel, Home, MapPin, ArrowRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { LocationType } from '@/api/client';
+import { buildLocationTypeUrl } from '@/features/locations/utils/locationTypeUtils';
 
 interface CategoryCardProps {
   icon: React.ReactNode;
@@ -57,7 +58,7 @@ export function CategorySection() {
       title: t('hotel.title'),
       description: t('hotel.description'),
       count: 15,
-      href: `/locations?type=${LocationType.Hotel}`,
+      href: buildLocationTypeUrl(LocationType.Hotel),
       color: 'primary' as const,
     },
     {
@@ -65,7 +66,7 @@ export function CategorySection() {
       title: t('bnb.title'),
       description: t('bnb.description'),
       count: 8,
-      href: `/locations?type=${LocationType.BAndB}`,
+      href: buildLocationTypeUrl(LocationType.BAndB),
       color: 'secondary' as const,
     },
     {
@@ -73,7 +74,7 @@ export function CategorySection() {
       title: t('all.title'),
       description: t('all.description'),
       count: 25,
-      href: '/locations',
+      href: buildLocationTypeUrl(null),
       color: 'success' as const,
     },
   ];
