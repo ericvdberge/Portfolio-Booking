@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Chip } from '@heroui/react';
 import { useState, useEffect } from 'react';
-import { parseLocationTypeFromQuery } from '@/utils/locationTypeUtils';
+import { parseLocationTypeFromQuery, buildLocationUrl } from '@/utils/locationTypeUtils';
 
 export default function LocationsPage() {
   const searchParams = useSearchParams();
@@ -44,13 +44,7 @@ export default function LocationsPage() {
 
   const handleFilterClick = (type: LocationType | null) => {
     setSelectedLocationType(type);
-
-    // Update URL query parameter
-    if (type === null) {
-      router.push('/locations');
-    } else {
-      router.push(`/locations?type=${type}`);
-    }
+    router.push(buildLocationUrl(type));
   };
 
   return (

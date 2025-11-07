@@ -19,6 +19,15 @@ export function parseLocationTypeFromQuery(value: string | null): LocationType |
 }
 
 /**
+ * Builds a location page URL with optional type filter
+ * @param type - The LocationType to filter by, or null for all locations
+ * @returns The URL path with query parameter if type is specified
+ */
+export function buildLocationUrl(type: LocationType | null): string {
+  return type === null ? '/locations' : `/locations?type=${type}`;
+}
+
+/**
  * Checks if a number is a valid LocationType enum value
  * @param value - The number to check
  * @returns true if valid, false otherwise
