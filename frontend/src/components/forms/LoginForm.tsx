@@ -2,13 +2,20 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Button, Input } from '@heroui/react';
+import { Button, Input, Select, SelectItem } from '@heroui/react';
 import { useState } from 'react';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Building2 } from 'lucide-react';
 import { z } from 'zod';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoginFormErrors } from '../../types/form-errors';
+import { useOrganization } from '@/contexts/OrganizationContext';
+
+// Demo organizations for testing
+const DEMO_ORGANIZATIONS = [
+  { id: 'org-acme-corp', name: 'Acme Corporation' },
+  { id: 'org-global-ventures', name: 'Global Ventures' },
+];
 
 // Zod validation schema
 const loginSchema = z.object({
@@ -20,12 +27,16 @@ const loginSchema = z.object({
     .string()
     .min(1, LoginFormErrors.PASSWORD_REQUIRED)
     .min(6, LoginFormErrors.PASSWORD_TOO_SHORT),
+  organizationId: z
+    .string()
+    .min(1, 'Please select an organization'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginForm() {
   const router = useRouter();
+  const { login } = useOrganization();
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const {
@@ -40,6 +51,7 @@ export default function LoginForm() {
     defaultValues: {
       email: '',
       password: '',
+      organizationId: '',
     },
   });
 
@@ -52,6 +64,13 @@ export default function LoginForm() {
 
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Find the organization name
+      const organization = DEMO_ORGANIZATIONS.find(org => org.id === data.organizationId);
+      const organizationName = organization?.name || 'Unknown Organization';
+
+      // Store user and organization in context
+      login(data.email, data.organizationId, organizationName);
 
       // Navigate to dashboard on successful login
       router.push('/dashboard');
@@ -132,6 +151,37 @@ export default function LoginForm() {
               }}
               data-testid="signin-password-input"
             />
+          </div>
+        )}
+      />
+
+      <Controller
+        name="organizationId"
+        control={control}
+        render={({ field, fieldState }) => (
+          <div data-testid="signin-organization-field">
+            <Select
+              {...field}
+              label="Organization"
+              placeholder="Select your organization"
+              variant="bordered"
+              isInvalid={!!fieldState.error}
+              errorMessage={fieldState.error?.message}
+              classNames={{
+                trigger: "border-default-200",
+                errorMessage: "text-xs mt-1",
+              }}
+              startContent={
+                <Building2 className="text-default-400 pointer-events-none flex-shrink-0" size={18} />
+              }
+              data-testid="signin-organization-select"
+            >
+              {DEMO_ORGANIZATIONS.map((org) => (
+                <SelectItem key={org.id} value={org.id}>
+                  {org.name}
+                </SelectItem>
+              ))}
+            </Select>
           </div>
         )}
       />
