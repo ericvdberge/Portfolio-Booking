@@ -177,7 +177,7 @@ export default function LoginForm() {
               data-testid="signin-organization-select"
             >
               {DEMO_ORGANIZATIONS.map((org) => (
-                <SelectItem key={org.id} value={org.id}>
+                <SelectItem key={org.id}>
                   {org.name}
                 </SelectItem>
               ))}
