@@ -136,7 +136,8 @@ public class AdvanceNoticePolicyTests
             description: "A test hotel",
             capacity: 10,
             openTime: TimeSpan.FromHours(8),
-            closeTime: TimeSpan.FromHours(20)
+            closeTime: TimeSpan.FromHours(20),
+            organizationId: "test-org"
         );
 
         // Set LocationType using reflection for consistency

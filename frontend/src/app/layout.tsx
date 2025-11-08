@@ -4,6 +4,7 @@ import { QueryProvider } from "@/providers/query-provider";
 import { LocaleProvider } from '@/providers/locale-provider';
 import { PublicEnvScript } from "next-runtime-env";
 import { HeroUIProvider } from "@/providers/heroui-provider";
+import { OrganizationProvider } from "@/contexts/OrganizationContext";
 
 export const metadata: Metadata = {
   title: "Portfolio Booking System",
@@ -56,9 +57,11 @@ export default async function RootLayout({
       >
         <HeroUIProvider>
           <LocaleProvider initialMessages={initialMessages}>
-            <QueryProvider>
-              {children}
-            </QueryProvider>
+            <OrganizationProvider>
+              <QueryProvider>
+                {children}
+              </QueryProvider>
+            </OrganizationProvider>
           </LocaleProvider>
         </HeroUIProvider>
       </body>

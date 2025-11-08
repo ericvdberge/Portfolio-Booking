@@ -119,7 +119,8 @@ public class GetLocationByIdTests
             description: "A wonderful test location",
             capacity: 75,
             openTime: TimeSpan.FromHours(9),
-            closeTime: TimeSpan.FromHours(21)
+            closeTime: TimeSpan.FromHours(21),
+            organizationId: "test-org"
         );
 
         // Use reflection to set the Id since it's private set
@@ -177,7 +178,8 @@ public class GetLocationByIdTests
             description: $"Description for {name}",
             capacity: 100,
             openTime: TimeSpan.FromHours(8),
-            closeTime: TimeSpan.FromHours(20)
+            closeTime: TimeSpan.FromHours(20),
+            organizationId: "test-org"
         );
 
         // Set Id using reflection

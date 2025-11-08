@@ -273,7 +273,8 @@ public class LocationRepositoryIntegrationTests : IDisposable
             description: $"Description for {name}",
             capacity: 100,
             openTime: TimeSpan.FromHours(8),
-            closeTime: TimeSpan.FromHours(20)
+            closeTime: TimeSpan.FromHours(20),
+            organizationId: "test-org"
         );
 
         // Set LocationType using reflection for Hotel default policies

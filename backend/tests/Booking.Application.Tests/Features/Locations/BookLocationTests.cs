@@ -229,7 +229,8 @@ public class BookLocationTests
             description: "A test hotel",
             capacity: 100,
             openTime: TimeSpan.FromHours(8),
-            closeTime: TimeSpan.FromHours(20)
+            closeTime: TimeSpan.FromHours(20),
+            organizationId: "test-org"
         );
 
         // Set Id using reflection
