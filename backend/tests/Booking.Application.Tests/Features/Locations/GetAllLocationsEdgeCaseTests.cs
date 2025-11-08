@@ -88,7 +88,8 @@ public class GetAllLocationsEdgeCaseTests
             description: "Complete description with all fields",
             capacity: 250,
             openTime: TimeSpan.FromHours(7),
-            closeTime: TimeSpan.FromHours(23)
+            closeTime: TimeSpan.FromHours(23),
+            organizationId: "test-org"
         );
 
         typeof(Location).GetProperty(nameof(Location.Id))?.SetValue(location, locationId);
@@ -166,7 +167,8 @@ public class GetAllLocationsEdgeCaseTests
             description: "A test location",
             capacity: 100,
             openTime: TimeSpan.FromHours(9),
-            closeTime: TimeSpan.FromHours(17)
+            closeTime: TimeSpan.FromHours(17),
+            organizationId: "test-org"
         );
 
         typeof(Location).GetProperty(nameof(Location.Id))?.SetValue(location, id);

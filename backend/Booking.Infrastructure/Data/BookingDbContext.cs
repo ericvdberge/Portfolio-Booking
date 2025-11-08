@@ -26,8 +26,10 @@ public class BookingDbContext : DbContext
             entity.Property(e => e.CloseTime).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt).IsRequired();
+            entity.Property(e => e.OrganizationId).IsRequired().HasMaxLength(100);
 
             entity.HasMany(e => e.Bookings);
+            entity.HasIndex(e => e.OrganizationId);
         });
     }
 }

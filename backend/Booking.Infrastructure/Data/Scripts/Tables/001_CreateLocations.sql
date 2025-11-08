@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS "Locations" (
     "OpenTime" TIME NOT NULL,
     "CloseTime" TIME NOT NULL,
     "LocationType" INTEGER NOT NULL,
+    "OrganizationId" VARCHAR(100) NOT NULL,
     "CreatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     "UpdatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
 
@@ -21,3 +22,4 @@ CREATE TABLE IF NOT EXISTS "Locations" (
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS "IX_Locations_Name" ON "Locations" ("Name");
 CREATE INDEX IF NOT EXISTS "IX_Locations_IsActive" ON "Locations" ("IsActive");
+CREATE INDEX IF NOT EXISTS "IX_Locations_OrganizationId" ON "Locations" ("OrganizationId");

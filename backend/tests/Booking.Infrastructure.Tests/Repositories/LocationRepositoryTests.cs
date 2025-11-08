@@ -41,7 +41,7 @@ public class LocationRepositoryTests
         var mockRepository = new Mock<ILocationRepository>();
         var expectedLocations = new List<Location>
         {
-            new Location("Test Location", "123 Test St", "Description", 10, TimeSpan.FromHours(8), TimeSpan.FromHours(20))
+            new Location("Test Location", "123 Test St", "Description", 10, TimeSpan.FromHours(8), TimeSpan.FromHours(20), "test-org")
         };
 
         mockRepository
@@ -68,7 +68,8 @@ public class LocationRepositoryTests
             "Description",
             10,
             TimeSpan.FromHours(8),
-            TimeSpan.FromHours(20)
+            TimeSpan.FromHours(20),
+            "test-org"
         );
 
         mockRepository
@@ -94,7 +95,8 @@ public class LocationRepositoryTests
             "New Description",
             20,
             TimeSpan.FromHours(9),
-            TimeSpan.FromHours(21)
+            TimeSpan.FromHours(21),
+            "test-org"
         );
 
         mockRepository
