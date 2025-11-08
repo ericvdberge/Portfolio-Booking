@@ -35,16 +35,32 @@ export async function fetchLocations(options?: FetchLocationsOptions): Promise<L
     headers['X-Organization-Id'] = organizationId;
   }
 
-  const response = await fetch(url, {
-    method: 'GET',
-    headers,
-  });
+  console.log('Fetching locations from:', url, 'with headers:', headers);
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch locations: ${response.statusText}`);
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    console.log('Response status:', response.status, response.statusText);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error response:', errorText);
+      throw new Error(`Failed to fetch locations: ${response.status} ${response.statusText}. ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('Fetched locations:', data);
+    return data;
+  } catch (error) {
+    console.error('Fetch error:', error);
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Unable to connect to API. Make sure the backend is running on port 8080.');
+    }
+    throw error;
   }
-
-  return response.json();
 }
 
 export async function fetchLocationById(id: string): Promise<LocationDto> {
