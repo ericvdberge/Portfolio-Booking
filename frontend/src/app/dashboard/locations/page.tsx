@@ -1,9 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { fetchLocations } from '@/api/locations';
-import { components } from '@/api/api-types';
+import { useGetDashboardLocations } from '@/api/dashboardLocations';
 import {
   Card,
   CardBody,
@@ -14,37 +12,20 @@ import {
 } from '@heroui/react';
 import { MapPin, Users, Clock, Plus } from 'lucide-react';
 
-type LocationDto = components['schemas']['LocationDto'];
-
 export default function DashboardLocationsPage() {
   const { user } = useOrganization();
-  const [locations, setLocations] = useState<LocationDto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadLocations() {
-      if (!user?.organizationId) {
-        setError('No organization selected. Please log in again.');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await fetchLocations({ organizationId: user.organizationId });
-        setLocations(data);
-      } catch (err) {
-        console.error('Failed to load locations:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load locations');
-      } finally {
-        setLoading(false);
-      }
+  // Use the generated API hook
+  const { data: locations, isLoading, error } = useGetDashboardLocations(
+    {
+      headers: {
+        'X-Organization-Id': user?.organizationId || '',
+      },
+    },
+    {
+      enabled: !!user?.organizationId, // Only fetch if we have an organizationId
     }
-
-    loadLocations();
-  }, [user?.organizationId]);
+  );
 
   const getLocationTypeLabel = (type?: number) => {
     switch (type) {
@@ -70,7 +51,22 @@ export default function DashboardLocationsPage() {
     }
   };
 
-  if (loading) {
+  if (!user?.organizationId) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Locations</h1>
+        </div>
+        <Card shadow="sm">
+          <CardBody className="p-6">
+            <p className="text-danger">No organization selected. Please log in again.</p>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Spinner size="lg" label="Loading locations..." />
@@ -86,12 +82,18 @@ export default function DashboardLocationsPage() {
         </div>
         <Card shadow="sm">
           <CardBody className="p-6">
-            <p className="text-danger">{error}</p>
+            <p className="text-danger">
+              Failed to load locations: {error.status === 401
+                ? 'Unauthorized. Please check your organization access.'
+                : error.payload || 'Unknown error'}
+            </p>
           </CardBody>
         </Card>
       </div>
     );
   }
+
+  const locationsList = locations || [];
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -100,7 +102,7 @@ export default function DashboardLocationsPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Locations</h1>
           <p className="text-sm sm:text-base text-muted-foreground mt-1">
-            {user?.organizationName} - {locations.length} location{locations.length !== 1 ? 's' : ''}
+            {user?.organizationName} - {locationsList.length} location{locationsList.length !== 1 ? 's' : ''}
           </p>
         </div>
         <Button color="primary" startContent={<Plus className="h-4 w-4" />}>
@@ -109,7 +111,7 @@ export default function DashboardLocationsPage() {
       </div>
 
       {/* Locations Grid */}
-      {locations.length === 0 ? (
+      {locationsList.length === 0 ? (
         <Card shadow="sm">
           <CardBody className="p-8 text-center">
             <MapPin className="h-12 w-12 mx-auto mb-4 text-default-300" />
@@ -124,7 +126,7 @@ export default function DashboardLocationsPage() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {locations.map((location) => (
+          {locationsList.map((location) => (
             <Card key={location.id} shadow="sm" isPressable className="hover:shadow-md transition-shadow">
               <CardHeader className="flex flex-col items-start gap-2 p-4">
                 <div className="flex items-start justify-between w-full">
