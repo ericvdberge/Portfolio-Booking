@@ -18,9 +18,169 @@ type QueryFnOptions = {
   signal?: AbortController["signal"];
 };
 
-export type GetAllLocationsQueryParams = {
+export type GetDashboardLocationsQueryParams = {
+  /**
+   * @format int32
+   */
   limit?: number;
-  locationType?: Schemas.LocationType;
+  locationType?: Schemas.NullableOfLocationType;
+};
+
+export type GetDashboardLocationsError = Fetcher.ErrorWrapper<undefined>;
+
+export type GetDashboardLocationsResponse = Schemas.LocationDto[];
+
+export type GetDashboardLocationsVariables = {
+  queryParams?: GetDashboardLocationsQueryParams;
+} & BookingApiContext["fetcherOptions"];
+
+export const fetchGetDashboardLocations = (
+  variables: GetDashboardLocationsVariables,
+  signal?: AbortSignal,
+) =>
+  bookingApiFetch<
+    GetDashboardLocationsResponse,
+    GetDashboardLocationsError,
+    undefined,
+    {},
+    GetDashboardLocationsQueryParams,
+    {}
+  >({ url: "/api/dashboard/locations", method: "get", ...variables, signal });
+
+export function getDashboardLocationsQuery(
+  variables: GetDashboardLocationsVariables,
+): {
+  queryKey: reactQuery.QueryKey;
+  queryFn: (options: QueryFnOptions) => Promise<GetDashboardLocationsResponse>;
+};
+
+export function getDashboardLocationsQuery(
+  variables: GetDashboardLocationsVariables | reactQuery.SkipToken,
+): {
+  queryKey: reactQuery.QueryKey;
+  queryFn:
+    | ((options: QueryFnOptions) => Promise<GetDashboardLocationsResponse>)
+    | reactQuery.SkipToken;
+};
+
+export function getDashboardLocationsQuery(
+  variables: GetDashboardLocationsVariables | reactQuery.SkipToken,
+) {
+  return {
+    queryKey: queryKeyFn({
+      path: "/api/dashboard/locations",
+      operationId: "getDashboardLocations",
+      variables,
+    }),
+    queryFn:
+      variables === reactQuery.skipToken
+        ? reactQuery.skipToken
+        : ({ signal }: QueryFnOptions) =>
+            fetchGetDashboardLocations(variables, signal),
+  };
+}
+
+export const useSuspenseGetDashboardLocations = <
+  TData = GetDashboardLocationsResponse,
+>(
+  variables: GetDashboardLocationsVariables,
+  options?: Omit<
+    reactQuery.UseQueryOptions<
+      GetDashboardLocationsResponse,
+      GetDashboardLocationsError,
+      TData
+    >,
+    "queryKey" | "queryFn" | "initialData"
+  >,
+) => {
+  const { queryOptions, fetcherOptions } = useBookingApiContext(options);
+  return reactQuery.useSuspenseQuery<
+    GetDashboardLocationsResponse,
+    GetDashboardLocationsError,
+    TData
+  >({
+    ...getDashboardLocationsQuery(deepMerge(fetcherOptions, variables)),
+    ...options,
+    ...queryOptions,
+  });
+};
+
+export const useGetDashboardLocations = <
+  TData = GetDashboardLocationsResponse,
+>(
+  variables: GetDashboardLocationsVariables | reactQuery.SkipToken,
+  options?: Omit<
+    reactQuery.UseQueryOptions<
+      GetDashboardLocationsResponse,
+      GetDashboardLocationsError,
+      TData
+    >,
+    "queryKey" | "queryFn" | "initialData"
+  >,
+) => {
+  const { queryOptions, fetcherOptions } = useBookingApiContext(options);
+  return reactQuery.useQuery<
+    GetDashboardLocationsResponse,
+    GetDashboardLocationsError,
+    TData
+  >({
+    ...getDashboardLocationsQuery(
+      variables === reactQuery.skipToken
+        ? variables
+        : deepMerge(fetcherOptions, variables),
+    ),
+    ...options,
+    ...queryOptions,
+  });
+};
+
+export type CreateDashboardLocationError = Fetcher.ErrorWrapper<undefined>;
+
+export type CreateDashboardLocationVariables = {
+  body: Schemas.CreateLocationRequest;
+} & BookingApiContext["fetcherOptions"];
+
+export const fetchCreateDashboardLocation = (
+  variables: CreateDashboardLocationVariables,
+  signal?: AbortSignal,
+) =>
+  bookingApiFetch<
+    string,
+    CreateDashboardLocationError,
+    Schemas.CreateLocationRequest,
+    {},
+    {},
+    {}
+  >({ url: "/api/dashboard/locations", method: "post", ...variables, signal });
+
+export const useCreateDashboardLocation = (
+  options?: Omit<
+    reactQuery.UseMutationOptions<
+      string,
+      CreateDashboardLocationError,
+      CreateDashboardLocationVariables
+    >,
+    "mutationFn"
+  >,
+) => {
+  const { fetcherOptions } = useBookingApiContext();
+  return reactQuery.useMutation<
+    string,
+    CreateDashboardLocationError,
+    CreateDashboardLocationVariables
+  >({
+    mutationFn: (variables: CreateDashboardLocationVariables) =>
+      fetchCreateDashboardLocation(deepMerge(fetcherOptions, variables)),
+    ...options,
+  });
+};
+
+export type GetAllLocationsQueryParams = {
+  /**
+   * @format int32
+   */
+  limit?: number;
+  locationType?: Schemas.NullableOfLocationType;
 };
 
 export type GetAllLocationsError = Fetcher.ErrorWrapper<undefined>;
@@ -228,7 +388,61 @@ export const useGetLocationById = <TData = Schemas.LocationDto,>(
   });
 };
 
+export type CreateBookingPathParams = {
+  /**
+   * @format uuid
+   */
+  id: string;
+};
+
+export type CreateBookingError = Fetcher.ErrorWrapper<undefined>;
+
+export type CreateBookingVariables = {
+  body: Schemas.BookLocationRequest;
+  pathParams: CreateBookingPathParams;
+} & BookingApiContext["fetcherOptions"];
+
+export const fetchCreateBooking = (
+  variables: CreateBookingVariables,
+  signal?: AbortSignal,
+) =>
+  bookingApiFetch<
+    undefined,
+    CreateBookingError,
+    Schemas.BookLocationRequest,
+    {},
+    {},
+    CreateBookingPathParams
+  >({ url: "/api/locations/{id}/book", method: "post", ...variables, signal });
+
+export const useCreateBooking = (
+  options?: Omit<
+    reactQuery.UseMutationOptions<
+      undefined,
+      CreateBookingError,
+      CreateBookingVariables
+    >,
+    "mutationFn"
+  >,
+) => {
+  const { fetcherOptions } = useBookingApiContext();
+  return reactQuery.useMutation<
+    undefined,
+    CreateBookingError,
+    CreateBookingVariables
+  >({
+    mutationFn: (variables: CreateBookingVariables) =>
+      fetchCreateBooking(deepMerge(fetcherOptions, variables)),
+    ...options,
+  });
+};
+
 export type QueryOperation =
+  | {
+      path: "/api/dashboard/locations";
+      operationId: "getDashboardLocations";
+      variables: GetDashboardLocationsVariables | reactQuery.SkipToken;
+    }
   | {
       path: "/api/locations";
       operationId: "getAllLocations";

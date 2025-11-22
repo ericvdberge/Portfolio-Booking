@@ -20,10 +20,11 @@ public class Location
     public DateTime UpdatedAt { get; private set; }
     public LocationType LocationType { get; private set; }
     public string OrganizationId { get; private set; }
+    public List<string> Images { get; private set; } = [];
     public List<Booking> Bookings { get; private set; } = [];
     public List<PolicyConfig> PolicyConfigs { get; private set; } = [];
 
-    public Location(string name, string address, string description, int capacity, TimeSpan openTime, TimeSpan closeTime, string organizationId)
+    public Location(string name, string address, string description, int capacity, TimeSpan openTime, TimeSpan closeTime, LocationType locationType, string organizationId, List<string>? images = null)
     {
         Id = Guid.NewGuid();
         Name = name;
@@ -32,7 +33,9 @@ public class Location
         Capacity = capacity;
         OpenTime = openTime;
         CloseTime = closeTime;
+        LocationType = locationType;
         OrganizationId = organizationId;
+        Images = images ?? [];
         IsActive = false;
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useGetDashboardLocations } from '@/api/dashboardLocations';
 import {
@@ -13,6 +14,7 @@ import {
 import { MapPin, Users, Clock, Plus } from 'lucide-react';
 
 export default function DashboardLocationsPage() {
+  const router = useRouter();
   const { user } = useOrganization();
 
   // Use the generated API hook
@@ -105,7 +107,11 @@ export default function DashboardLocationsPage() {
             {user?.organizationName} - {locationsList.length} location{locationsList.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <Button color="primary" startContent={<Plus className="h-4 w-4" />}>
+        <Button
+          color="primary"
+          startContent={<Plus className="h-4 w-4" />}
+          onPress={() => router.push('/dashboard/locations/new')}
+        >
           Add Location
         </Button>
       </div>
@@ -119,7 +125,11 @@ export default function DashboardLocationsPage() {
             <p className="text-default-500 mb-4">
               Get started by creating your first location
             </p>
-            <Button color="primary" startContent={<Plus className="h-4 w-4" />}>
+            <Button
+              color="primary"
+              startContent={<Plus className="h-4 w-4" />}
+              onPress={() => router.push('/dashboard/locations/new')}
+            >
               Add Your First Location
             </Button>
           </CardBody>
@@ -128,6 +138,22 @@ export default function DashboardLocationsPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {locationsList.map((location) => (
             <Card key={location.id} shadow="sm" isPressable className="hover:shadow-md transition-shadow">
+              {/* Image Header */}
+              {location.images && location.images.length > 0 && (
+                <div className="relative w-full h-48 overflow-hidden">
+                  <img
+                    src={location.images[0]}
+                    alt={location.name || 'Location'}
+                    className="w-full h-full object-cover"
+                  />
+                  {location.images.length > 1 && (
+                    <div className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm rounded-full px-2 py-1 text-xs font-medium">
+                      +{location.images.length - 1} more
+                    </div>
+                  )}
+                </div>
+              )}
+
               <CardHeader className="flex flex-col items-start gap-2 p-4">
                 <div className="flex items-start justify-between w-full">
                   <h3 className="text-lg font-semibold line-clamp-1">{location.name}</h3>

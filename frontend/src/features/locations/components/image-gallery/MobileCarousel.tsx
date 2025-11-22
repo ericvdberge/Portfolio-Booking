@@ -85,14 +85,24 @@ export function MobileCarousel({
               className="relative flex-shrink-0 min-w-full w-full h-full cursor-pointer"
               onClick={() => onImageClick(index)}
             >
-              <Image
-                src={image}
-                alt={`${locationName} photo ${index + 1}`}
-                fill
-                priority={index === 0}
-                sizes="100vw"
-                className="object-cover"
-              />
+              {image.startsWith('data:') ? (
+                // Use regular img tag for data URLs
+                <img
+                  src={image}
+                  alt={`${locationName} photo ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                // Use Next.js Image for regular URLs
+                <Image
+                  src={image}
+                  alt={`${locationName} photo ${index + 1}`}
+                  fill
+                  priority={index === 0}
+                  sizes="100vw"
+                  className="object-cover"
+                />
+              )}
             </div>
           ))}
         </div>

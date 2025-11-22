@@ -18,8 +18,10 @@ export default function LocationDetailsPage() {
     pathParams: { id: locationId }
   });
 
-  // Generate multiple images for the collage
-  const images = getLocationImages(location?.id, 4);
+  // Use uploaded images if available, otherwise generate placeholder images
+  const images = location?.images && location.images.length > 0
+    ? location.images
+    : getLocationImages(location?.id, 4);
 
   const handleBookNow = () => {
     console.log('Book location:', locationId);

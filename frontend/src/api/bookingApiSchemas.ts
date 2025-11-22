@@ -3,12 +3,36 @@
  *
  * @version 1.0.0
  */
+export type BookLocationRequest = {
+  /**
+   * @format date-time
+   */
+  startDate: string;
+  /**
+   * @format date-time
+   */
+  endDate: string;
+};
 
-export enum LocationType {
-  None = 0,
-  Hotel = 1,
-  BAndB = 2,
-}
+export type CreateLocationRequest = {
+  name: string;
+  address: string;
+  description: string;
+  /**
+   * @format int32
+   */
+  capacity: number;
+  /**
+   * @pattern ^-?(\d+\.)?\d{2}:\d{2}:\d{2}(\.\d{1,7})?$
+   */
+  openTime: string;
+  /**
+   * @pattern ^-?(\d+\.)?\d{2}:\d{2}:\d{2}(\.\d{1,7})?$
+   */
+  closeTime: string;
+  locationType: LocationType;
+  images?: string[];
+};
 
 export type LocationDto = {
   /**
@@ -32,4 +56,13 @@ export type LocationDto = {
   closeTime?: string;
   isActive?: boolean;
   locationType?: LocationType;
+  images?: string[];
 };
+
+export enum LocationType {
+  None = 0,
+  Hotel = 1,
+  BAndB = 2,
+}
+
+export type NullableOfLocationType = number;

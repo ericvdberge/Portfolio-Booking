@@ -26,7 +26,8 @@ public class GetLocationByIdHandler(
             OpenTime = location.OpenTime,
             CloseTime = location.CloseTime,
             IsActive = location.IsActive,
-            LocationType = location.LocationType
+            LocationType = location.LocationType,
+            Images = location.Images
         };
     }
 }

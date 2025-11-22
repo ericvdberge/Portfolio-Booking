@@ -37,8 +37,14 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
   };
 
   const getImage = () => {
+    // Use uploaded image if available
+    if (location?.images && location.images.length > 0) {
+      return location.images[0];
+    }
+
+    // Fallback to placeholder images based on location ID
     if (!location?.id) return '/greece1.jpg';
-    
+
     const hash = location.id.split('').reduce((a, b) => {
       a = ((a << 5) - a) + b.charCodeAt(0);
       return a & a;
@@ -72,8 +78,6 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
 
   return (
     <Card
-      isPressable
-      onPress={handleViewDetails}
       data-testid="location-card"
       className={`w-full transition-all duration-300 ease-out ${
         isVisible
@@ -81,7 +85,7 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
           : 'opacity-0 -translate-y-2'
       }`}
     >
-      <CardHeader className="p-0">
+      <CardHeader className="p-0 cursor-pointer" onClick={handleViewDetails}>
         <div className="relative w-full h-40 sm:h-48 bg-default-100 overflow-hidden">
           {imageLoading && (
             <div className="absolute inset-0 bg-default-100 animate-pulse" />
@@ -95,7 +99,7 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
             onLoad={handleImageLoad}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
           />
-          <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+          <div className="absolute top-2 right-2 sm:top-3 sm:right-3 flex gap-2">
             <Chip
               color={locationTypeInfo.color}
               variant="flat"
@@ -106,10 +110,19 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
             >
               {locationTypeInfo.label}
             </Chip>
+            {location.images && location.images.length > 1 && (
+              <Chip
+                variant="flat"
+                size="sm"
+                className="backdrop-blur-sm bg-background/80"
+              >
+                +{location.images.length - 1}
+              </Chip>
+            )}
           </div>
         </div>
       </CardHeader>
-      <CardBody className="space-y-2 sm:space-y-3 p-4">
+      <CardBody className="space-y-2 sm:space-y-3 p-4 cursor-pointer" onClick={handleViewDetails}>
         <div>
           <h3 className="text-base sm:text-lg font-semibold line-clamp-1" data-testid="location-card-name">{location.name}</h3>
           <p className="text-xs sm:text-sm text-default-500 line-clamp-1" data-testid="location-card-address">{location.address}</p>

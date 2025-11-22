@@ -28,6 +28,11 @@ public class BookingDbContext : DbContext
             entity.Property(e => e.UpdatedAt).IsRequired();
             entity.Property(e => e.OrganizationId).IsRequired().HasMaxLength(100);
 
+            // Configure Images as JSONB column in PostgreSQL
+            entity.Property(e => e.Images)
+                .HasColumnType("jsonb")
+                .IsRequired();
+
             entity.HasMany(e => e.Bookings);
             entity.HasIndex(e => e.OrganizationId);
         });
