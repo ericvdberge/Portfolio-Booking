@@ -86,3 +86,24 @@ export const useGetDashboardLocations = <TData = GetDashboardLocationsResponse,>
     ...options,
   });
 };
+
+export const useSuspenseGetDashboardLocations = <TData = GetDashboardLocationsResponse,>(
+  variables: GetDashboardLocationsVariables,
+  options?: Omit<
+    reactQuery.UseSuspenseQueryOptions<
+      GetDashboardLocationsResponse,
+      GetDashboardLocationsError,
+      TData
+    >,
+    "queryKey" | "queryFn"
+  >,
+) => {
+  return reactQuery.useSuspenseQuery<
+    GetDashboardLocationsResponse,
+    GetDashboardLocationsError,
+    TData
+  >({
+    ...getDashboardLocationsQuery(variables),
+    ...options,
+  });
+};

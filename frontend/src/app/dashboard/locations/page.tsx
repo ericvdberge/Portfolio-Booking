@@ -1,8 +1,9 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { useGetDashboardLocations } from '@/api/dashboardLocations';
+import { useSuspenseGetDashboardLocations } from '@/api/dashboardLocations';
 import {
   Card,
   CardBody,
@@ -13,21 +14,24 @@ import {
 } from '@heroui/react';
 import { MapPin, Users, Clock, Plus } from 'lucide-react';
 
-export default function DashboardLocationsPage() {
+function DashboardLocationsLoading() {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <Spinner size="lg" label="Loading locations..." />
+    </div>
+  );
+}
+
+function DashboardLocationsContent() {
   const router = useRouter();
   const { user } = useOrganization();
 
-  // Use the generated API hook
-  const { data: locations, isLoading, error } = useGetDashboardLocations(
-    {
-      headers: {
-        'X-Organization-Id': user?.organizationId || '',
-      },
+  // Use the suspense API hook
+  const { data: locations } = useSuspenseGetDashboardLocations({
+    headers: {
+      'X-Organization-Id': user?.organizationId || '',
     },
-    {
-      enabled: !!user?.organizationId, // Only fetch if we have an organizationId
-    }
-  );
+  });
 
   const getLocationTypeLabel = (type?: number) => {
     switch (type) {
@@ -52,48 +56,6 @@ export default function DashboardLocationsPage() {
         return 'default';
     }
   };
-
-  if (!user?.organizationId) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Locations</h1>
-        </div>
-        <Card shadow="sm">
-          <CardBody className="p-6">
-            <p className="text-danger">No organization selected. Please log in again.</p>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Spinner size="lg" label="Loading locations..." />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Locations</h1>
-        </div>
-        <Card shadow="sm">
-          <CardBody className="p-6">
-            <p className="text-danger">
-              Failed to load locations: {error.status === 401
-                ? 'Unauthorized. Please check your organization access.'
-                : error.payload || 'Unknown error'}
-            </p>
-          </CardBody>
-        </Card>
-      </div>
-    );
-  }
 
   const locationsList = locations || [];
 
@@ -202,5 +164,30 @@ export default function DashboardLocationsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function DashboardLocationsPage() {
+  const { user } = useOrganization();
+
+  if (!user?.organizationId) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Locations</h1>
+        </div>
+        <Card shadow="sm">
+          <CardBody className="p-6">
+            <p className="text-danger">No organization selected. Please log in again.</p>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <Suspense fallback={<DashboardLocationsLoading />}>
+      <DashboardLocationsContent />
+    </Suspense>
   );
 }

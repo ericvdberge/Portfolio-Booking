@@ -1,20 +1,35 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useGetLocationById } from '@/api/client';
+import { useSuspenseGetLocationById } from '@/api/client';
 import { Button, Card, CardHeader, CardBody, Chip } from '@heroui/react';
 import { ArrowLeft, Users, Clock, Calendar } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { ImageCollage } from '../components/ImageCollage';
 import { getLocationImages } from '../utils/getLocationImages';
 
-export default function LocationDetailsPage() {
-  const params = useParams();
+function LocationDetailsSkeleton() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="animate-pulse space-y-8">
+        <div className="h-8 bg-default-200 rounded w-1/4"></div>
+        <div className="h-64 bg-default-200 rounded"></div>
+        <div className="space-y-4">
+          <div className="h-6 bg-default-200 rounded w-3/4"></div>
+          <div className="h-4 bg-default-200 rounded w-1/2"></div>
+          <div className="h-4 bg-default-200 rounded w-2/3"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LocationDetailsContent({ locationId }: { locationId: string }) {
   const router = useRouter();
   const t = useTranslations();
-  const locationId = params.id as string;
 
-  const { data: location, isLoading, error } = useGetLocationById({
+  const { data: location } = useSuspenseGetLocationById({
     pathParams: { id: locationId }
   });
 
@@ -32,23 +47,7 @@ export default function LocationDetailsPage() {
     router.back();
   };
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="animate-pulse space-y-8">
-          <div className="h-8 bg-default-200 rounded w-1/4"></div>
-          <div className="h-64 bg-default-200 rounded"></div>
-          <div className="space-y-4">
-            <div className="h-6 bg-default-200 rounded w-3/4"></div>
-            <div className="h-4 bg-default-200 rounded w-1/2"></div>
-            <div className="h-4 bg-default-200 rounded w-2/3"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !location) {
+  if (!location) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center space-y-4">
@@ -191,5 +190,16 @@ export default function LocationDetailsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LocationDetailsPage() {
+  const params = useParams();
+  const locationId = params.id as string;
+
+  return (
+    <Suspense fallback={<LocationDetailsSkeleton />}>
+      <LocationDetailsContent locationId={locationId} />
+    </Suspense>
   );
 }

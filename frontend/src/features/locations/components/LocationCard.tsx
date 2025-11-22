@@ -1,11 +1,13 @@
 'use client';
 
-import { LocationDto, LocationType } from '@/api/client';
+import { LocationDto, LocationType, getLocationByIdQuery } from '@/api/client';
 import { Card, CardHeader, CardBody, CardFooter, Button, Chip } from '@heroui/react';
 import { MapPin, Users, Clock, Hotel, Home, Building } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { useQueryClient } from '@/providers/query-provider';
 
 interface LocationCardProps {
   location: LocationDto;
@@ -16,6 +18,7 @@ interface LocationCardProps {
 
 export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: LocationCardProps) {
   const t = useTranslations();
+  const queryClient = useQueryClient();
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
@@ -24,7 +27,7 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
     const timer = setTimeout(() => {
       setIsVisible(true);
     }, delay);
-    
+
     return () => clearTimeout(timer);
   }, [delay]);
 
@@ -34,6 +37,15 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
 
   const handleViewDetails = () => {
     onViewDetails?.(location.id || '');
+  };
+
+  // Prefetch location details on hover
+  const handlePrefetch = () => {
+    if (location.id) {
+      queryClient.prefetchQuery(
+        getLocationByIdQuery({ pathParams: { id: location.id } })
+      );
+    }
   };
 
   const getImage = () => {
@@ -77,15 +89,22 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
   const locationTypeInfo = getLocationTypeInfo();
 
   return (
-    <Card
-      data-testid="location-card"
-      className={`w-full transition-all duration-300 ease-out ${
-        isVisible
-          ? 'opacity-100 translate-y-0'
-          : 'opacity-0 -translate-y-2'
-      }`}
+    <Link
+      href={`/locations/${location.id}`}
+      prefetch={true}
+      onMouseEnter={handlePrefetch}
+      className={"w-full block"}
     >
-      <CardHeader className="p-0 cursor-pointer" onClick={handleViewDetails}>
+      <Card
+        data-testid="location-card"
+        className={`w-full transition-all duration-300 ease-out ${
+          isVisible
+            ? 'opacity-100 translate-y-0'
+            : 'opacity-0 -translate-y-2'
+        }`}
+        isPressable
+      >
+      <CardHeader className="p-0">
         <div className="relative w-full h-40 sm:h-48 bg-default-100 overflow-hidden">
           {imageLoading && (
             <div className="absolute inset-0 bg-default-100 animate-pulse" />
@@ -122,7 +141,7 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
           </div>
         </div>
       </CardHeader>
-      <CardBody className="space-y-2 sm:space-y-3 p-4 cursor-pointer" onClick={handleViewDetails}>
+      <CardBody className="space-y-2 sm:space-y-3 p-4">
         <div>
           <h3 className="text-base sm:text-lg font-semibold line-clamp-1" data-testid="location-card-name">{location.name}</h3>
           <p className="text-xs sm:text-sm text-default-500 line-clamp-1" data-testid="location-card-address">{location.address}</p>
@@ -153,5 +172,6 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
         </Button>
       </CardFooter>
     </Card>
+    </Link>
   );
 }
