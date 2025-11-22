@@ -91,14 +91,24 @@ export function DesktopImageGrid({
             )}`}
             onClick={() => onImageClick(startIndex + index)}
           >
-            <Image
-              src={image}
-              alt={`${locationName} photo ${startIndex + index + 1}`}
-              width={1600}
-              height={900}
-              priority={index === 0 && currentPage === 0}
-              className="w-full h-full object-cover transition-transform group-hover:scale-105"
-            />
+            {image.startsWith('data:') ? (
+              // Use regular img tag for data URLs
+              <img
+                src={image}
+                alt={`${locationName} photo ${startIndex + index + 1}`}
+                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+              />
+            ) : (
+              // Use Next.js Image for regular URLs
+              <Image
+                src={image}
+                alt={`${locationName} photo ${startIndex + index + 1}`}
+                width={1600}
+                height={900}
+                priority={index === 0 && currentPage === 0}
+                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+              />
+            )}
             {/* Hover overlay */}
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
           </div>

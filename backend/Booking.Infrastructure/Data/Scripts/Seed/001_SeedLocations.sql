@@ -12,8 +12,9 @@ BEGIN
     -- Check if we already have locations
     IF NOT EXISTS (SELECT 1 FROM "Locations") THEN
         -- Insert sample locations
+        -- Note: Using two demo organizations for testing: 'org-acme-corp' and 'org-global-ventures'
         INSERT INTO "Locations"
-        ("Id", "Name", "Address", "Description", "Capacity", "IsActive", "OpenTime", "CloseTime", "LocationType", "CreatedAt", "UpdatedAt")
+        ("Id", "Name", "Address", "Description", "Capacity", "IsActive", "OpenTime", "CloseTime", "LocationType", "OrganizationId", "CreatedAt", "UpdatedAt")
         VALUES
         (
             gen_random_uuid(),
@@ -25,6 +26,7 @@ BEGIN
             '08:00:00',
             '18:00:00',
             1,
+            'org-acme-corp',
             NOW(),
             NOW()
         ),
@@ -38,6 +40,7 @@ BEGIN
             '07:00:00',
             '22:00:00',
             2,
+            'org-acme-corp',
             NOW(),
             NOW()
         ),
@@ -51,6 +54,7 @@ BEGIN
             '00:00:00',
             '23:59:59',
             1,
+            'org-global-ventures',
             NOW(),
             NOW()
         ),
@@ -64,6 +68,7 @@ BEGIN
             '07:00:00',
             '22:00:00',
             2,
+            'org-global-ventures',
             NOW(),
             NOW()
         ),
@@ -77,6 +82,7 @@ BEGIN
             '00:00:00',
             '23:59:59',
             1,
+            'org-acme-corp',
             NOW(),
             NOW()
         ),
@@ -90,6 +96,7 @@ BEGIN
             '06:00:00',
             '23:00:00',
             2,
+            'org-global-ventures',
             NOW(),
             NOW()
         );

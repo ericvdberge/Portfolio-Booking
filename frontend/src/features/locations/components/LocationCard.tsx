@@ -1,11 +1,13 @@
 'use client';
 
-import { LocationDto, LocationType } from '@/api/client';
+import { LocationDto, LocationType, getLocationByIdQuery } from '@/api/client';
 import { Card, CardHeader, CardBody, CardFooter, Button, Chip } from '@heroui/react';
 import { MapPin, Users, Clock, Hotel, Home, Building } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { useQueryClient } from '@/providers/query-provider';
 
 interface LocationCardProps {
   location: LocationDto;
@@ -16,6 +18,7 @@ interface LocationCardProps {
 
 export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: LocationCardProps) {
   const t = useTranslations();
+  const queryClient = useQueryClient();
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
@@ -24,7 +27,7 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
     const timer = setTimeout(() => {
       setIsVisible(true);
     }, delay);
-    
+
     return () => clearTimeout(timer);
   }, [delay]);
 
@@ -36,9 +39,24 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
     onViewDetails?.(location.id || '');
   };
 
+  // Prefetch location details on hover
+  const handlePrefetch = () => {
+    if (location.id) {
+      queryClient.prefetchQuery(
+        getLocationByIdQuery({ pathParams: { id: location.id } })
+      );
+    }
+  };
+
   const getImage = () => {
+    // Use uploaded image if available
+    if (location?.images && location.images.length > 0) {
+      return location.images[0];
+    }
+
+    // Fallback to placeholder images based on location ID
     if (!location?.id) return '/greece1.jpg';
-    
+
     const hash = location.id.split('').reduce((a, b) => {
       a = ((a << 5) - a) + b.charCodeAt(0);
       return a & a;
@@ -71,16 +89,21 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
   const locationTypeInfo = getLocationTypeInfo();
 
   return (
-    <Card
-      isPressable
-      onPress={handleViewDetails}
-      data-testid="location-card"
-      className={`w-full transition-all duration-300 ease-out ${
-        isVisible
-          ? 'opacity-100 translate-y-0'
-          : 'opacity-0 -translate-y-2'
-      }`}
+    <Link
+      href={`/locations/${location.id}`}
+      prefetch={true}
+      onMouseEnter={handlePrefetch}
+      className={"w-full block"}
     >
+      <Card
+        data-testid="location-card"
+        className={`w-full transition-all duration-300 ease-out ${
+          isVisible
+            ? 'opacity-100 translate-y-0'
+            : 'opacity-0 -translate-y-2'
+        }`}
+        isPressable
+      >
       <CardHeader className="p-0">
         <div className="relative w-full h-40 sm:h-48 bg-default-100 overflow-hidden">
           {imageLoading && (
@@ -95,7 +118,7 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
             onLoad={handleImageLoad}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
           />
-          <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+          <div className="absolute top-2 right-2 sm:top-3 sm:right-3 flex gap-2">
             <Chip
               color={locationTypeInfo.color}
               variant="flat"
@@ -106,6 +129,15 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
             >
               {locationTypeInfo.label}
             </Chip>
+            {location.images && location.images.length > 1 && (
+              <Chip
+                variant="flat"
+                size="sm"
+                className="backdrop-blur-sm bg-background/80"
+              >
+                +{location.images.length - 1}
+              </Chip>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -140,5 +172,6 @@ export function LocationCard({ location, onBookNow, onViewDetails, delay = 0 }: 
         </Button>
       </CardFooter>
     </Card>
+    </Link>
   );
 }

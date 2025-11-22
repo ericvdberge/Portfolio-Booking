@@ -32,6 +32,12 @@ public class LocationRepository : ILocationRepository
             query = query.Where(l => l.LocationType == filter.LocationType.Value);
         }
 
+        // Apply organization filter if provided
+        if (!string.IsNullOrWhiteSpace(filter?.OrganizationId))
+        {
+            query = query.Where(l => l.OrganizationId == filter.OrganizationId);
+        }
+
         return await query
             .Take(limit)
             .ToListAsync(cancellationToken);

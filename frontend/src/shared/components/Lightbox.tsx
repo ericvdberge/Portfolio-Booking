@@ -103,14 +103,24 @@ export function Lightbox({ images, initialIndex, isOpen, onClose, locationName }
             {/* Image */}
             <div className="relative w-full h-full flex items-center justify-center p-4">
               <div className="relative max-w-7xl max-h-full">
-                <Image
-                  src={images[currentIndex]}
-                  alt={`${locationName} photo ${currentIndex + 1}`}
-                  width={1200}
-                  height={800}
-                  className="max-w-full max-h-[90vh] w-auto h-auto object-contain"
-                  priority
-                />
+                {images[currentIndex]?.startsWith('data:') ? (
+                  // Use regular img tag for data URLs
+                  <img
+                    src={images[currentIndex]}
+                    alt={`${locationName} photo ${currentIndex + 1}`}
+                    className="max-w-full max-h-[90vh] w-auto h-auto object-contain"
+                  />
+                ) : (
+                  // Use Next.js Image for regular URLs
+                  <Image
+                    src={images[currentIndex]}
+                    alt={`${locationName} photo ${currentIndex + 1}`}
+                    width={1200}
+                    height={800}
+                    className="max-w-full max-h-[90vh] w-auto h-auto object-contain"
+                    priority
+                  />
+                )}
               </div>
             </div>
 

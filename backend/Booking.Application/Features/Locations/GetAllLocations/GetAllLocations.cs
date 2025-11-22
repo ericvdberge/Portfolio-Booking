@@ -24,7 +24,8 @@ public class GetAllLocationsHandler(
             OpenTime = location.OpenTime,
             CloseTime = location.CloseTime,
             IsActive = location.IsActive,
-            LocationType = location.LocationType
+            LocationType = location.LocationType,
+            Images = location.Images
         });
     }
 }
@@ -40,4 +41,5 @@ public class LocationDto
     public TimeSpan CloseTime { get; set; }
     public bool IsActive { get; set; }
     public LocationType LocationType { get; set; }
+    public List<string> Images { get; set; } = [];
 }

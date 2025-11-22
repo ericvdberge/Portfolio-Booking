@@ -16,6 +16,7 @@ import {
 import { Header } from './Header';
 import { BrandLogo } from './BrandLogo';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 interface DashboardHeaderProps {
   onMenuClick?: () => void;
@@ -25,9 +26,10 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const t = useTranslations('dashboard.header');
   const nav = useTranslations('navigation');
   const router = useRouter();
+  const { user, logout } = useOrganization();
 
   const handleLogout = () => {
-    // Navigate to login page
+    logout();
     router.push('/sign-in');
   };
 
@@ -117,10 +119,14 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
                     />
                   }
                 >
-                  <span className="hidden md:inline">Admin User</span>
+                  <span className="hidden md:inline">{user?.organizationName || 'User'}</span>
                 </Button>
               </DropdownTrigger>
               <DropdownMenu aria-label={t('profile')}>
+                <DropdownItem key="user-info" className="h-14 gap-2" textValue="User info">
+                  <p className="font-semibold">{user?.email || 'Not logged in'}</p>
+                  <p className="text-xs text-default-500">{user?.organizationName}</p>
+                </DropdownItem>
                 <DropdownItem key="profile" startContent={<UserIcon className="h-4 w-4" />}>
                   {t('profile')}
                 </DropdownItem>

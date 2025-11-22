@@ -23,7 +23,7 @@ public class LocationTests
         var closeTime = TimeSpan.FromHours(22);
 
         // Act
-        var location = new Location(name, address, description, capacity, openTime, closeTime);
+        var location = new Location(name, address, description, capacity, openTime, closeTime, "test-org");
 
         // Assert
         location.Name.Should().Be(name);
@@ -204,7 +204,8 @@ public class LocationTests
             description: "A test location for unit tests",
             capacity: 100,
             openTime: TimeSpan.FromHours(9),
-            closeTime: TimeSpan.FromHours(18)
+            closeTime: TimeSpan.FromHours(18),
+            organizationId: "test-org"
         );
 
         // Set LocationType using reflection since the constructor doesn't set it

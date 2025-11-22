@@ -144,7 +144,8 @@ public class BookingPolicyProviderTests
             description: "A test location",
             capacity: 100,
             openTime: TimeSpan.FromHours(9),
-            closeTime: TimeSpan.FromHours(18)
+            closeTime: TimeSpan.FromHours(18),
+            organizationId: "test-org"
         );
 
         typeof(Location).GetProperty(nameof(Location.LocationType))?.SetValue(location, LocationType.Hotel);
