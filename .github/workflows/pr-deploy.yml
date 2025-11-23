@@ -5,51 +5,77 @@ on:
     types: [opened, synchronize, reopened]
     branches: [main]
 
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE_NAME: ericvdberge/portfolio-booking/backend
+  FRONTEND_IMAGE_NAME: ericvdberge/portfolio-booking/frontend
+  RESOURCE_GROUP: BookingSystem-PR
+  ENVIRONMENT_TYPE: preview
+
 jobs:
   deploy-preview:
-    uses: ./.github/workflows/template-deploy.yml
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-preview-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     permissions:
       contents: read
       packages: write
       id-token: write
-
-    concurrency:
-      group: deploy-preview-pr-${{ github.event.pull_request.number }}
-      cancel-in-progress: true
-
-    with:
-      environment_type: 'preview'
-      resource_group: 'BookingSystem-PR'
-      deployment_suffix: 'pr-${{ github.event.pull_request.number }}'
-      image_tag: 'pr-${{ github.event.pull_request.number }}'
-      pr_number: '${{ github.event.pull_request.number }}'
-
-    secrets:
-      azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
-      azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
-      azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      db_password: ${{ secrets.DB_PASSWORD }}
-
-  comment-preview-url:
-    needs: deploy-preview
-    runs-on: ubuntu-latest
-    permissions:
       pull-requests: write
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    outputs:
+      frontend_pr_url: ${{ steps.get-urls.outputs.frontend_pr_url }}
+      backend_pr_url: ${{ steps.get-urls.outputs.backend_pr_url }}
 
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      # Build and push Docker images
+      - name: Build and push images
+        env:
+          IMAGE_TAG: pr-${{ github.event.pull_request.number }}
+          REGISTRY_USERNAME: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: dotnet cake --target=Build-Images
+
+      # Azure deployment
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy infrastructure
+        id: get-urls
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          RESOURCE_GROUP: ${{ env.RESOURCE_GROUP }}
+          ENVIRONMENT_TYPE: ${{ env.ENVIRONMENT_TYPE }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          IMAGE_TAG: pr-${{ github.event.pull_request.number }}
+        run: dotnet cake --target=Deploy-Infra
+
+      # Comment on PR with URLs
       - name: Comment preview URL on PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          FRONTEND_URL: ${{ needs.deploy-preview.outputs.frontend_pr_url }}
-          BACKEND_URL: ${{ needs.deploy-preview.outputs.backend_pr_url }}
-          COMMIT_SHA: ${{ github.sha }}
+          FRONTEND_URL: ${{ steps.get-urls.outputs.frontend_pr_url }}
+          BACKEND_URL: ${{ steps.get-urls.outputs.backend_pr_url }}
         run: |
           gh pr comment ${{ github.event.pull_request.number }} --body "🚀 **Preview Deployment Ready**
           - **Frontend**: ${FRONTEND_URL}
           - **Backend**: ${BACKEND_URL}
 
           ---
-          *Deployed from commit ${COMMIT_SHA}*"
+          *Deployed from commit ${{ github.sha }}*"
