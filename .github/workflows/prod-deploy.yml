@@ -4,23 +4,53 @@ on:
   push:
     branches: [main]
 
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE_NAME: ericvdberge/portfolio-booking/backend
+  FRONTEND_IMAGE_NAME: ericvdberge/portfolio-booking/frontend
+  RESOURCE_GROUP: BookingSystem
+  ENVIRONMENT_TYPE: production
+
 jobs:
   deploy-production:
-    uses: ./.github/workflows/template-deploy.yml
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
       id-token: write
 
-    with:
-      environment_type: 'production'
-      resource_group: ${{ vars.AZURE_RESOURCE_GROUP }}
-      deployment_suffix: ''
-      image_tag: 'latest'
-      pr_number: ''
+    steps:
+      - uses: actions/checkout@v4
 
-    secrets:
-      azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
-      azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
-      azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      db_password: ${{ secrets.DB_PASSWORD }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      # Build and push Docker images
+      - name: Build and push images
+        env:
+          IMAGE_TAG: latest
+          REGISTRY_USERNAME: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: dotnet cake --target=Build-Images
+
+      # Azure deployment
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy infrastructure
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          RESOURCE_GROUP: ${{ env.RESOURCE_GROUP }}
+          ENVIRONMENT_TYPE: ${{ env.ENVIRONMENT_TYPE }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          IMAGE_TAG: latest
+        run: dotnet cake --target=Deploy-Infra

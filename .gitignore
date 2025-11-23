@@ -3,3 +3,8 @@
 
 # NPM lock file (using pnpm instead)
 **/package-lock.json
+
+# Cake Build
+tools/
+.dotnet/
+*.binlog
