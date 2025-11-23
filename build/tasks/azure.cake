@@ -254,21 +254,15 @@ public static class AzureTasks
     private static void ApplyLabelToRevision(ICakeContext context, BuildParameters parameters,
         string appType, string deploymentHash)
     {
+        var expectedRevisionName = $"{parameters.NamePrefix}-{appType}--{deploymentHash}";
         string revisionName = null;
 
         for (int attempt = 1; attempt <= 2; attempt++)
         {
-            // Debug: Show all revisions and their suffixes
-            var debugOutput = BuildHelpers.RunCommandWithOutput(context, "az",
-                $"containerapp revision list --resource-group {parameters.ResourceGroup} " +
-                $"--name {parameters.NamePrefix}-{appType} " +
-                $"--query \"[].[name, properties.template.revisionSuffix]\" -o tsv");
-            context.Information($"All {appType} revisions (attempt {attempt}):\n{debugOutput}");
-
             revisionName = BuildHelpers.RunCommandWithOutput(context, "az",
                 $"containerapp revision list --resource-group {parameters.ResourceGroup} " +
                 $"--name {parameters.NamePrefix}-{appType} " +
-                $"--query \"[?properties.template.revisionSuffix=='{deploymentHash}'].name | [0]\" -o tsv").Trim();
+                $"--query \"[?name=='{expectedRevisionName}'].name | [0]\" -o tsv").Trim();
 
             if (!string.IsNullOrWhiteSpace(revisionName) && revisionName != "null")
                 break;
@@ -278,7 +272,7 @@ public static class AzureTasks
         }
 
         if (string.IsNullOrWhiteSpace(revisionName) || revisionName == "null")
-            throw new Exception($"Could not find {appType} revision with suffix '{deploymentHash}'");
+            throw new Exception($"Could not find {appType} revision '{expectedRevisionName}'");
 
         BuildHelpers.RunCommand(context, "az",
             $"containerapp revision label add --name {parameters.NamePrefix}-{appType} " +
