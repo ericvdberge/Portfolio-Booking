@@ -254,28 +254,29 @@ public static class AzureTasks
     private static void ApplyLabelToRevision(ICakeContext context, BuildParameters parameters,
         string appType, string deploymentHash)
     {
-        var revisionName = BuildHelpers.RunCommandWithOutput(context, "az",
-            $"containerapp revision list " +
-            $"--resource-group {parameters.ResourceGroup} " +
-            $"--name {parameters.NamePrefix}-{appType} " +
-            $"--query \"[?properties.template.revisionSuffix=='{deploymentHash}'].name | [0]\" -o tsv").Trim();
+        string revisionName = null;
 
-        if (string.IsNullOrWhiteSpace(revisionName) || revisionName == "null")
+        for (int attempt = 1; attempt <= 2; attempt++)
         {
-            throw new Exception($"Could not find {appType} revision with suffix '{deploymentHash}'");
+            revisionName = BuildHelpers.RunCommandWithOutput(context, "az",
+                $"containerapp revision list --resource-group {parameters.ResourceGroup} " +
+                $"--name {parameters.NamePrefix}-{appType} " +
+                $"--query \"[?properties.template.revisionSuffix=='{deploymentHash}'].name | [0]\" -o tsv").Trim();
+
+            if (!string.IsNullOrWhiteSpace(revisionName) && revisionName != "null")
+                break;
+
+            if (attempt < 2)
+                System.Threading.Thread.Sleep(3000);
         }
 
-        context.Information($"Applying label to {appType} revision: {revisionName}");
+        if (string.IsNullOrWhiteSpace(revisionName) || revisionName == "null")
+            throw new Exception($"Could not find {appType} revision with suffix '{deploymentHash}'");
 
         BuildHelpers.RunCommand(context, "az",
-            $"containerapp revision label add " +
-            $"--name {parameters.NamePrefix}-{appType} " +
-            $"--resource-group {parameters.ResourceGroup} " +
-            $"--label \"{parameters.RevisionLabel}\" " +
-            $"--revision \"{revisionName}\" " +
-            $"--yes");
-
-        context.Information($"✓ Label applied to {appType} revision");
+            $"containerapp revision label add --name {parameters.NamePrefix}-{appType} " +
+            $"--resource-group {parameters.ResourceGroup} --label \"{parameters.RevisionLabel}\" " +
+            $"--revision \"{revisionName}\" --yes");
     }
 
     public static void GetDeploymentUrls(ICakeContext context, BuildParameters parameters)
