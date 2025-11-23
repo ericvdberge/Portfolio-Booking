@@ -258,6 +258,13 @@ public static class AzureTasks
 
         for (int attempt = 1; attempt <= 2; attempt++)
         {
+            // Debug: Show all revisions and their suffixes
+            var debugOutput = BuildHelpers.RunCommandWithOutput(context, "az",
+                $"containerapp revision list --resource-group {parameters.ResourceGroup} " +
+                $"--name {parameters.NamePrefix}-{appType} " +
+                $"--query \"[].[name, properties.template.revisionSuffix]\" -o tsv");
+            context.Information($"All {appType} revisions (attempt {attempt}):\n{debugOutput}");
+
             revisionName = BuildHelpers.RunCommandWithOutput(context, "az",
                 $"containerapp revision list --resource-group {parameters.ResourceGroup} " +
                 $"--name {parameters.NamePrefix}-{appType} " +
@@ -267,7 +274,7 @@ public static class AzureTasks
                 break;
 
             if (attempt < 2)
-                System.Threading.Thread.Sleep(3000);
+                System.Threading.Thread.Sleep(5000);
         }
 
         if (string.IsNullOrWhiteSpace(revisionName) || revisionName == "null")
