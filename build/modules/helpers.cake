@@ -65,9 +65,9 @@ public static class BuildHelpers
 
     public static string GenerateDeploymentHash(ICakeContext context)
     {
-        var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
-        var hash = GetGitCommitHash(context, true);
-        return $"{timestamp}-{hash}";
+        var timestamp = DateTime.UtcNow.Ticks;
+        var hash = Math.Abs(timestamp.GetHashCode()).ToString("x5");
+        return hash.Substring(0, 5);
     }
 
     public static void EnsureDirectoryExists(ICakeContext context, string path)
