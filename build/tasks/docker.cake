@@ -16,31 +16,35 @@ public static class DockerTasks
 
         context.Information($"Logging into {parameters.Registry}...");
 
-        var loginArgs = $"login {parameters.Registry} " +
-            $"-u {parameters.RegistryUsername} " +
-            $"--password-stdin";
-
-        var settings = new ProcessSettings
+        // Write password to temp file for secure stdin
+        var tempFile = System.IO.Path.GetTempFileName();
+        try
         {
-            Arguments = loginArgs,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true
-        };
+            System.IO.File.WriteAllText(tempFile, parameters.RegistryPassword);
 
-        using (var process = context.StartAndReturnProcess("docker", settings))
-        {
-            using (var standardInput = process.GetStandardInput())
+            // Use cat/type to pipe password to docker login (cross-platform)
+            var isWindows = context.Environment.Platform.Family == PlatformFamily.Windows;
+            var catCommand = isWindows ? "type" : "cat";
+            var shellCommand = $"{catCommand} \"{tempFile}\" | docker login {parameters.Registry} -u \"{parameters.RegistryUsername}\" --password-stdin";
+
+            var shell = isWindows ? "cmd" : "bash";
+            var shellArg = isWindows ? "/c" : "-c";
+
+            var exitCode = context.StartProcess(shell, new ProcessSettings
             {
-                standardInput.WriteLine(parameters.RegistryPassword);
-            }
+                Arguments = $"{shellArg} \"{shellCommand}\"",
+            });
 
-            process.WaitForExit();
-
-            if (process.GetExitCode() != 0)
+            if (exitCode != 0)
                 throw new Exception("Docker login failed!");
-        }
 
-        context.Information("Docker login successful");
+            context.Information("Docker login successful");
+        }
+        finally
+        {
+            if (System.IO.File.Exists(tempFile))
+                System.IO.File.Delete(tempFile);
+        }
     }
 
     public static void BuildBackendImage(ICakeContext context, BuildParameters parameters)
